@@ -2,7 +2,7 @@
 # # tribe-social — Phase 1b Correlation Analysis
 #
 # **Project:** Validate whether TRIBE v2 cortical activation scores correlate
-# with Instagram Reels engagement metrics (saves, shares, views, likes).
+# with short-form video engagement metrics (shares, views, likes, comments).
 #
 # ## Scientific Basis
 #
@@ -23,9 +23,9 @@
 # TRIBE v2 composite scores — weighted sum of Attention (IFJa/IFJp),
 # Social (PGi/PGp/IP1), Language (44/45), Valuation (vmPFC: 10v/25/s32),
 # Auditory (STS/A5/TE1a), Motion (MT/MST/V4t), and Narrative/DMN (PCC complex)
-# activations — will correlate positively with Instagram Reels **saves** and
-# **shares**, which require deliberate behavioral investment and best reflect
-# genuine neural engagement signals.
+# activations — will correlate positively with Instagram Reels **shares**,
+# which require deliberate propagation intent and best reflect genuine neural
+# engagement signals. Saves are a private metric and excluded from analysis.
 #
 # ## Analysis Output
 # - **Figure 1** (4-panel, publishable): r heatmap · composite scatter ·
@@ -78,9 +78,15 @@ ROI_WEIGHTS = {
 ALPHA               = 0.05
 N_COMPARISONS       = 28          # 7 ROIs × 4 metrics (Bonferroni)
 ALPHA_BONF          = ALPHA / N_COMPARISONS   # 0.00179
+# Metrics: YouTube=[likes_per_view, views, likes, comments_per_view]
+#          Instagram=[shares, views, likes, comments]
 R_THRESHOLD         = 0.30        # per-ROI deep-dive inclusion cutoff
-COMPOSITE_THRESHOLD = 0.40        # go/no-go for composite model r with saves
+COMPOSITE_THRESHOLD = 0.40        # go/no-go for composite model r with primary metric
 COMPOSITE_POST_GATE = 65          # composite_raw threshold for post decision (0–100)
+
+# YOUTUBE_MODE: saves/shares unavailable on YouTube — use likes_per_view as proxy
+# Set False when running against Instagram corpus (shares available via Apify)
+YOUTUBE_MODE = True
 
 CI_LEVEL       = 0.95
 TOP_BOTTOM_PCT = 0.10             # top/bottom decile for Panel C hook analysis
@@ -112,8 +118,8 @@ DPI = 300
 #
 # **Bootstrap CI** used in Panel B regression band when corpus n < 30.
 #
-# **Save rate** (saves/views) in Panel D normalizes for video reach —
-# the funnel-entry efficiency metric most under the creator's control.
+# **Virality score** (shares×3 + comments×2 + likes) in Panel D weights
+# propagation intent over passive engagement — the creator's key lever.
 
 # %% Cell 2 — Data Loading and Merge
 # ─────────────────────────────────────────────────────────────────────────────
@@ -129,7 +135,22 @@ N  = len(df)
 print(f'Corpus: {N} videos  (scores={len(scores_df)}, engagement={len(eng_df)}, matched={N})')
 
 roi_labels = list(ROI_WEIGHTS.keys())
-eng_labels = ['saves', 'shares', 'views', 'likes']
+
+if YOUTUBE_MODE:
+    # YouTube Shorts: shares not exposed — derive likes_per_view as quality proxy
+    for col in ['views', 'likes', 'comments']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df['likes_per_view']    = (df['likes']    / df['views'].replace(0, np.nan)).round(6)
+    df['comments_per_view'] = (df['comments'] / df['views'].replace(0, np.nan)).round(6)
+    df['shares'] = np.nan
+    eng_labels = ['likes_per_view', 'views', 'likes', 'comments_per_view']
+    print(f'YouTube mode: using {eng_labels} (shares unavailable)')
+else:
+    # Instagram corpus: shares available via Apify scraper
+    for col in ['views', 'likes', 'shares', 'comments']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    eng_labels = ['shares', 'views', 'likes', 'comments']
+    print(f'Instagram mode: using {eng_labels}')
 
 missing_rois = [f'{r}_mean' for r in roi_labels if f'{r}_mean' not in df.columns]
 missing_eng  = [e for e in eng_labels if e not in df.columns]
@@ -173,8 +194,13 @@ df['composite_z'] = sum(
     for r in roi_labels
 )
 
-# Save rate: normalized efficiency (not affected by creator audience size)
-df['save_rate'] = df['saves'] / df['views'].replace(0, np.nan)
+# Virality score: weighted composite prioritising propagation intent
+# weights: shares×3 (deliberate send) + comments×2 (active response) + likes×1
+df['virality_score'] = (
+    df['shares'].fillna(0) * 3
+    + df['comments'].fillna(0) * 2
+    + df['likes'].fillna(0)
+)
 
 # Log transform flags
 LOG_ENG = {col: df[col].skew() > 2 for col in eng_labels}
@@ -205,34 +231,38 @@ for eng in eng_labels:
     composite_r[eng] = r
     composite_p[eng] = p
 
+PRIMARY_METRIC = 'likes_per_view' if YOUTUBE_MODE else 'shares'
+SECONDARY_METRIC = 'views' if YOUTUBE_MODE else 'shares'
+
 print('Pearson r matrix:')
 print(r_matrix.round(3).to_string())
 print('\nComposite r:')
 for eng in eng_labels:
-    print(f'  vs {eng:<8}: r={composite_r[eng]:+.3f}  p={composite_p[eng]:.4f}')
+    print(f'  vs {eng:<12}: r={composite_r[eng]:+.3f}  p={composite_p[eng]:.4f}')
 
 qualifying_rois = [
     roi for roi in roi_labels
-    if abs(r_matrix.loc[roi, 'saves']) > R_THRESHOLD
-    or abs(r_matrix.loc[roi, 'shares']) > R_THRESHOLD
+    if abs(r_matrix.loc[roi, PRIMARY_METRIC]) > R_THRESHOLD
+    or abs(r_matrix.loc[roi, SECONDARY_METRIC]) > R_THRESHOLD
 ]
-print(f'\nROIs exceeding |r| > {R_THRESHOLD} (saves or shares): {qualifying_rois}')
+print(f'\nROIs exceeding |r| > {R_THRESHOLD} ({PRIMARY_METRIC} or {SECONDARY_METRIC}): {qualifying_rois}')
 
 # %% Cell 5 — Hook-Window Group Statistics
 # ─────────────────────────────────────────────────────────────────────────────
-high_cut = df['saves'].quantile(1 - TOP_BOTTOM_PCT)
-low_cut  = df['saves'].quantile(TOP_BOTTOM_PCT)
-top_group = df[df['saves'] >= high_cut]
-bot_group = df[df['saves'] <= low_cut]
+high_cut = df[PRIMARY_METRIC].quantile(1 - TOP_BOTTOM_PCT)
+low_cut  = df[PRIMARY_METRIC].quantile(TOP_BOTTOM_PCT)
+top_group = df[df[PRIMARY_METRIC] >= high_cut]
+bot_group = df[df[PRIMARY_METRIC] <= low_cut]
 
+_pm_label = PRIMARY_METRIC.replace('_', ' ').title()
 if len(top_group) < 3 or len(bot_group) < 3:
     print(f'Warning: decile groups too small ({len(top_group)}/{len(bot_group)}). Using median split.')
-    median    = df['saves'].median()
-    top_group = df[df['saves'] > median]
-    bot_group = df[df['saves'] <= median]
-    GROUP_LABEL = 'Above/Below Median Saves'
+    median    = df[PRIMARY_METRIC].median()
+    top_group = df[df[PRIMARY_METRIC] > median]
+    bot_group = df[df[PRIMARY_METRIC] <= median]
+    GROUP_LABEL = f'Above/Below Median {_pm_label}'
 else:
-    GROUP_LABEL = f'Top {int(TOP_BOTTOM_PCT*100)}% vs Bottom {int(TOP_BOTTOM_PCT*100)}% by Saves'
+    GROUP_LABEL = f'Top {int(TOP_BOTTOM_PCT*100)}% vs Bottom {int(TOP_BOTTOM_PCT*100)}% by {_pm_label}'
 
 hook_stats = pd.DataFrame({
     'roi':      roi_labels,
@@ -330,8 +360,8 @@ ax_A.set_title('A   ROI × Engagement Correlation', fontweight='bold', pad=10, f
 ax_A.text(0, -0.18, '* Bonferroni p < 0.05   † uncorrected p < 0.05',
           transform=ax_A.transAxes, fontsize=8, color='#555555')
 
-# ── Panel B: Composite Score vs. Saves ────────────────────────────────────────
-y_b, y_label_b = _eng_y('saves')
+# ── Panel B: Composite Score vs. Primary Metric ───────────────────────────────
+y_b, y_label_b = _eng_y(PRIMARY_METRIC)
 x_b = df['composite_z']
 mask_b = x_b.notna() & y_b.notna()
 xf, yf = x_b[mask_b].values, y_b[mask_b].values
@@ -339,15 +369,16 @@ xf, yf = x_b[mask_b].values, y_b[mask_b].values
 xr_b = np.linspace(xf.min(), xf.max(), 200)
 y_line_b, ci_lo_b, ci_hi_b = _ols_with_ci(xf, yf, xr_b)
 
-colors_b = [C_POS if r >= df['save_rate'].median() else '#AAAAAA'
-            for r in df['save_rate'].fillna(0)]
+colors_b = [C_POS if r >= df['virality_score'].median() else '#AAAAAA'
+            for r in df['virality_score'].fillna(0)]
 ax_B.scatter(x_b[mask_b], y_b[mask_b], c=colors_b, s=70, alpha=0.82,
              edgecolors='white', linewidths=0.5, zorder=3)
 ax_B.plot(xr_b, y_line_b, color=C_POS, linewidth=2, zorder=4)
 ax_B.fill_between(xr_b, ci_lo_b, ci_hi_b, alpha=0.14, color=C_POS)
 
-r_b = composite_r['saves']
-p_b = composite_p['saves']
+_pm = PRIMARY_METRIC if PRIMARY_METRIC in composite_r.index else list(composite_r.index)[0]
+r_b = composite_r[_pm]
+p_b = composite_p[_pm]
 ax_B.text(0.05, 0.95, f'r = {r_b:.3f}\np = {p_b:.4f}',
           transform=ax_B.transAxes, fontsize=11, va='top',
           bbox=dict(boxstyle='round,pad=0.35', facecolor='white',
@@ -358,7 +389,7 @@ if USE_BOOTSTRAP:
 
 ax_B.set_xlabel('Composite Neural Score (z)', fontsize=11)
 ax_B.set_ylabel(y_label_b, fontsize=11)
-ax_B.set_title('B   Composite Score vs. Saves', fontweight='bold', pad=10, fontsize=12)
+ax_B.set_title(f'B   Composite Score vs. {PRIMARY_METRIC.replace("_"," ").title()}', fontweight='bold', pad=10, fontsize=12)
 
 # ── Panel C: Hook-Window Grouped Bar Chart ────────────────────────────────────
 x_c   = np.arange(len(roi_labels))
@@ -378,7 +409,7 @@ ax_C.set_xticklabels([r.capitalize() for r in roi_labels], rotation=35, ha='righ
 ax_C.set_ylabel('Mean Hook-Window Score (z, 0–3 s)', fontsize=11)
 ax_C.axhline(0, color='black', linewidth=0.8, linestyle='--', alpha=0.45)
 ax_C.legend(title=GROUP_LABEL, frameon=False, fontsize=9, title_fontsize=8)
-ax_C.set_title('C   Hook-Window Activation by Save Performance',
+ax_C.set_title(f'C   Hook-Window Activation by {_pm_label} Performance',
                fontweight='bold', pad=10, fontsize=12)
 
 # ── Panel D: Portfolio Map ────────────────────────────────────────────────────
@@ -388,13 +419,13 @@ thresh_z   = (COMPOSITE_POST_GATE - c_raw_mean) / (c_raw_std + 1e-9)
 
 colors_d = [C_ABOVE if v >= COMPOSITE_POST_GATE else C_BELOW
             for v in df['composite_raw']]
-ax_D.scatter(df['composite_z'], df['save_rate'].fillna(0),
+ax_D.scatter(df['composite_z'], df['virality_score'].fillna(0),
              c=colors_d, s=82, alpha=0.85, edgecolors='white', linewidths=0.5, zorder=3)
 ax_D.axvline(thresh_z, color='#333333', linestyle='--', linewidth=1.2, zorder=2)
 
 if 'label' in df.columns:
     texts_d = [
-        ax_D.text(row['composite_z'], row['save_rate'] or 0, row['label'], fontsize=7.5)
+        ax_D.text(row['composite_z'], row['virality_score'] or 0, row['label'], fontsize=7.5)
         for _, row in df.iterrows()
     ]
     if HAS_ADJUSTTEXT:
@@ -408,7 +439,7 @@ legend_d = [
 ]
 ax_D.legend(handles=legend_d, frameon=False, fontsize=8.5)
 ax_D.set_xlabel('Composite Neural Score (z)', fontsize=11)
-ax_D.set_ylabel('Save Rate (saves / views)', fontsize=11)
+ax_D.set_ylabel('Virality Score (shares×3 + comments×2 + likes)', fontsize=11)
 ax_D.set_title('D   Video Portfolio Map', fontweight='bold', pad=10, fontsize=12)
 
 # ── Figure-level labels and export ───────────────────────────────────────────
@@ -434,7 +465,7 @@ plt.show()
 if not qualifying_rois:
     print(f'No ROIs exceeded |r| > {R_THRESHOLD}. Figure 2 skipped.')
 else:
-    target_engs = ['saves', 'shares']
+    target_engs = ['shares'] if not YOUTUBE_MODE else ['likes_per_view']
     n_cols = len(qualifying_rois)
 
     fig2, axes2 = plt.subplots(
@@ -499,18 +530,16 @@ print('  TRIBE-SOCIAL Phase 1b — Correlation Summary')
 print(f'  Corpus: {N} videos  |  Date: {today}')
 print('=' * 62)
 
-print(f'\nROI Threshold Report (|r| > {R_THRESHOLD} with saves or shares):')
+print(f'\nROI Threshold Report (|r| > {R_THRESHOLD} with {PRIMARY_METRIC}):')
 for roi in roi_labels:
-    r_s  = r_matrix.loc[roi, 'saves']
-    r_sh = r_matrix.loc[roi, 'shares']
-    best = max(abs(r_s), abs(r_sh))
-    print(f'  {roi:<12}  r_saves={r_s:+.3f}  r_shares={r_sh:+.3f}  [{_flag(best, R_THRESHOLD)}]')
+    r_pm = r_matrix.loc[roi, PRIMARY_METRIC] if PRIMARY_METRIC in r_matrix.columns else np.nan
+    print(f'  {roi:<12}  r_{PRIMARY_METRIC}={r_pm:+.3f}  [{_flag(abs(r_pm), R_THRESHOLD)}]')
 
-print('\nComposite Model (target: r_saves > {:.2f}):'.format(COMPOSITE_THRESHOLD))
+print('\nComposite Model (target: r_{} > {:.2f}):'.format(PRIMARY_METRIC, COMPOSITE_THRESHOLD))
 for eng in eng_labels:
     rc, pc = composite_r[eng], composite_p[eng]
-    extra  = f'  [{_flag(rc, COMPOSITE_THRESHOLD)}]' if eng in ('saves', 'shares') else ''
-    print(f'  vs {eng:<8}  r={rc:+.3f}  p={pc:.4f}{extra}')
+    extra  = f'  [{_flag(rc, COMPOSITE_THRESHOLD)}]' if eng == PRIMARY_METRIC else ''
+    print(f'  vs {eng:<20}  r={rc:+.3f}  p={pc:.4f}{extra}')
 
 bonf_sig = [
     (roi, eng)
@@ -529,7 +558,7 @@ else:
 print(f'\nSmall-N flag: {"YES" if USE_BOOTSTRAP else "NO"} (n = {N})')
 
 # Verdict
-composite_go   = abs(composite_r['saves']) >= COMPOSITE_THRESHOLD
+composite_go   = abs(composite_r[PRIMARY_METRIC]) >= COMPOSITE_THRESHOLD
 roi_pass_count = len(qualifying_rois)
 
 if composite_go and roi_pass_count >= 2:
@@ -537,7 +566,7 @@ if composite_go and roi_pass_count >= 2:
     action  = (
         f'Proceed to Phase 2. Create content targeting '
         f'{", ".join(qualifying_rois)} ROIs. Score each draft before posting. '
-        f'Track saves/shares per post to close the feedback loop.'
+        f'Track {PRIMARY_METRIC} per post to close the feedback loop.'
     )
 elif roi_pass_count >= 1 and not composite_go:
     verdict = 'CONDITIONAL'
@@ -555,7 +584,8 @@ else:
 print(f'\n{"─" * 62}')
 print(f'  RECOMMENDATION: {verdict}')
 print(f'\n  Rationale:')
-print(f'    Composite r_saves = {composite_r["saves"]:.3f}  '
+_r_pm = composite_r[PRIMARY_METRIC] if PRIMARY_METRIC in composite_r.index else float('nan')
+print(f'    Composite r_{PRIMARY_METRIC} = {_r_pm:.3f}  '
       f'(threshold {COMPOSITE_THRESHOLD}) → {"met" if composite_go else "not met"}')
 print(f'    {roi_pass_count}/{len(roi_labels)} ROIs exceed |r| > {R_THRESHOLD}')
 if bonf_sig:
@@ -569,10 +599,11 @@ print('=' * 62)
 _VAULT_INBOX = '/mnt/external/obsidian-vault/inbox'
 _vault_path  = f'{_VAULT_INBOX}/tribe-social-phase1b-{today}.md'
 
+_eng_cols = [c for c in [PRIMARY_METRIC, 'views', 'likes'] if c in r_matrix.columns]
 _roi_table = '\n'.join(
-    f'| {roi:<12} | {r_matrix.loc[roi,"saves"]:+.3f} | {r_matrix.loc[roi,"shares"]:+.3f} '
-    f'| {r_matrix.loc[roi,"views"]:+.3f} | {r_matrix.loc[roi,"likes"]:+.3f} '
-    f'| {"✓" if roi in qualifying_rois else "—"} |'
+    '| ' + roi + ' | ' +
+    ' | '.join(f'{r_matrix.loc[roi, c]:+.3f}' for c in _eng_cols) +
+    f' | {"✓" if roi in qualifying_rois else "—"} |'
     for roi in roi_labels
 )
 
@@ -588,17 +619,15 @@ _vault_doc = f"""<!-- alfred:source tribe_social_phase1b -->
 
 ## ROI × Engagement Correlations (Pearson r)
 
-| ROI | r_saves | r_shares | r_views | r_likes | |r|>{R_THRESHOLD} |
-|---|---|---|---|---|---|
+| ROI | {' | '.join('r_' + c for c in _eng_cols)} | |r|>{R_THRESHOLD} |
+|{'|'.join(['---'] * (len(_eng_cols) + 2))}|
 {_roi_table}
 
 ## Composite Model
 
 | Metric | r | p | Threshold met |
 |---|---|---|---|
-| vs saves  | {composite_r['saves']:+.3f} | {composite_p['saves']:.4f} | {'yes' if composite_go else 'no'} |
-| vs shares | {composite_r['shares']:+.3f} | {composite_p['shares']:.4f} | {'yes' if abs(composite_r['shares']) >= COMPOSITE_THRESHOLD else 'no'} |
-| vs views  | {composite_r['views']:+.3f} | {composite_p['views']:.4f} | — |
+{''.join(f"| vs {eng:<20} | {composite_r[eng]:+.3f} | {composite_p[eng]:.4f} | {'yes' if abs(composite_r[eng]) >= COMPOSITE_THRESHOLD else 'no' if eng == PRIMARY_METRIC else '—'} |{chr(10)}" for eng in eng_labels if eng in composite_r.index)}
 
 ## Bonferroni-Significant Pairs (p < {ALPHA_BONF:.5f})
 

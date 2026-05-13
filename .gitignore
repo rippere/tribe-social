@@ -8,3 +8,17 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Secrets
+.env
+
+# Data / media (large binary files, not source)
+engagement.csv
+reels/
+media/
+scores.csv
+*.mp4
+*.mov
+
+# RunPod session scripts with embedded keys
+runpod_session.sh

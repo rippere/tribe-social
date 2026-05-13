@@ -31,20 +31,25 @@ from tribev2.demo_utils import TribeModel
 # Approximate ROI masks for RunPod (numpy-only, no neuromaps dependency).
 # These match the Phase 0 baseline; analyze.py uses full HCP MMP1.0 masks locally.
 # ---------------------------------------------------------------------------
-_R = 10242  # right hemisphere vertex offset (fsaverage5)
+_R = 10242          # right hemisphere vertex offset (fsaverage5)
+_N_VERTS = 20484    # total vertices in TRIBE v2 output
 
 
 def _bilateral(*ranges: tuple[int, int]) -> np.ndarray:
     lh = np.concatenate([np.arange(a, b) for a, b in ranges])
-    return np.concatenate([lh, lh + _R])
+    lh = lh[lh < _R]   # guard: LH indices must be < 10242
+    rh = lh + _R
+    return np.concatenate([lh, rh])
 
 
+# fsaverage5 LH vertex approximations (all < 10242).
+# social/auditory were previously out-of-bounds (indices 12000+ / 10200+).
 _BATCH_MASKS = {
     "attention": _bilateral((8200, 8350), (8350, 8500)),
-    "social":    _bilateral((12000, 12400),),
+    "social":    _bilateral((6500, 6900),),    # TPJ: posterior parietal-temporal
     "language":  _bilateral((7800, 8000),),
     "valuation": _bilateral((400, 700),),
-    "auditory":  _bilateral((10200, 10450), (10450, 10650)),
+    "auditory":  _bilateral((8800, 9200),),    # STS: lateral superior temporal
     "motion":    _bilateral((9800, 10000),),
     "narrative": _bilateral((1200, 1600),),
 }
@@ -173,13 +178,44 @@ def main():
     parser.add_argument("--text",        help="Text string to analyze")
     parser.add_argument("--label",       default="content", help="Output filename label")
     # Batch args
-    parser.add_argument("--batch-dir",   help="Directory of .mp4/.mov files to process")
-    parser.add_argument("--results-csv", default="scores.csv",
-                        help="Output CSV filename (written inside --batch-dir)")
-    parser.add_argument("--cache",       default="./cache", help="Model cache folder")
+    parser.add_argument("--batch-dir",    help="Directory of .mp4/.mov files to process")
+    parser.add_argument("--rescore-dir",  help="Rescore existing *_preds.npy files without re-running inference")
+    parser.add_argument("--results-csv",  default="scores.csv",
+                        help="Output CSV filename (written inside --batch-dir / --rescore-dir)")
+    parser.add_argument("--cache",        default="./cache", help="Model cache folder")
     args = parser.parse_args()
 
-    if args.batch_dir:
+    if args.rescore_dir:
+        # ----------------------------------------------------------------
+        # RESCORE MODE — read saved .npy files, recompute ROI scores only
+        # ----------------------------------------------------------------
+        rescore_dir = Path(args.rescore_dir)
+        npy_files = sorted(rescore_dir.glob("*_preds.npy"))
+        if not npy_files:
+            raise FileNotFoundError(f"No *_preds.npy files found in {rescore_dir}")
+        print(f"Rescoring {len(npy_files)} .npy file(s) in {rescore_dir}")
+        rows = []
+        for nf in npy_files:
+            label = nf.stem.replace("_preds", "")
+            try:
+                preds = np.load(nf)
+                print(f"[{label}] shape={preds.shape}")
+                row = quick_scores(preds)
+                row["filename"]  = label + ".mp4"
+                row["label"]     = label
+                row["n_seconds"] = preds.shape[0]
+                rows.append(row)
+                print(f"  composite_raw={row['composite_raw']:.4f}")
+            except Exception as exc:
+                print(f"  ERROR: {exc} — skipping {nf.name}")
+        out_csv = rescore_dir / args.results_csv
+        with open(out_csv, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS)
+            writer.writeheader()
+            writer.writerows(rows)
+        print(f"\nRescore complete: {len(rows)}/{len(npy_files)} succeeded → {out_csv}")
+
+    elif args.batch_dir:
         # ----------------------------------------------------------------
         # BATCH MODE
         # ----------------------------------------------------------------
