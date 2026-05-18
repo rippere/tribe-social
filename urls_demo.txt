@@ -1,0 +1,56 @@
+# TRIBE v2 Demo Corpus — Viral YouTube Shorts (Field-Indiscriminant)
+# 15 verified viral clips across 7 niches. All 10M–4.6B+ views.
+# Source: documented rankings (Juksun, HitPaw, Guinness, DTW, Wizdeo)
+# Run: make fetch   (downloads to reels_new/, does not re-score existing corpus)
+
+# ── COMEDY / PRANK ───────────────────────────────────────────────────────────
+# Collins Key | ~1.2B views | Hook: prank reversal, victim turns tables
+https://www.youtube.com/shorts/xLezgUBTFg4
+
+# Topper Guild | ~974M views | Hook: disgust→relief arc (sponge eating reveal)
+https://www.youtube.com/shorts/QV6iOzP_OXY
+
+# Lucas & Marcus (Dobre Twins) | ~1.2B views | Hook: sibling prank karma
+https://www.youtube.com/shorts/Zhpk3ML7bIQ
+
+# ── MAGIC / ILLUSION ─────────────────────────────────────────────────────────
+# Justin Flom | ~1.9B views | Hook: Cinderella dress transformation (compulsive rewatch)
+https://www.youtube.com/shorts/ldSVhw1Nv50
+
+# Zach King | ~1.2B views | Hook: seamless CGI impossibility, ladder graffiti
+https://www.youtube.com/shorts/9btQkaci6kA
+
+# Xavier Mortimer | ~574M views | Hook: perceptual violation, impossible balance
+https://www.youtube.com/shorts/cm8x4uR1bck
+
+# ── SPORTS / TRICK SHOTS ─────────────────────────────────────────────────────
+# Colin Amazing | ~4.66B views | Guinness record | Hook: escalating duo trick shots
+https://www.youtube.com/shorts/mLi0JBXQrao
+
+# How Ridiculous | ~1.38B views | Hook: power tools racing, unpredictable stages
+https://www.youtube.com/shorts/Nus7MfF2ytw
+
+# How Ridiculous | ~1.2B views | Hook: balloon popping race, broad accessibility
+https://www.youtube.com/shorts/8uiUz_IUkpo
+
+# ── FOOD / COOKING ───────────────────────────────────────────────────────────
+# Fruits & Nature | ~1.57B views | Hook: tribal child breakfast, 3 virality drivers at once
+https://www.youtube.com/shorts/dFzmJLWGmys
+
+# Nick DiGiovanni | ~10M+ views | Hook: world record + Gordon Ramsay collab
+https://www.youtube.com/shorts/wJYxLc5PaAs
+
+# ── BEAUTY / TRANSFORMATION ──────────────────────────────────────────────────
+# Oussama Sabbagh | ~129M views | Hook: before/after hair transformation
+https://www.youtube.com/shorts/EPHVEFmudEA
+
+# ── LIFE HACKS / ENTERTAINMENT ───────────────────────────────────────────────
+# MiniKatana | ~677M–1B+ views | Hook: boss-arriving anxiety resolved by satisfying speed-clean
+https://www.youtube.com/shorts/5E30dQyhrrk
+
+# ── CHALLENGE / GENEROSITY ───────────────────────────────────────────────────
+# MrBeast | ~1.4B views | Hook: absurd generosity premise + open question drives comments
+https://www.youtube.com/shorts/MLCwHeJ02aA
+
+# MrBeast | ~1.4B views | Hook: subverts Halloween ritual with extreme generosity
+https://www.youtube.com/shorts/YlvcFJOE-OE
