@@ -60,18 +60,19 @@ def run_batch(cfg: Config, no_analyze: bool = False) -> None:
         sys.exit(1)
 
     console.print(Rule("[bold]tribe-score batch[/bold]"))
+    gpu_list = [cfg.gpu_type_id] + cfg.gpu_fallback_ids
     console.print(f"  Videos:  {len(reels)} .mp4 files")
     console.print(f"  Reels:   {cfg.reels_dir}")
-    console.print(f"  GPU:     {cfg.gpu_type_id}")
+    console.print(f"  GPU:     {cfg.gpu_type_id} (+ {len(cfg.gpu_fallback_ids)} fallback(s))")
 
     _check_engagement_coverage(cfg.engagement_csv)
 
     # --- Provision -------------------------------------------------------
     _step("Provisioning RunPod pod…")
-    pod_id = runpod.provision(
-        cfg.runpod_api_key, cfg.gpu_type_id, cfg.image, cfg.container_disk_gb
+    pod_id, gpu_used = runpod.provision(
+        cfg.runpod_api_key, gpu_list, cfg.image, cfg.container_disk_gb
     )
-    _ok(f"Pod ID: {pod_id}")
+    _ok(f"Pod ID: {pod_id}  GPU: {gpu_used}")
 
     try:
         _step("Waiting for SSH…")
@@ -79,6 +80,19 @@ def run_batch(cfg: Config, no_analyze: bool = False) -> None:
         _ok(f"SSH ready → {host}:{port}")
 
         with remote.ssh_session(host, port, cfg.ssh_user, cfg.ssh_key_path) as sess:
+
+            # --- Pod setup -----------------------------------------------
+            _step("Installing TRIBE v2 on pod…")
+            setup_cmd = (
+                "pip install -q --upgrade pip && "
+                "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
+                "--extra-index-url https://download.pytorch.org/whl/cu118"
+            )
+            rc = sess.run(setup_cmd, env={"HF_TOKEN": cfg.hf_token})
+            if rc != 0:
+                console.print(f"[red]Pod setup failed (exit {rc}) — tribev2 install error[/red]")
+                sys.exit(1)
+            _ok("tribev2 installed")
 
             # --- Upload --------------------------------------------------
             _step(f"Uploading {len(reels)} videos + scripts…")
@@ -128,15 +142,16 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
         console.print(f"[red]Video not found: {video_path}[/red]")
         sys.exit(1)
 
+    gpu_list = [cfg.gpu_type_id] + cfg.gpu_fallback_ids
     console.print(Rule(f"[bold]tribe-score score[/bold]  {label}"))
     console.print(f"  Video: {video_path}")
-    console.print(f"  GPU:   {cfg.gpu_type_id}")
+    console.print(f"  GPU:   {cfg.gpu_type_id} (+ {len(cfg.gpu_fallback_ids)} fallback(s))")
 
     _step("Provisioning RunPod pod…")
-    pod_id = runpod.provision(
-        cfg.runpod_api_key, cfg.gpu_type_id, cfg.image, cfg.container_disk_gb
+    pod_id, gpu_used = runpod.provision(
+        cfg.runpod_api_key, gpu_list, cfg.image, cfg.container_disk_gb
     )
-    _ok(f"Pod ID: {pod_id}")
+    _ok(f"Pod ID: {pod_id}  GPU: {gpu_used}")
 
     preds_local = cfg.tribe_dir / f"{label}_preds.npy"
 
@@ -146,6 +161,19 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
         _ok(f"SSH ready → {host}:{port}")
 
         with remote.ssh_session(host, port, cfg.ssh_user, cfg.ssh_key_path) as sess:
+
+            # --- Pod setup -----------------------------------------------
+            _step("Installing TRIBE v2 on pod…")
+            setup_cmd = (
+                "pip install -q --upgrade pip && "
+                "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
+                "--extra-index-url https://download.pytorch.org/whl/cu118"
+            )
+            rc = sess.run(setup_cmd, env={"HF_TOKEN": cfg.hf_token})
+            if rc != 0:
+                console.print(f"[red]Pod setup failed (exit {rc}) — tribev2 install error[/red]")
+                sys.exit(1)
+            _ok("tribev2 installed")
 
             _step("Uploading video + script…")
             scripts = [cfg.tribe_dir / "run_and_save.py"]

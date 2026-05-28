@@ -11,12 +11,13 @@ wheels/
 
 # Secrets
 .env
+.env.*
+!.env.example
 
 # Data / media (large binary files, not source)
-engagement.csv
+# Note: scores.csv and engagement.csv are intentionally tracked — they power the demo
 reels/
 media/
-scores.csv
 *.mp4
 *.mov
 

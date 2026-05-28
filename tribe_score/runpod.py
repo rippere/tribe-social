@@ -28,7 +28,7 @@ def _gql(api_key: str, query: str, variables: dict | None = None) -> dict:
     return data["data"]
 
 
-def provision(api_key: str, gpu_type_id: str, image: str, disk_gb: int) -> str:
+def _provision_one(api_key: str, gpu_type_id: str, image: str, disk_gb: int) -> str:
     mutation = """
     mutation Deploy($input: PodFindAndDeployOnDemandInput!) {
       podFindAndDeployOnDemand(input: $input) { id }
@@ -49,6 +49,23 @@ def provision(api_key: str, gpu_type_id: str, image: str, disk_gb: int) -> str:
         "startSsh":         True,
     }})
     return data["podFindAndDeployOnDemand"]["id"]
+
+
+def provision(api_key: str, gpu_type_ids: list[str], image: str, disk_gb: int) -> tuple[str, str]:
+    """Try each GPU in order, skipping supply-constrained types. Returns (pod_id, gpu_type_id)."""
+    last_err: Exception | None = None
+    for gpu in gpu_type_ids:
+        try:
+            pod_id = _provision_one(api_key, gpu, image, disk_gb)
+            return pod_id, gpu
+        except RuntimeError as exc:
+            if "SUPPLY_CONSTRAINT" in str(exc):
+                last_err = exc
+                continue
+            raise
+    raise RuntimeError(
+        f"No GPU available from fallback list {gpu_type_ids}. Last error: {last_err}"
+    )
 
 
 def get_ssh_info(api_key: str, pod_id: str) -> tuple[str, int] | None:

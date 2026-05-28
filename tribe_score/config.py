@@ -16,6 +16,7 @@ TRIBE_DIR = Path(__file__).parent.parent
 class Config:
     runpod_api_key: str
     gpu_type_id: str
+    gpu_fallback_ids: list[str]
     image: str
     ssh_key_path: Path
     ssh_user: str
@@ -47,9 +48,15 @@ def load_config() -> Config:
             missing.append(key)
         return val
 
+    _fallback_default = "NVIDIA A100-SXM4-80GB,NVIDIA RTX A6000,NVIDIA GeForce RTX 4090"
     cfg = Config(
         runpod_api_key    = req("RUNPOD_API_KEY"),
         gpu_type_id       = os.environ.get("RUNPOD_GPU_TYPE_ID", "NVIDIA A100 80GB PCIe"),
+        gpu_fallback_ids  = [
+            g.strip() for g in
+            os.environ.get("RUNPOD_GPU_FALLBACK_IDS", _fallback_default).split(",")
+            if g.strip()
+        ],
         image             = os.environ.get(
             "RUNPOD_IMAGE",
             "runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04"

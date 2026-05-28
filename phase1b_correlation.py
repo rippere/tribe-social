@@ -376,7 +376,7 @@ ax_B.scatter(x_b[mask_b], y_b[mask_b], c=colors_b, s=70, alpha=0.82,
 ax_B.plot(xr_b, y_line_b, color=C_POS, linewidth=2, zorder=4)
 ax_B.fill_between(xr_b, ci_lo_b, ci_hi_b, alpha=0.14, color=C_POS)
 
-_pm = PRIMARY_METRIC if PRIMARY_METRIC in composite_r.index else list(composite_r.index)[0]
+_pm = PRIMARY_METRIC if PRIMARY_METRIC in composite_r else list(composite_r.keys())[0]
 r_b = composite_r[_pm]
 p_b = composite_p[_pm]
 ax_B.text(0.05, 0.95, f'r = {r_b:.3f}\np = {p_b:.4f}',
@@ -584,7 +584,7 @@ else:
 print(f'\n{"─" * 62}')
 print(f'  RECOMMENDATION: {verdict}')
 print(f'\n  Rationale:')
-_r_pm = composite_r[PRIMARY_METRIC] if PRIMARY_METRIC in composite_r.index else float('nan')
+_r_pm = composite_r[PRIMARY_METRIC] if PRIMARY_METRIC in composite_r else float('nan')
 print(f'    Composite r_{PRIMARY_METRIC} = {_r_pm:.3f}  '
       f'(threshold {COMPOSITE_THRESHOLD}) → {"met" if composite_go else "not met"}')
 print(f'    {roi_pass_count}/{len(roi_labels)} ROIs exceed |r| > {R_THRESHOLD}')
@@ -627,7 +627,7 @@ _vault_doc = f"""<!-- alfred:source tribe_social_phase1b -->
 
 | Metric | r | p | Threshold met |
 |---|---|---|---|
-{''.join(f"| vs {eng:<20} | {composite_r[eng]:+.3f} | {composite_p[eng]:.4f} | {'yes' if abs(composite_r[eng]) >= COMPOSITE_THRESHOLD else 'no' if eng == PRIMARY_METRIC else '—'} |{chr(10)}" for eng in eng_labels if eng in composite_r.index)}
+{''.join(f"| vs {eng:<20} | {composite_r[eng]:+.3f} | {composite_p[eng]:.4f} | {'yes' if abs(composite_r[eng]) >= COMPOSITE_THRESHOLD else 'no' if eng == PRIMARY_METRIC else '—'} |{chr(10)}" for eng in eng_labels if eng in composite_r)}
 
 ## Bonferroni-Significant Pairs (p < {ALPHA_BONF:.5f})
 
