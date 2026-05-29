@@ -167,7 +167,7 @@ The core hypothesis: cortical activation patterns during video consumption predi
 
 Scores normalized to 0–100 for display. Raw composite values and all per-ROI statistics (hook window, offset window, peak second, temporal slope) are in `scores.csv`.
 
-**Phase 1b verdict (24-video corpus):** Composite score correlates with likes/1K views at r ≈ 0.45 — clearing the Phase 2 go/no-go threshold (r > 0.4). TPJ and vmPFC are the strongest individual predictors, consistent with Scholz et al. 2017.
+**Phase 1b verdict (24-video corpus):** The composite score correlates with likes/1K views at only r = 0.25 (p = 0.24, n = 24) — NOT statistically significant. The sample is underpowered and suffers from restriction-of-range, and one ROI (MT/V5) is negatively correlated with engagement. The Phase 2 go/no-go threshold (r > 0.4) was NOT cleared. Treat all scores as exploratory pending the revised validation in docs/VALIDATION-PROTOCOL-AND-ROADMAP.md.
 
 ---
 
