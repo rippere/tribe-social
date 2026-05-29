@@ -1,9 +1,9 @@
 """
 Build corpus.json from scores.csv + engagement.csv.
 
-Run with:
-    /mnt/external/Projects/tribe-social/.venv/bin/python \
-        apps/api/scripts/build_corpus_json.py
+Run from the monorepo root with:
+    python apps/api/scripts/build_corpus_json.py
+(reads scores.csv / engagement.csv from the research/ subtree)
 """
 
 import json
@@ -16,7 +16,10 @@ import pandas as pd
 from scipy import stats
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-PROTOTYPE_DIR   = Path("/mnt/external/Projects/tribe-social")
+# Resolve the research subtree relative to the monorepo root so this works on any
+# checkout. This file lives at apps/api/scripts/, so parents[3] is the repo root.
+MONOREPO_ROOT   = Path(__file__).resolve().parents[3]
+PROTOTYPE_DIR   = MONOREPO_ROOT / "research"
 SCORES_PATH     = PROTOTYPE_DIR / "scores.csv"
 ENGAGEMENT_PATH = PROTOTYPE_DIR / "engagement.csv"
 
