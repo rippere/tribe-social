@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0D0D0D;
+  --foreground: #F9FAFB;
+
+  /* Design tokens */
+  --color-bg: #0D0D0D;
+  --color-panel: #111827;
+  --color-border: #1F2937;
+  --color-text: #F9FAFB;
+  --color-muted: #9CA3AF;
+  --color-accent: #6366F1;
+  --color-post: #16A34A;
+  --color-revise: #D97706;
+  --color-rethink: #DC2626;
+
+  /* ROI colors */
+  --color-roi-vmPFC: #FFB74D;
+  --color-roi-TPJ: #81C784;
+  --color-roi-IFJa: #4FC3F7;
+  --color-roi-IFJp: #4DD0E1;
+  --color-roi-area45: #CE93D8;
+  --color-roi-MT_V5: #80DEEA;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Expose tokens as Tailwind utilities */
+  --color-bg: #0D0D0D;
+  --color-panel: #111827;
+  --color-border: #1F2937;
+  --color-text: #F9FAFB;
+  --color-muted: #9CA3AF;
+  --color-accent: #6366F1;
+  --color-post: #16A34A;
+  --color-revise: #D97706;
+  --color-rethink: #DC2626;
+}
+
+html {
+  background: #0D0D0D;
+  color: #F9FAFB;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}

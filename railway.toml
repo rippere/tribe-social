@@ -1,0 +1,2 @@
+# Monorepo — each service has its own railway.toml under apps/api and apps/web.
+# Set Root Directory in the Railway service settings to apps/api or apps/web accordingly.

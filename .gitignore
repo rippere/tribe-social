@@ -1,0 +1,32 @@
+# Monorepo root .gitignore
+# Per-subtree ignores also live in research/.gitignore and apps/*/.gitignore
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Node / web build artifacts
+node_modules/
+.next/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# RunPod deploy secrets (local only) — imported from tribe-social-lab
+.deploy.env
+**/.deploy.env
+
+# RunPod session scripts with embedded keys
+runpod_session.sh
+
+# Stray logs
+openscad_mcp.log
