@@ -13,8 +13,13 @@ from . import runpod, remote
 
 console = Console()
 
-# Files uploaded to RunPod for batch scoring
-_REMOTE_SCRIPTS = ["run_and_save.py"]
+# The shared scoring module now lives in the monorepo's tribe_scoring package
+# (packages/tribe_scoring/run_and_save.py). It is uploaded to the pod as a
+# standalone file named run_and_save.py and run there with `python run_and_save.py`.
+_SCORING_DIR = Path(__file__).resolve().parents[2] / "packages" / "tribe_scoring"
+
+# Files uploaded to RunPod for batch scoring (absolute source paths)
+_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py"]
 _REMOTE_WORK_DIR = "/workspace/tribe"
 
 
@@ -96,7 +101,7 @@ def run_batch(cfg: Config, no_analyze: bool = False) -> None:
 
             # --- Upload --------------------------------------------------
             _step(f"Uploading {len(reels)} videos + scripts…")
-            scripts = [cfg.tribe_dir / s for s in _REMOTE_SCRIPTS]
+            scripts = list(_REMOTE_SCRIPTS)
             sess.upload(scripts + reels, _REMOTE_WORK_DIR)
 
             # --- Score ---------------------------------------------------
@@ -176,7 +181,7 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
             _ok("tribev2 installed")
 
             _step("Uploading video + script…")
-            scripts = [cfg.tribe_dir / "run_and_save.py"]
+            scripts = [_SCORING_DIR / "run_and_save.py"]
             sess.upload(scripts + [video_path], _REMOTE_WORK_DIR)
 
             _step("Running TRIBE v2 inference…")

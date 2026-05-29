@@ -11,8 +11,11 @@ ENV HF_HUB_DOWNLOAD_TIMEOUT=300
 # fetching the faster-whisper model. Force it off → standard HF downloader.
 ENV HF_HUB_ENABLE_HF_TRANSFER=0
 
+# Build context is the MONOREPO ROOT (not this app dir), so the shared
+# scoring package can be copied in alongside the handler.
+#   docker build -f apps/runpod_handler/Dockerfile -t <tag> .
 WORKDIR /workspace
-COPY run_and_save.py .
-COPY handler.py .
+COPY packages/tribe_scoring ./tribe_scoring
+COPY apps/runpod_handler/handler.py .
 
 CMD ["python3.13", "handler.py"]

@@ -1,0 +1,18 @@
+[project]
+name = "tribe-scoring"
+version = "0.1.0"
+description = "Shared TRIBE v2 scoring module (run_and_save) used by research/, pod_server and runpod_handler"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+]
+
+# The package source lives directly in this directory (packages/tribe_scoring/),
+# so force-map these files into an importable `tribe_scoring` package.
+[tool.hatch.build.targets.wheel.force-include]
+"__init__.py" = "tribe_scoring/__init__.py"
+"run_and_save.py" = "tribe_scoring/run_and_save.py"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

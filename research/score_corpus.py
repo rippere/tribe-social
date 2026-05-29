@@ -166,8 +166,8 @@ def run_dry(corpus_dir: Path) -> None:
         console.print(f"  [yellow]![/yellow] engagement.csv not found at {eng_csv}")
         console.print("       Correlation analysis will be skipped.")
 
-    # 3. run_and_save.py
-    script = _HERE / "run_and_save.py"
+    # 3. run_and_save.py (now in the shared tribe_scoring package at repo root)
+    script = _HERE.parent / "packages" / "tribe_scoring" / "run_and_save.py"
     if script.exists():
         console.print(f"  [green]✓[/green] Scoring script: {script.name}")
     else:

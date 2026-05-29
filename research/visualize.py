@@ -596,7 +596,7 @@ try:
             n_secs = int(row["n_seconds"]) if row is not None else 30
 
             if preds is not None:
-                from run_and_save import _BATCH_MASKS
+                from tribe_scoring.run_and_save import _BATCH_MASKS
                 curves = {}
                 for roi in KEY_ROIS:
                     idx = _BATCH_MASKS[roi]

@@ -21,7 +21,7 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from run_and_save import load_model, quick_scores
+from tribe_scoring.run_and_save import load_model, quick_scores
 
 CACHE_FOLDER = os.environ.get("TRIBE_CACHE", "/workspace/cache")
 

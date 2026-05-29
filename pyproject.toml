@@ -1,0 +1,29 @@
+[project]
+name = "tribe-social-monorepo"
+version = "0.1.0"
+description = "TRIBE Social monorepo — neural content intelligence research + web/api/pod product"
+requires-python = ">=3.12"
+# Aggregate dependency: pull the workspace members in for editable installs.
+dependencies = [
+    "tribe-scoring",
+]
+
+# uv workspace: shared lockfile, members installed editable so the
+# tribe_scoring package is importable from research/ and apps/ alike.
+[tool.uv.workspace]
+members = [
+    "packages/tribe_scoring",
+    "research",
+    "apps/api",
+]
+
+[tool.uv.sources]
+tribe-scoring = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Root is a virtual aggregator; nothing to ship from the root itself.
+bypass-selection = true

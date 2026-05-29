@@ -12,9 +12,12 @@ ENV HF_HUB_DOWNLOAD_TIMEOUT=300
 ENV HF_HUB_ENABLE_HF_TRANSFER=0
 ENV TRIBE_CACHE=/workspace/cache
 
+# Build context is the MONOREPO ROOT (not this app dir), so the shared
+# scoring package can be copied in alongside the app.
+#   docker build -f apps/pod_server/Dockerfile -t <tag> .
 WORKDIR /workspace
-COPY run_and_save.py .
-COPY server.py .
+COPY packages/tribe_scoring ./tribe_scoring
+COPY apps/pod_server/server.py .
 
 EXPOSE 8000
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]

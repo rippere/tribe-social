@@ -30,7 +30,7 @@ _model = None
 def _get_model():
     global _model
     if _model is None:
-        from run_and_save import load_model
+        from tribe_scoring.run_and_save import load_model
         _t0 = time.time()
         print("[handler] Loading TRIBE v2 model...", flush=True)
         _model = load_model(cache_folder="/workspace/cache")
@@ -55,7 +55,7 @@ def handler(event: dict) -> dict:
     try:
         video_path.write_bytes(video_bytes)
         model     = _get_model()
-        from run_and_save import quick_scores
+        from tribe_scoring.run_and_save import quick_scores
         events_df = model.get_events_dataframe(video_path=str(video_path))
         preds, _  = model.predict(events=events_df)
         row = quick_scores(preds)
