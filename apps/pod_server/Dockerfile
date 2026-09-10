@@ -4,7 +4,10 @@
 FROM runpod/pytorch:1.0.0-cu1290-torch260-ubuntu2204
 
 RUN pip install runpod numpy fastapi "uvicorn[standard]"
-RUN pip install git+https://github.com/facebookresearch/tribev2
+# TODO(operator): pin TRIBEV2_REF to a real commit SHA for reproducible scores —
+# `main` floats and will silently change model/scoring behaviour between builds.
+ARG TRIBEV2_REF=main
+RUN pip install git+https://github.com/facebookresearch/tribev2@${TRIBEV2_REF}
 
 # HF_TOKEN is NOT baked in — it's passed as a pod env var at runtime so the
 # token never lands in a (public) image layer.

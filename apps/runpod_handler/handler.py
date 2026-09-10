@@ -3,7 +3,8 @@ RunPod Serverless handler for TRIBE v2 inference.
 Deployed as a Docker container to RunPod — NOT part of Railway.
 
 Input:  {"input": {"video_b64": "<base64 mp4>", "filename": "video.mp4"}}
-Output: {"output": <quick_scores() flat dict>}
+Output: <quick_scores() flat dict>  — RunPod wraps this in the single "output"
+        key itself, so the handler must NOT add its own "output" wrapper.
         {"error": "<message>"} on failure
 """
 import base64
@@ -62,7 +63,9 @@ def handler(event: dict) -> dict:
         row["filename"]  = filename
         row["label"]     = Path(filename).stem
         row["n_seconds"] = preds.shape[0]
-        return {"output": row}
+        # Return the flat row directly — RunPod adds the single "output" wrapper.
+        # Returning {"output": row} would double-nest to {"output": {"output": row}}.
+        return row
     except Exception as exc:
         return {"error": str(exc)}
     finally:

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import state
 from .routers import health, corpus, jobs as jobs_router, admin as admin_router
-from .store.jobs import cleanup_loop
+from .store.jobs import cleanup_loop, reconcile_interrupted_jobs
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "corpus.json"
 
@@ -26,6 +26,12 @@ async def lifespan(app: FastAPI):
         print(f"[startup] Loaded {len(state.corpus_data['videos'])} videos from corpus.json")
     else:
         print(f"[startup] WARNING: corpus.json not found at {DATA_PATH}")
+
+    # Fail any job left non-terminal by a prior process (no-op with today's
+    # in-memory store; load-bearing once jobs persist across restarts).
+    reconciled = reconcile_interrupted_jobs()
+    if reconciled:
+        print(f"[startup] Marked {reconciled} interrupted job(s) as failed")
 
     # Start job store cleanup background task
     asyncio.create_task(cleanup_loop())

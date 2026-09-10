@@ -42,7 +42,15 @@ def fetch_video(url: str) -> Path:
 
     cmd.append(url)
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    # On every failure path below (and on timeout) we must remove tmp_dir before
+    # re-raising, otherwise each failed download leaks a temp directory. Only the
+    # success path hands tmp_dir ownership to the caller (who cleans it up).
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired as exc:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        # Docstring promises RuntimeError; the caller catches only RuntimeError.
+        raise RuntimeError("yt-dlp timed out after 300s") from exc
 
     stderr = (result.stderr or "").strip()
 
@@ -55,6 +63,7 @@ def fetch_video(url: str) -> Path:
 
     auth_signals = ("login required", "login", "private", "rate-limit", "rate limit")
     if any(signal in lowered for signal in auth_signals):
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         raise RuntimeError(
             "Instagram download failed — the reel may be private, region-blocked, "
             "or require login cookies (set YTDLP_COOKIES_FILE to a cookies.txt path). "
@@ -62,10 +71,12 @@ def fetch_video(url: str) -> Path:
         )
 
     if result.returncode != 0 or "ERROR" in combined_output:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         raise RuntimeError(f"yt-dlp failed (exit {result.returncode}): {stderr_tail}")
 
     mp4_files = list(Path(tmp_dir).glob("*.mp4"))
     if not mp4_files:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         raise RuntimeError(
             f"yt-dlp reported success but produced no .mp4 in {tmp_dir}. "
             f"yt-dlp stderr: {stderr_tail}"

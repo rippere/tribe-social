@@ -1,3 +1,8 @@
+// Inference backend mode reported by GET /health.
+// "mock" = no inference backend, "pod" = warm-pod (POD_URL) path active,
+// "real" = RunPod serverless key+endpoint active. Precedence when both set: "real".
+export type InferenceMode = 'mock' | 'pod' | 'real'
+
 export interface TemporalPoint {
   second: number
   attention: number

@@ -8,6 +8,7 @@ well under RunPod's ~100s proxy (Cloudflare 524) timeout, even though a full
 score takes a couple of minutes.
 """
 import base64
+import hmac
 import os
 import tempfile
 import threading
@@ -18,12 +19,32 @@ from pathlib import Path
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "300")
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from tribe_scoring.run_and_save import load_model, quick_scores
 
 CACHE_FOLDER = os.environ.get("TRIBE_CACHE", "/workspace/cache")
+
+# Shared-secret auth for /score and /result. If POD_KEY is unset we allow all
+# requests (local/mock dev) but warn loudly at startup. When set, callers must
+# send a matching X-Pod-Key header.
+POD_KEY = os.environ.get("POD_KEY", "")
+if not POD_KEY:
+    print("[pod_server] WARNING: POD_KEY not set — /score and /result are "
+          "UNAUTHENTICATED (fine for local/mock dev; set POD_KEY in prod)", flush=True)
+
+
+def require_pod_key(x_pod_key: str | None = Header(default=None, alias="X-Pod-Key")):
+    """Require a matching X-Pod-Key header when POD_KEY is configured, else 401.
+
+    If POD_KEY is unset, all requests are allowed (a startup warning was logged).
+    """
+    if not POD_KEY:
+        return
+    if x_pod_key is None or not hmac.compare_digest(x_pod_key, POD_KEY):
+        raise HTTPException(401, "Missing or invalid X-Pod-Key")
+
 
 app = FastAPI(title="TRIBE v2 Warm Inference")
 _model = None
@@ -87,7 +108,7 @@ def _run_inference(job_id: str, video_bytes: bytes, filename: str):
             pass
 
 
-@app.post("/score")
+@app.post("/score", dependencies=[Depends(require_pod_key)])
 def score(req: ScoreRequest):
     if _model is None:
         raise HTTPException(503, "Model not loaded yet")
@@ -104,7 +125,7 @@ def score(req: ScoreRequest):
     return {"job_id": job_id, "status": "processing"}
 
 
-@app.get("/result/{job_id}")
+@app.get("/result/{job_id}", dependencies=[Depends(require_pod_key)])
 def result(job_id: str):
     with _jobs_lock:
         j = _jobs.get(job_id)

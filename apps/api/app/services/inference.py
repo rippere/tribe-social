@@ -27,6 +27,10 @@ _REAL_MODE = bool(os.getenv("RUNPOD_API_KEY") and os.getenv("RUNPOD_ENDPOINT_ID"
 # e.g. https://<podId>-8000.proxy.runpod.net
 _POD_URL = os.getenv("POD_URL", "").rstrip("/")
 
+# Shared secret for the warm-pod endpoint (must match POD_KEY on the pod server).
+# When set, sent as the X-Pod-Key header on /score and /result calls.
+_POD_KEY = os.getenv("POD_KEY", "")
+
 # Real inference is available via either the warm pod or the serverless endpoint.
 # The router uses this to decide whether to download/read the video.
 _INFER_ENABLED = bool(_POD_URL) or _REAL_MODE
@@ -35,6 +39,18 @@ _INFER_ENABLED = bool(_POD_URL) or _REAL_MODE
 # disable_endpoint fires on 1→0 transition, so concurrent jobs share one active endpoint.
 _active_runpod_jobs: int = 0
 _active_runpod_lock: asyncio.Lock = asyncio.Lock()
+
+# Hold strong references to background scoring tasks. asyncio.create_task keeps
+# only a weak reference, so without this a task can be garbage-collected mid-run.
+# Each task discards itself from the set once done.
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _spawn(coro) -> asyncio.Task:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    return task
 
 MOCK_STAGES = [
     (10, "uploading",   "Uploading video..."),
@@ -61,11 +77,11 @@ async def submit_job(filename: str, video_bytes: bytes | None = None) -> str:
     job_store.set(job)
 
     if _POD_URL and video_bytes is not None:
-        asyncio.create_task(pod_process_job(job_id, filename, video_bytes))
+        _spawn(pod_process_job(job_id, filename, video_bytes))
     elif _REAL_MODE and video_bytes is not None:
-        asyncio.create_task(real_process_job(job_id, filename, video_bytes))
+        _spawn(real_process_job(job_id, filename, video_bytes))
     else:
-        asyncio.create_task(_mock_process(job_id, filename))
+        _spawn(_mock_process(job_id, filename))
 
     return job_id
 
@@ -81,9 +97,11 @@ async def pod_process_job(job_id: str, filename: str, video_bytes: bytes):
     try:
         job_store.update(job_id, status="uploading", progress_pct=8, message="Uploading to GPU pod...")
         video_b64 = base64.b64encode(video_bytes).decode()
+        pod_headers = {"X-Pod-Key": _POD_KEY} if _POD_KEY else {}
 
         async with httpx.AsyncClient(timeout=60) as client:
-            r = await client.post(f"{_POD_URL}/score", json={"video_b64": video_b64, "filename": filename})
+            r = await client.post(f"{_POD_URL}/score", json={"video_b64": video_b64, "filename": filename},
+                                  headers=pod_headers)
             r.raise_for_status()
             pod_job_id = r.json().get("job_id")
             if not pod_job_id:
@@ -100,7 +118,7 @@ async def pod_process_job(job_id: str, filename: str, video_bytes: bytes):
                 pct = min(95, 15 + int((elapsed / 540) * 80))
                 job_store.update(job_id, status="scoring", progress_pct=pct,
                                  message="Running TRIBE v2 inference on GPU pod...")
-                rr = await client.get(f"{_POD_URL}/result/{pod_job_id}")
+                rr = await client.get(f"{_POD_URL}/result/{pod_job_id}", headers=pod_headers)
                 rr.raise_for_status()
                 data = rr.json()
                 st = data.get("status")

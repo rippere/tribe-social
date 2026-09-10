@@ -14,3 +14,14 @@ dependencies = [
     "scipy>=1.17.1",
     "uvicorn[standard]>=0.47.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+# Put the project root on sys.path so `import app...` resolves when running
+# `pytest` from apps/api — without this the suite silently skips (false green).
+pythonpath = "."
+testpaths = ["tests"]

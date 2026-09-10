@@ -21,7 +21,7 @@ export default function VideoDropzone({ onJobCreated }: Props) {
     setError(null)
     if (rejected.length > 0) {
       const r = rejected[0]
-      if (r.errors.some((e) => e.message.includes('too large'))) {
+      if (r.errors.some((e) => e.code === 'file-too-large')) {
         setError('File exceeds the 50 MB limit. For longer content, use a YouTube URL.')
       } else {
         setError('Only .mp4 files are supported.')

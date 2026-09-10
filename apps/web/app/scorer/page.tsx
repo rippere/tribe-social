@@ -5,16 +5,24 @@ import VideoDropzone from '@/components/scorer/VideoDropzone'
 import JobProgress from '@/components/scorer/JobProgress'
 import ResultsCard from '@/components/scorer/ResultsCard'
 import { fetchHealth } from '@/lib/api'
-import type { ScoreResult } from '@/lib/types'
+import type { ScoreResult, InferenceMode } from '@/lib/types'
+
+const MODE_LABEL: Record<InferenceMode, string> = {
+  mock: 'TRIBE v2 Mock Inference',
+  pod: 'TRIBE v2 Warm-Pod (real)',
+  real: 'TRIBE v2 Serverless (real)',
+}
 
 export default function ScorerPage() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [result, setResult] = useState<ScoreResult | null>(null)
-  const [inferenceMode, setInferenceMode] = useState<'mock' | 'real'>('mock')
+  const [inferenceMode, setInferenceMode] = useState<InferenceMode>('mock')
 
   useEffect(() => {
     fetchHealth().then(h => setInferenceMode(h.mode)).catch(() => {})
   }, [])
+
+  const isReal = inferenceMode !== 'mock'
 
   const handleReset = () => {
     setJobId(null)
@@ -26,8 +34,8 @@ export default function ScorerPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 rounded-full border border-[#1F2937] bg-[#111827] px-4 py-1.5 text-sm text-[#9CA3AF] mb-4">
-          <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${inferenceMode === 'real' ? 'bg-[#10B981]' : 'bg-[#6366F1]'}`} />
-          {inferenceMode === 'real' ? 'TRIBE v2 Real Inference' : 'TRIBE v2 Mock Inference'}
+          <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isReal ? 'bg-[#10B981]' : 'bg-[#6366F1]'}`} />
+          {MODE_LABEL[inferenceMode]}
         </div>
         <h1 className="text-3xl font-bold text-[#F9FAFB] mb-2">Score a Reel</h1>
         <p className="text-[#9CA3AF] max-w-xl">

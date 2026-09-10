@@ -3,9 +3,40 @@ from datetime import datetime, timedelta
 from typing import Dict
 from app.models.job import Job, JobStatus
 
+# TODO(durability): This is a process-local in-memory dict. It is wiped on every
+# restart, so in-flight jobs vanish and clients polling for them get a 404
+# ("phantom"). Real durability requires a Supabase-backed store (jobs table +
+# status/result columns) so state survives restarts and can be reconciled on
+# startup. Until then, reconcile_interrupted_jobs() (below) is the minimum-viable
+# stand-in: it gives clients a definitive terminal answer instead of a phantom.
+
 _TERMINAL_STATUSES = {JobStatus.complete, JobStatus.failed}
 
 _store: Dict[str, Job] = {}
+
+
+def reconcile_interrupted_jobs() -> int:
+    """Startup hook: mark any job left in a non-terminal state as failed.
+
+    Meant to run once at process start. A job stuck mid-flight (queued/uploading/
+    scoring/etc.) at startup can only be a leftover from a previous run that was
+    interrupted — its background task no longer exists — so we resolve it to a
+    definitive `failed` with a clear error rather than leaving a phantom that
+    never completes.
+
+    NOTE: with the current in-memory `_store`, the dict starts empty on every
+    process start, so there is nothing to reconcile YET and this is effectively a
+    no-op. It becomes load-bearing once a durable (Supabase-backed) store persists
+    jobs across restarts — see the module TODO above. Returns the count reconciled.
+    """
+    reconciled = 0
+    for job in _store.values():
+        if job.status not in _TERMINAL_STATUSES:
+            job.status = JobStatus.failed
+            job.error = "interrupted by restart"
+            job.message = "Failed"
+            reconciled += 1
+    return reconciled
 
 
 def get(job_id: str) -> Job | None:

@@ -5,7 +5,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+# TODO(operator): bump YTDLP_VERSION deliberately to a recent release tag
+# (https://github.com/yt-dlp/yt-dlp/releases). Pinning avoids `releases/latest`
+# silently changing the binary between builds; yt-dlp needs regular bumps to keep
+# up with site changes, so treat this as an intentional, reviewed update.
+ARG YTDLP_VERSION=2025.08.11
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp \
     -o /usr/local/bin/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 
 RUN pip install uv

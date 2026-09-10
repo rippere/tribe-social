@@ -22,8 +22,9 @@ HF_TOKEN="${HF_TOKEN:?set HF_TOKEN in apps/runpod_handler/.deploy.env or export 
 RUNPOD_API_KEY="${RUNPOD_API_KEY:?set RUNPOD_API_KEY in apps/runpod_handler/.deploy.env or export it}"
 
 echo "==> Building image: $IMAGE_TAG"
+# HF_TOKEN is NOT passed as a build arg — it must never be baked into the image
+# layer. The RunPod template (saveTemplate below) injects it as a runtime env var.
 docker build \
-  --build-arg HF_TOKEN="$HF_TOKEN" \
   -t "$IMAGE_TAG" \
   "$SCRIPT_DIR"
 
