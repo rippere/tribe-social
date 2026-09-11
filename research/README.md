@@ -64,7 +64,7 @@ The dashboard ships with a pre-scored 24-video corpus (3 creators × 8 videos: A
 
 ```bash
 git clone <this-repo>
-cd tribe-social
+cd tribe-social/research
 
 make setup   # creates .venv and installs dependencies
 make demo    # launches http://localhost:8501
