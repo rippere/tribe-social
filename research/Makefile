@@ -26,7 +26,7 @@ _check_venv:
 		exit 1; \
 	fi
 
-## fetch  — download viral Shorts from urls_demo.txt into reels_new/
+## fetch  — download viral Shorts from urls_demo.txt into reels/
 fetch:
 	@mkdir -p $(REELS_DIR)
 	@echo "Downloading URLs from $(URLS_FILE) → $(REELS_DIR)/"
@@ -50,7 +50,7 @@ analyze:
 open:
 	@open http://localhost:8501 2>/dev/null || xdg-open http://localhost:8501
 
-## score-corpus       — full E2E: load reels_new/ → RunPod scoring → ranked output
+## score-corpus       — full E2E: load reels/ → RunPod scoring → ranked output
 score-corpus:
 	$(PYTHON) score_corpus.py --corpus $(REELS_DIR)
 
@@ -58,7 +58,7 @@ score-corpus:
 score-corpus-dry:
 	$(PYTHON) score_corpus.py --corpus $(REELS_DIR) --dry-run
 
-## score-corpus-existing — score the pre-fetched reels/ corpus (not reels_new/)
+## score-corpus-existing — score the pre-fetched reels/ corpus (same dir as score-corpus; kept as an explicit alias)
 score-corpus-existing:
 	$(PYTHON) score_corpus.py --corpus reels
 
