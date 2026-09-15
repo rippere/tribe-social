@@ -39,4 +39,4 @@ Offline corpus path: `apps/api/scripts/build_corpus_json.py` reads `research/sco
 
 ## Two tracks (why both exist)
 - **Product** (`apps/` + `packages/`) — the scorer + dashboard, deployable today.
-- **Research** (`research/`) — the validation that decides whether the score *means* anything. The pilot (`docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` §7) GO/NO-GO gates the product's core claim; a paper (`docs/…YouTube-replay.pdf`) already found TRIBE's global signal null vs. re-watch, so the honest-diagnostic framing is load-bearing.
+- **Research** (`research/`) — the validation that decides whether the score *means* anything. The pilot (`docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` §7) GO/NO-GO gates the product's core claim; a paper (`arXiv:2607.01400`) already found TRIBE's global signal null vs. re-watch, so the honest-diagnostic framing is load-bearing.
