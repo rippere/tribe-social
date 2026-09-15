@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from tribe_scoring.composite import compute_verdict, scale_to_100, POST_THRESHOLD
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 # Resolve the research subtree relative to the monorepo root so this works on any
 # checkout. This file lives at apps/api/scripts/, so parents[3] is the repo root.
@@ -74,9 +76,11 @@ def load_and_normalize() -> pd.DataFrame:
         scores[col] = min_max(scores[col]).round(4)
 
     # ── Composite score 0–100 ─────────────────────────────────────────────────
-    scores["composite_score"] = (
-        min_max(scores["composite_raw"]) * 100
-    ).round(1)
+    _raw_lo = float(scores["composite_raw"].min())
+    _raw_hi = float(scores["composite_raw"].max())
+    scores["composite_score"] = scores["composite_raw"].apply(
+        lambda r: round(scale_to_100(float(r), _raw_lo, _raw_hi), 1)
+    )
 
     # ── Identity columns ──────────────────────────────────────────────────────
     scores["video_id"] = scores["filename"].str.replace(".mp4", "", regex=False)
@@ -99,12 +103,13 @@ def load_and_normalize() -> pd.DataFrame:
 
 def build_corpus() -> dict:
     df = load_and_normalize()
+    df["verdict"] = df["composite_score"].apply(compute_verdict)
 
     # ── Videos list ───────────────────────────────────────────────────────────
     keep = [
         "video_id", "creator", "filename",
         "views", "likes", "shares", "saves", "comments", "likes_per_1k",
-    ] + ROI_COLS + ["composite_score"]
+    ] + ROI_COLS + ["composite_score", "verdict"]
     keep = [c for c in keep if c in df.columns]
 
     videos = []
@@ -118,7 +123,7 @@ def build_corpus() -> dict:
     # ── Corpus stats ──────────────────────────────────────────────────────────
     total_videos       = len(df)
     avg_composite      = round(float(df["composite_score"].mean()), 1)
-    post_count         = int((df["composite_score"] >= 65).sum())
+    post_count         = int((df["composite_score"] >= POST_THRESHOLD).sum())
     median_likes_per_1k = round(float(df["likes_per_1k"].median()), 1)
 
     roi_means = {
@@ -154,6 +159,8 @@ def build_corpus() -> dict:
 
     stats_block = {
         "total_videos":        total_videos,
+        "composite_raw_min":   round(float(df["composite_raw"].min()), 6),
+        "composite_raw_max":   round(float(df["composite_raw"].max()), 6),
         "avg_composite":       avg_composite,
         "post_count":          post_count,
         "median_likes_per_1k": median_likes_per_1k,

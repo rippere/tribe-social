@@ -19,38 +19,8 @@ export const ROI_COLORS: Record<string, string> = {
   MT_V5:   '#80DEEA',
 }
 
-export const COMPOSITE_WEIGHTS: Record<string, number> = {
-  vmPFC:  0.25,
-  TPJ:    0.25,
-  IFJa:   0.20,
-  area_45: 0.15,
-  MT_V5:  0.15,
-}
-
-export interface ROIBreakdown {
-  vmPFC_mean:   number
-  TPJ_mean:     number
-  IFJa_mean:    number
-  IFJp_mean:    number
-  area_45_mean: number
-  MT_V5_mean:   number
-}
-
-export function computeVerdict(score: number): 'POST' | 'REVISE' | 'RETHINK' {
-  if (score >= 65) return 'POST'
-  if (score >= 40) return 'REVISE'
-  return 'RETHINK'
-}
-
-export function computeComposite(roi: ROIBreakdown): number {
-  return (
-    COMPOSITE_WEIGHTS.vmPFC   * roi.vmPFC_mean +
-    COMPOSITE_WEIGHTS.TPJ     * roi.TPJ_mean +
-    COMPOSITE_WEIGHTS.IFJa    * roi.IFJa_mean +
-    COMPOSITE_WEIGHTS.area_45 * roi.area_45_mean +
-    COMPOSITE_WEIGHTS.MT_V5   * roi.MT_V5_mean
-  ) * 100
-}
+// Composite score + verdict now come from the API (single source of truth:
+// packages/tribe_scoring/composite.py). The web only renders them.
 
 export function pearsonR(xs: number[], ys: number[]): number {
   const n = xs.length

@@ -5,7 +5,7 @@ import {
   ReferenceLine, Cell, ResponsiveContainer,
 } from 'recharts'
 import { CorpusVideo } from '@/lib/types'
-import { computeVerdict, VERDICT_COLORS } from '@/lib/scoring'
+import { VERDICT_COLORS } from '@/lib/scoring'
 
 interface Props {
   videos: CorpusVideo[]

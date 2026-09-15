@@ -34,6 +34,6 @@ Poll       JobProgress useSWR('/jobs/{id}', refresh 2s)      → GET /jobs/{id} 
 `railway.toml` (NIXPACKS, `npm run start`, healthcheck `/`). Env: `NEXT_PUBLIC_API_URL`. Framework rules: `apps/web/AGENTS.md` (`CLAUDE.md` just `@AGENTS.md`).
 
 ## ⚠ Findings
-- **Triple composite-weights home:** `lib/scoring.ts` re-implements weights / computeComposite / computeVerdict / pearsonR **client-side** — a THIRD copy, alongside `packages/tribe_scoring._BATCH_MASKS` (pod) and `apps/api/services/scoring.py COMPOSITE_WEIGHTS`. One rule, three homes → drift risk.
+- ✅ **RESOLVED — composite-weights:** `lib/scoring.ts` re-implements weights / computeComposite / computeVerdict / pearsonR **client-side** — a THIRD copy, alongside `packages/tribe_scoring._BATCH_MASKS` (pod) and `apps/api/services/scoring.py COMPOSITE_WEIGHTS`. One rule, three homes → drift risk.
 - **Stale hardcodes:** `app/page.tsx` hardcodes "63.8" corpus avg + 12/8/4 verdict chips (not API-driven) — drifts from the real corpus.
 - **`apps/web/README.md`** was create-next-app boilerplate (replaced this sweep).

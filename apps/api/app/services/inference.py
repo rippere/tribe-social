@@ -13,12 +13,8 @@ import httpx
 import numpy as np
 
 from app.models.job import Job, JobStatus, ScoreResult
-from app.services.scoring import (
-    compute_composite,
-    compute_verdict,
-    get_revision_tips,
-    generate_temporal_data,
-)
+from tribe_scoring.composite import scale_to_100, compute_verdict
+from app.services.scoring import get_revision_tips, generate_temporal_data
 from app.store import jobs as job_store
 
 _REAL_MODE = bool(os.getenv("RUNPOD_API_KEY") and os.getenv("RUNPOD_ENDPOINT_ID"))
@@ -63,6 +59,25 @@ MOCK_STAGES = [
 
 def _seed_from_name(name: str) -> int:
     return int(hashlib.md5(name.encode()).hexdigest()[:8], 16)
+
+
+def _composite_from_raw(output: dict) -> float:
+    """The ONE composite: scale the pod's composite_raw (tribe_scoring) onto the
+    corpus's 0-100 scale. Fails LOUD if the corpus range is unavailable rather
+    than emitting a plausible-looking wrong score — with a 0-1 fallback a missing
+    corpus.json would silently grade every clip ~2/100 (RETHINK)."""
+    raw = output.get("composite_raw")
+    if raw is None:
+        raise RuntimeError("scorer output missing 'composite_raw'")
+    from app import state
+    stats = (state.corpus_data or {}).get("stats", {})
+    lo, hi = stats.get("composite_raw_min"), stats.get("composite_raw_max")
+    if lo is None or hi is None:
+        raise RuntimeError(
+            "corpus composite_raw range unavailable (corpus.json not loaded) — "
+            "refusing to emit an unscaled/garbage composite score"
+        )
+    return scale_to_100(float(raw), float(lo), float(hi))
 
 
 async def submit_job(filename: str, video_bytes: bytes | None = None) -> str:
@@ -130,7 +145,7 @@ async def pod_process_job(job_id: str, filename: str, video_bytes: bytes):
                 await asyncio.sleep(POLL_S)
 
         roi_raw   = _map_runpod_output_to_roi(result)
-        composite = compute_composite(roi_raw)
+        composite = _composite_from_raw(result)
         verdict   = compute_verdict(composite)
         tips      = get_revision_tips(roi_raw)
         seed      = _seed_from_name(filename)
@@ -182,7 +197,7 @@ async def _mock_process(job_id: str, filename: str):
         "MT_V5":   float(rng.uniform(0.15, 0.75)),
     }
 
-    composite = compute_composite(roi_raw)
+    composite = round(float(rng.uniform(20, 90)), 1)  # mock: deterministic fake score
     verdict = compute_verdict(composite)
     tips = get_revision_tips(roi_raw)
     temporal = generate_temporal_data(
@@ -295,7 +310,7 @@ async def real_process_job(job_id: str, filename: str, video_bytes: bytes):
 
         output    = result_data["output"]
         roi_raw   = _map_runpod_output_to_roi(output)
-        composite = compute_composite(roi_raw)
+        composite = _composite_from_raw(output)
         verdict   = compute_verdict(composite)
         tips      = get_revision_tips(roi_raw)
         seed      = _seed_from_name(filename)

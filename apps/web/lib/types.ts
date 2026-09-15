@@ -54,6 +54,7 @@ export interface CorpusVideo {
   area_45_mean: number
   MT_V5_mean: number
   composite_score: number
+  verdict: 'POST' | 'REVISE' | 'RETHINK'
 }
 
 export interface CorrelationPair {

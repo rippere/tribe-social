@@ -16,11 +16,11 @@
 | `dependencies.md` | external services · Python/Node deps · deploy |
 
 ## Change-impact index — what else moves if I change X
-Facts that live in MORE THAN ONE home. Change one, you must change all — the top two rows are **active drift today**, not hypotheticals (see `../../.reports/codemap-diff.txt`).
+Facts that live in MORE THAN ONE home. Change one, you must change all — the **ROI-set** row + **engagement schema** remain multi-home (the composite-weights row was consolidated 2026-09-15) (see `../../.reports/codemap-diff.txt`).
 
 | If you change… | You must also touch | Card |
 |---|---|---|
-| **ROI composite weights / verdict thresholds** | `packages/tribe_scoring._WEIGHTS` (pod, 7-ROI) · `apps/api/app/services/scoring.py::COMPOSITE_WEIGHTS` (5-ROI) · `apps/web/lib/scoring.ts::COMPOSITE_WEIGHTS` (5-ROI). **Already divergent** — research validates a different composite than the product ships. | backend · frontend |
+| **ROI composite weights / verdict thresholds** | ✅ **ONE home:** `packages/tribe_scoring/composite.py` (`ROI_WEIGHTS`, `POST/REVISE_THRESHOLD`, `compute_composite_raw`, `scale_to_100`, `compute_verdict`). Pod computes `composite_raw`; API scales it to the corpus range + serves `verdict`; web renders the API's values. Consolidated 2026-09-15. | backend · frontend |
 | **ROI set / names** | pod (functional names) · api `_map_runpod_output_to_roi` + `ROI_COLS` (anatomical) · web `lib/types.ts` + `lib/scoring.ts` · `research/scores.csv` columns | data · backend |
 | **engagement schema** | `research/engagement.csv` · `engagement_template.csv` (drift: `saves` vs `platform`/`likes`) · `apps/api/scripts/build_corpus_json.py` · `research/phase1b_correlation.py` | data |
 | **scoring backend selection** | env precedence in `apps/api/app/services/inference.py` (`POD_URL` → `RUNPOD_*` → mock) | backend |

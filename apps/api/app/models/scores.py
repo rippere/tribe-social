@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel
 
 
@@ -32,6 +32,7 @@ class CorpusVideo(BaseModel):
     area_45_mean: float
     MT_V5_mean: float
     composite_score: float
+    verdict: Literal["POST", "REVISE", "RETHINK"]
 
 
 class CorpusResponse(BaseModel):

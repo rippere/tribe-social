@@ -3,6 +3,7 @@ TRIBE Social Lab — scoring logic ported from demo.py / demo_data.py
 """
 import numpy as np
 from app.models.job import RevisionTip, TemporalPoint
+from tribe_scoring.composite import POST_THRESHOLD, REVISE_THRESHOLD, compute_verdict  # single source of truth
 
 # ── Constants (verbatim from demo.py) ─────────────────────────────────────────
 ROI_COLS = ["vmPFC_mean", "TPJ_mean", "IFJa_mean", "IFJp_mean", "area_45_mean", "MT_V5_mean"]
@@ -67,36 +68,6 @@ HOOK_TEMPLATES = {
     ],
 }
 
-COMPOSITE_WEIGHTS = {
-    "vmPFC":   0.25,
-    "TPJ":     0.25,
-    "IFJa":    0.20,
-    "area_45": 0.15,
-    "MT_V5":   0.15,
-}
-
-# Verdict thresholds
-POST_THRESHOLD   = 65.0
-REVISE_THRESHOLD = 40.0
-
-
-def compute_composite(roi: dict[str, float]) -> float:
-    """Compute weighted composite score 0–100 from ROI dict."""
-    return (
-        COMPOSITE_WEIGHTS["vmPFC"]   * roi.get("vmPFC", 0)
-        + COMPOSITE_WEIGHTS["TPJ"]   * roi.get("TPJ", 0)
-        + COMPOSITE_WEIGHTS["IFJa"]  * roi.get("IFJa", 0)
-        + COMPOSITE_WEIGHTS["area_45"] * roi.get("area_45", 0)
-        + COMPOSITE_WEIGHTS["MT_V5"] * roi.get("MT_V5", 0)
-    ) * 100
-
-
-def compute_verdict(score: float) -> str:
-    if score >= POST_THRESHOLD:
-        return "POST"
-    elif score >= REVISE_THRESHOLD:
-        return "REVISE"
-    return "RETHINK"
 
 
 def get_revision_tips(roi: dict[str, float]) -> list[RevisionTip]:

@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { CorpusVideo } from '@/lib/types'
-import { computeVerdict, VERDICT_COLORS } from '@/lib/scoring'
+import { VERDICT_COLORS } from '@/lib/scoring'
 
 interface Props {
   videos: CorpusVideo[]
@@ -36,7 +36,7 @@ export default function TopVideosTable({ videos }: Props) {
           </TableHeader>
           <TableBody>
             {top10.map(v => {
-              const verdict = computeVerdict(v.composite_score)
+              const verdict = v.verdict
               return (
                 <TableRow key={v.video_id} className="border-[#1F2937] hover:bg-[#1F2937]/30">
                   <TableCell className="text-[#F9FAFB] text-sm font-mono">{v.video_id}</TableCell>

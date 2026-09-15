@@ -12,6 +12,7 @@ dependencies = [
 [tool.hatch.build.targets.wheel.force-include]
 "__init__.py" = "tribe_scoring/__init__.py"
 "run_and_save.py" = "tribe_scoring/run_and_save.py"
+"composite.py" = "tribe_scoring/composite.py"
 
 [build-system]
 requires = ["hatchling"]

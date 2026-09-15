@@ -54,10 +54,7 @@ _BATCH_MASKS = {
     "narrative": _bilateral((1200, 1600),),
 }
 
-_WEIGHTS = {
-    "attention": 0.25, "social": 0.30, "language": 0.15,
-    "valuation": 0.20, "auditory": 0.05, "motion": 0.03, "narrative": 0.02,
-}
+from .composite import compute_composite_raw  # single source of truth
 
 _CSV_DIMS = list(_BATCH_MASKS.keys())
 _CSV_FIELDS = (
@@ -87,7 +84,7 @@ def quick_scores(preds: np.ndarray) -> dict:
     """
     n   = preds.shape[0]
     row: dict = {}
-    weighted_sum = 0.0
+    roi_means: dict = {}
 
     # Per-ROI stats
     ts_store: dict = {}
@@ -109,9 +106,9 @@ def quick_scores(preds: np.ndarray) -> dict:
         row[f"{dim}_offset"]   = round(offset_act, 6)
         row[f"{dim}_peak_s"]   = peak_s
         row[f"{dim}_ts_ratio"] = round(ts_ratio,   4)
-        weighted_sum += mean_act * _WEIGHTS[dim]
+        roi_means[dim] = mean_act
 
-    row["composite_raw"] = round(weighted_sum, 6)
+    row["composite_raw"] = round(compute_composite_raw(roi_means), 6)
 
     # Global Field Power (total cortical energy per second)
     gfp = np.sqrt((preds ** 2).mean(axis=1))

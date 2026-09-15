@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from app import state
+from tribe_scoring.composite import compute_verdict
 
 _DATA_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "corpus.json"
 
@@ -48,6 +49,7 @@ def add_video_to_corpus(job_id: str, filename: str, roi: dict[str, float], compo
         "area_45_mean": roi.get("area_45", 0.0),
         "MT_V5_mean": roi.get("MT_V5", 0.0),
         "composite_score": composite_score,
+        "verdict": compute_verdict(composite_score),
         "uploaded_at": datetime.utcnow().isoformat(),
     }
     state.corpus_data["videos"].append(entry)
