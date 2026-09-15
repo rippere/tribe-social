@@ -13,7 +13,7 @@ scatter changes across roots.
 | Pod server | `apps/pod_server/` | Warm/persistent RunPod GPU inference server (`server.py`). |
 | RunPod handler | `apps/runpod_handler/` | RunPod serverless handler (`handler.py`). |
 | Shared scoring | `packages/tribe_scoring/` | The single canonical `run_and_save.py` (`load_model`, `quick_scores`). Imported by research/, pod_server and runpod_handler — do NOT re-duplicate it. |
-| Docs | `docs/` | Cross-cutting docs, incl. `VALIDATION-PROTOCOL-AND-ROADMAP.md`. |
+| Docs | `docs/` | Cross-cutting docs: `VALIDATION-PROTOCOL-AND-ROADMAP.md` + `docs/CODEMAPS/` (architecture · backend · frontend · data · dependencies). |
 
 - Research → `research/`
 - Web / API / Pod → `apps/<name>/`
