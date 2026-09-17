@@ -4,10 +4,20 @@ the pod, serverless and mock scoring paths.
 
 Why this file exists: that tail used to be copy-pasted into `pod_process_job`,
 `real_process_job` and `_mock_process`. Three homes for one rule meant the
-0.45 weak-ROI threshold, the IFJp exclusion and the hook_attn fudge could
-silently diverge between backends, so the score you got would depend on which
-backend happened to serve you. The refactor collapsed them into one helper;
-these tests are what stop the duplication growing back unnoticed.
+0.45 weak-ROI threshold and the IFJp exclusion could silently diverge between
+backends, so the score you got would depend on which backend happened to serve
+you. The refactor collapsed them into one helper; these tests are what stop the
+duplication growing back unnoticed.
+
+Covered: the ScoreResult contract, the weak-ROI rule, `write_corpus` as the only
+behavioural switch, corpus_roi_means state handling, determinism, and the three
+call sites (see `TestCallSites`).
+
+NOT covered: the `hook_attn = min(IFJa + 0.1, 1.0)` cap. It only reaches the
+output through `generate_temporal_data`, which blends it with noise and a CTA
+spike and then clips to 0-1, so a test driven through `_finalize_job` cannot
+isolate it. That cap belongs to `scoring.generate_temporal_data` and should be
+tested there.
 
 Self-contained in the style of the sibling tests: if the import path moves, the
 suite skips with a clear reason rather than erroring into a false green.
@@ -46,6 +56,16 @@ def captured(monkeypatch):
     so it must be patched on its defining module, not on `inference`.
     """
     from app.services import corpus_writer
+
+    # If someone ever hoists that lazy import to module level, `inference` would
+    # bind its own reference at import time and this patch would quietly stop
+    # intercepting — tests would still pass while writing to the real
+    # data/corpus.json. Fail loudly instead of silently losing the interception.
+    assert "add_video_to_corpus" not in vars(inf), (
+        "inference now imports add_video_to_corpus at module level, so patching "
+        "corpus_writer no longer intercepts it. Patch inf.add_video_to_corpus "
+        "instead, or restore the lazy import (see the note at its call site)."
+    )
 
     updates: list[dict] = []
     corpus_writes: list[tuple] = []
@@ -206,10 +226,14 @@ def test_same_filename_yields_identical_temporal_series(captured, no_corpus):
     assert _temporal_tuple(updates[0]["result"]) == _temporal_tuple(updates[1]["result"])
 
 
-def test_all_three_backends_finalize_identically(captured, no_corpus):
-    """The invariant. Same ROI + same composite must yield the same user-visible
-    result regardless of which backend produced it — only the corpus write differs.
-    If this fails, the finalize tail has been duplicated or forked again.
+def test_finalize_is_deterministic_for_identical_inputs(captured, no_corpus):
+    """Same ROI + same composite yields the same user-visible result every time.
+
+    NOTE ON SCOPE: this proves `_finalize_job` is deterministic and that
+    `write_corpus` is its only behavioural switch. It does NOT prove the three
+    backends agree — it calls one pure function with identical arguments, which
+    is trivially consistent. The call sites are covered separately below, in
+    `TestCallSites`; do not treat this test as cross-backend coverage.
     """
     updates, corpus_writes = captured
     roi = _roi(vmPFC=0.42, TPJ=0.77, IFJp=0.02)
@@ -233,3 +257,105 @@ def test_all_three_backends_finalize_identically(captured, no_corpus):
 
     assert visible(results[0]) == visible(results[1]) == visible(results[2])
     assert len(corpus_writes) == 2, "only the write_corpus=True paths touch the corpus"
+
+
+# --------------------------------------------------------------------------
+# The call sites.
+#
+# Everything above exercises `_finalize_job` as a pure function. That leaves the
+# actual regression this refactor exists to prevent completely uncovered: a call
+# site passing the wrong `write_corpus`. Flipping `_mock_process`'s call to
+# `write_corpus=True` — which would pour fabricated mock scores into the real
+# corpus on every run — passed the entire suite before these tests existed.
+#
+# `_mock_process` is driven for real. `pod_process_job` and `real_process_job`
+# need live HTTP/RunPod, so they are verified structurally instead: the literal
+# at each call site is read out of the AST. That is weaker than execution, but it
+# fails loudly on exactly the mutation that slipped through.
+# --------------------------------------------------------------------------
+
+import ast
+import asyncio
+import inspect
+
+
+def _write_corpus_literal_at_call_sites() -> dict[str, list[bool]]:
+    """Map enclosing function name -> the `write_corpus=` literals it passes.
+
+    Read from source rather than mocked, so a hand-edit to any call site shows up
+    here even though the surrounding function never runs in tests.
+    """
+    tree = ast.parse(inspect.getsource(inf))
+    found: dict[str, list[bool]] = {}
+
+    for fn in ast.walk(tree):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for node in ast.walk(fn):
+            if not isinstance(node, ast.Call):
+                continue
+            target = node.func
+            if not (isinstance(target, ast.Name) and target.id == "_finalize_job"):
+                continue
+            for kw in node.keywords:
+                if kw.arg == "write_corpus" and isinstance(kw.value, ast.Constant):
+                    found.setdefault(fn.name, []).append(kw.value.value)
+    return found
+
+
+class TestCallSites:
+    """Each backend must reach `_finalize_job` with the right corpus flag."""
+
+    def test_every_call_site_passes_write_corpus_explicitly(self):
+        """Guards against the flag being dropped and silently defaulting."""
+        sites = _write_corpus_literal_at_call_sites()
+        assert set(sites) == {"pod_process_job", "_mock_process", "real_process_job"}, (
+            f"unexpected set of _finalize_job call sites: {sorted(sites)} — a backend "
+            "was added, removed or renamed without updating these tests"
+        )
+        for name, literals in sites.items():
+            assert len(literals) == 1, f"{name} calls _finalize_job {len(literals)} times"
+
+    def test_mock_call_site_does_not_write_to_the_corpus(self):
+        """THE regression. Mock scores are fabricated; they must never reach the corpus."""
+        assert _write_corpus_literal_at_call_sites()["_mock_process"] == [False]
+
+    def test_real_backend_call_sites_do_write_to_the_corpus(self):
+        sites = _write_corpus_literal_at_call_sites()
+        assert sites["pod_process_job"] == [True]
+        assert sites["real_process_job"] == [True]
+
+    def test_mock_process_end_to_end_writes_nothing_to_the_corpus(
+        self, captured, no_corpus, monkeypatch
+    ):
+        """Drive the real `_mock_process` coroutine, not just its source text."""
+        updates, corpus_writes = captured
+
+        async def _no_delay(_seconds):  # the mock path sleeps between progress stages
+            return None
+
+        monkeypatch.setattr(inf.asyncio, "sleep", _no_delay)
+        asyncio.run(inf._mock_process("abcdef1234567890", "clip.mp4"))
+
+        assert corpus_writes == [], "the mock backend must never write to the corpus"
+        assert updates[-1]["status"] is JobStatus.complete
+        assert isinstance(updates[-1]["result"], ScoreResult)
+
+    def test_mock_process_is_deterministic_for_a_given_filename(
+        self, captured, no_corpus, monkeypatch
+    ):
+        async def _no_delay(_seconds):
+            return None
+
+        monkeypatch.setattr(inf.asyncio, "sleep", _no_delay)
+        updates, _ = captured
+
+        asyncio.run(inf._mock_process("a" * 16, "same.mp4"))
+        asyncio.run(inf._mock_process("b" * 16, "same.mp4"))
+
+        # _mock_process also emits progress-only updates, which carry no result.
+        results = [u["result"] for u in updates if u.get("result") is not None]
+        assert len(results) == 2
+        first, second = results
+        assert first.roi == second.roi
+        assert first.composite_score == second.composite_score

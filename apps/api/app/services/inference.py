@@ -112,6 +112,12 @@ def _finalize_job(job_id: str, filename: str, roi_raw: dict[str, float], composi
                      message="Complete", result=score_result)
 
     if write_corpus:
+        # Kept as a function-local import deliberately: tests patch
+        # corpus_writer.add_video_to_corpus to intercept the write, which only
+        # works while the name is resolved at call time. Hoisting this to module
+        # level would bind it here at import and silently defeat that, letting
+        # the suite write to the real data/corpus.json. See
+        # tests/test_finalize_job.py::captured, which asserts against the hoist.
         from app.services.corpus_writer import add_video_to_corpus
         add_video_to_corpus(job_id, filename, roi_raw, round(composite, 1))
 
