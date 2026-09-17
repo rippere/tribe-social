@@ -80,6 +80,42 @@ def _composite_from_raw(output: dict) -> float:
     return scale_to_100(float(raw), float(lo), float(hi))
 
 
+def _finalize_job(job_id: str, filename: str, roi_raw: dict[str, float], composite: float,
+                   *, write_corpus: bool) -> None:
+    """The ONE finalize tail: verdict/tips/temporal, ScoreResult, job_store.update,
+    and (optionally) the corpus write. Shared by pod/real/mock so the 0.45 weak-ROI
+    threshold, IFJp exclusion, and hook_attn fudge only ever live in one place."""
+    verdict  = compute_verdict(composite)
+    tips     = get_revision_tips(roi_raw)
+    seed     = _seed_from_name(filename)
+    temporal = generate_temporal_data(
+        vmPFC=roi_raw["vmPFC"], TPJ=roi_raw["TPJ"], IFJa=roi_raw["IFJa"],
+        hook_attn=min(roi_raw["IFJa"] + 0.1, 1.0), seed=seed,
+    )
+
+    from app import state
+    corpus_roi_means: dict[str, float] = {}
+    if state.corpus_data:
+        corpus_roi_means = state.corpus_data["stats"]["roi_means"]
+
+    score_result = ScoreResult(
+        video_id=f"upload_{job_id[:8]}",
+        composite_score=round(composite, 1),
+        verdict=verdict,
+        roi=roi_raw,
+        corpus_roi_means=corpus_roi_means,
+        weak_rois=[r for r, v in roi_raw.items() if v < 0.45 and r != "IFJp"],
+        revision_tips=tips,
+        temporal=temporal,
+    )
+    job_store.update(job_id, status=JobStatus.complete, progress_pct=100,
+                     message="Complete", result=score_result)
+
+    if write_corpus:
+        from app.services.corpus_writer import add_video_to_corpus
+        add_video_to_corpus(job_id, filename, roi_raw, round(composite, 1))
+
+
 async def submit_job(filename: str, video_bytes: bytes | None = None) -> str:
     job_id = str(uuid4())
     job = Job(
@@ -146,33 +182,7 @@ async def pod_process_job(job_id: str, filename: str, video_bytes: bytes):
 
         roi_raw   = _map_runpod_output_to_roi(result)
         composite = _composite_from_raw(result)
-        verdict   = compute_verdict(composite)
-        tips      = get_revision_tips(roi_raw)
-        seed      = _seed_from_name(filename)
-        temporal  = generate_temporal_data(
-            vmPFC=roi_raw["vmPFC"], TPJ=roi_raw["TPJ"], IFJa=roi_raw["IFJa"],
-            hook_attn=min(roi_raw["IFJa"] + 0.1, 1.0), seed=seed,
-        )
-        from app import state
-        corpus_roi_means: dict[str, float] = {}
-        if state.corpus_data:
-            corpus_roi_means = state.corpus_data["stats"]["roi_means"]
-
-        score_result = ScoreResult(
-            video_id=f"upload_{job_id[:8]}",
-            composite_score=round(composite, 1),
-            verdict=verdict,
-            roi=roi_raw,
-            corpus_roi_means=corpus_roi_means,
-            weak_rois=[r for r, v in roi_raw.items() if v < 0.45 and r != "IFJp"],
-            revision_tips=tips,
-            temporal=temporal,
-        )
-        job_store.update(job_id, status=JobStatus.complete, progress_pct=100,
-                         message="Complete", result=score_result)
-
-        from app.services.corpus_writer import add_video_to_corpus
-        add_video_to_corpus(job_id, filename, roi_raw, round(composite, 1))
+        _finalize_job(job_id, filename, roi_raw, composite, write_corpus=True)
 
     except Exception as exc:
         job_store.update(job_id, status=JobStatus.failed, progress_pct=0,
@@ -198,40 +208,7 @@ async def _mock_process(job_id: str, filename: str):
     }
 
     composite = round(float(rng.uniform(20, 90)), 1)  # mock: deterministic fake score
-    verdict = compute_verdict(composite)
-    tips = get_revision_tips(roi_raw)
-    temporal = generate_temporal_data(
-        vmPFC=roi_raw["vmPFC"],
-        TPJ=roi_raw["TPJ"],
-        IFJa=roi_raw["IFJa"],
-        hook_attn=min(roi_raw["IFJa"] + 0.1, 1.0),
-        seed=seed,
-    )
-
-    # Load corpus roi_means from state (loaded at startup)
-    from app import state
-    corpus_roi_means: dict[str, float] = {}
-    if state.corpus_data:
-        corpus_roi_means = state.corpus_data["stats"]["roi_means"]
-
-    result = ScoreResult(
-        video_id=f"upload_{job_id[:8]}",
-        composite_score=round(composite, 1),
-        verdict=verdict,
-        roi=roi_raw,
-        corpus_roi_means=corpus_roi_means,
-        weak_rois=[r for r, v in roi_raw.items() if v < 0.45 and r != "IFJp"],
-        revision_tips=tips,
-        temporal=temporal,
-    )
-
-    job_store.update(
-        job_id,
-        status=JobStatus.complete,
-        progress_pct=100,
-        message="Complete",
-        result=result,
-    )
+    _finalize_job(job_id, filename, roi_raw, composite, write_corpus=False)
 
 
 async def real_process_job(job_id: str, filename: str, video_bytes: bytes):
@@ -311,43 +288,7 @@ async def real_process_job(job_id: str, filename: str, video_bytes: bytes):
         output    = result_data["output"]
         roi_raw   = _map_runpod_output_to_roi(output)
         composite = _composite_from_raw(output)
-        verdict   = compute_verdict(composite)
-        tips      = get_revision_tips(roi_raw)
-        seed      = _seed_from_name(filename)
-        temporal  = generate_temporal_data(
-            vmPFC=roi_raw["vmPFC"],
-            TPJ=roi_raw["TPJ"],
-            IFJa=roi_raw["IFJa"],
-            hook_attn=min(roi_raw["IFJa"] + 0.1, 1.0),
-            seed=seed,
-        )
-
-        from app import state
-        corpus_roi_means: dict[str, float] = {}
-        if state.corpus_data:
-            corpus_roi_means = state.corpus_data["stats"]["roi_means"]
-
-        score_result = ScoreResult(
-            video_id=f"upload_{job_id[:8]}",
-            composite_score=round(composite, 1),
-            verdict=verdict,
-            roi=roi_raw,
-            corpus_roi_means=corpus_roi_means,
-            weak_rois=[r for r, v in roi_raw.items() if v < 0.45 and r != "IFJp"],
-            revision_tips=tips,
-            temporal=temporal,
-        )
-
-        job_store.update(
-            job_id,
-            status=JobStatus.complete,
-            progress_pct=100,
-            message="Complete",
-            result=score_result,
-        )
-
-        from app.services.corpus_writer import add_video_to_corpus
-        add_video_to_corpus(job_id, filename, roi_raw, round(composite, 1))
+        _finalize_job(job_id, filename, roi_raw, composite, write_corpus=True)
 
     except Exception as exc:
         job_store.update(
