@@ -34,5 +34,5 @@ Poll       JobProgress useSWR('/jobs/{id}', refresh 2s)      → GET /jobs/{id} 
 `railway.toml` (NIXPACKS, `npm run start`, healthcheck `/`). Env: `NEXT_PUBLIC_API_URL`. Framework rules: `apps/web/AGENTS.md` (`CLAUDE.md` just `@AGENTS.md`).
 
 ## Known issues
-- **Stale landing-page hardcodes:** `app/page.tsx` hardcodes a "63.8" corpus average and 12/8/4 verdict chips rather than reading `/corpus/stats`. These drift from the real corpus every time it is rescored. Fix by fetching, not by editing the numbers.
+- **Landing page carries no corpus figures (resolved 2026-09-17):** `app/page.tsx` previously hardcoded a "63.8" corpus average and 12/8/4 verdict chips. Those numbers came from a pilot whose correlation was null, so presenting them as a headline result overstated what the corpus supports. The page is now a stripped hero with no claims; if figures return, they must come from `/corpus/stats`, never from literals.
 - **Scoring stays server-side:** `lib/scoring.ts` must not re-implement composite weights, verdicts, or correlation. Those have one home (`packages/tribe_scoring/composite.py`) and reach the client through the API.

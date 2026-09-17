@@ -11,7 +11,9 @@ No relational DB. Data is **CSV + on-GPU model artifacts** flowing through the r
 | `research/engagement_template.csv` | — | `filename, views, saves, shares, comments` |
 | `research/urls_demo.txt` | 15 | commented list of viral Shorts URLs (yt-dlp source) |
 
-> ⚠ **Schema drift (real):** the template carries `saves` but the live `engagement.csv` omits `saves` and instead has `platform` + `likes`. Saves/shares — the originally-intended primary metric — were never actually collected, so the `shares` column is empty. Anything reading `saves` off `engagement.csv` gets nothing. Reconcile before the pilot uses engagement as an outcome.
+> **Which engagement fields are real (resolved 2026-09-17):** `views` and `likes` are complete for all 24 rows; `comments` is 23/24; `platform` is `youtube` for every row. **`shares` is a column with zero data, and `saves` does not exist at all.**
+>
+> Those two were the originally-intended primary metrics, chosen when the corpus was going to be Instagram Reels. The corpus moved to YouTube Shorts, where neither is publicly exposed, so they can never be backfilled from public data. Phase 1b therefore uses **likes per 1k views** as its engagement proxy (`phase1b_correlation.py`), and `tribe_score/pipeline.py` validates `views` + `likes` as required while reporting `shares`/`comments` as informational. Do not reintroduce `saves` as a required field.
 
 ## Join
 `filename` is the key. `apps/api/scripts/build_corpus_json.py` joins `scores.csv` ⨝ `engagement.csv` on `filename` → dashboard corpus JSON. `phase1b_correlation.py` correlates ROI columns ↔ engagement columns on the same key.

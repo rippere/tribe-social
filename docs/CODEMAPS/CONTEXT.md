@@ -25,10 +25,9 @@ Facts that live in MORE THAN ONE home. Change one, you must change all.
 |---|---|---|
 | **ROI composite weights / verdict thresholds** | ✅ **ONE home:** `packages/tribe_scoring/composite.py` (`ROI_WEIGHTS`, `POST_THRESHOLD`, `REVISE_THRESHOLD`, `compute_composite_raw`, `scale_to_100`, `compute_verdict`). Pod computes `composite_raw`; API scales to the corpus range and serves `verdict`; web renders the API's values. Do not re-implement in TS or in the API. | backend · frontend |
 | **ROI set / names** | pod (functional names) · api `_map_runpod_output_to_roi` + `ROI_COLS` (anatomical) · web `lib/types.ts` · `research/scores.csv` columns | data · backend |
-| **engagement schema** | `research/engagement.csv` · `research/engagement_template.csv` (known drift: `saves` vs `platform`/`likes`) · `apps/api/scripts/build_corpus_json.py` · `research/phase1b_correlation.py` | data |
+| **engagement schema** | `research/engagement.csv` · `research/engagement_template.csv` · `research/tribe_score/pipeline.py` (`_REQUIRED_ENGAGEMENT_COLS`) · `apps/api/scripts/build_corpus_json.py` · `research/phase1b_correlation.py` | data |
 | **scoring backend selection** | env precedence in `apps/api/app/services/inference.py` (`POD_URL` → `RUNPOD_*` → mock) | backend |
 | **validation protocol** | single home: `docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` | — |
 
 ## Open items
-- **Engagement schema drift** (see `data.md`) — `engagement_template.csv` carries `saves`, the live `engagement.csv` does not. Reconcile before engagement is used as a study outcome.
-- **Stale landing-page hardcodes** (see `frontend.md`) — `apps/web/app/page.tsx` hardcodes corpus figures instead of reading them from the API.
+- _None currently open._

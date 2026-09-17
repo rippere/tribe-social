@@ -35,23 +35,62 @@ def _warn(msg: str) -> None:
     console.print(f"  [yellow]![/yellow] {msg}")
 
 
+def _note(msg: str) -> None:
+    """Informational. For facts about the data that are expected and not actionable —
+    distinct from _warn, which means 'something needs fixing'."""
+    console.print(f"  [dim]·[/dim] [dim]{msg}[/dim]")
+
+
+# Engagement fields the correlation analysis can actually use. `saves` and
+# `shares` are deliberately NOT here: neither is exposed publicly by YouTube,
+# which is where the whole corpus comes from. They were the originally-intended
+# primary metrics back when the corpus was going to be Instagram Reels, and
+# demanding them made this check warn on every run about data that can never
+# arrive. Phase 1b uses likes-per-1k-views as its engagement proxy instead.
+_REQUIRED_ENGAGEMENT_COLS = ["filename", "views", "likes"]
+_OPTIONAL_ENGAGEMENT_COLS = ["comments", "shares"]
+
+
 def _check_engagement_coverage(engagement_csv: Path) -> None:
     import pandas as pd
     if not engagement_csv.exists():
         _warn(f"engagement.csv not found at {engagement_csv} — Phase 1b will fail without it")
         return
+
     df = pd.read_csv(engagement_csv)
-    missing_saves  = df["saves"].isna().sum()  if "saves"  in df.columns else len(df)
-    missing_shares = df["shares"].isna().sum() if "shares" in df.columns else len(df)
     total = len(df)
-    if missing_saves or missing_shares:
+
+    missing_cols = [c for c in _REQUIRED_ENGAGEMENT_COLS if c not in df.columns]
+    if missing_cols:
         _warn(
-            f"engagement.csv: {missing_saves}/{total} missing saves, "
-            f"{missing_shares}/{total} missing shares — "
-            "fill these in before Phase 1b for valid correlation results."
+            f"engagement.csv: missing required column(s) {', '.join(missing_cols)} — "
+            "Phase 1b cannot compute its engagement proxy without them."
+        )
+        return
+
+    gaps = {
+        col: int(df[col].isna().sum())
+        for col in _REQUIRED_ENGAGEMENT_COLS
+        if col != "filename" and df[col].isna().any()
+    }
+    if gaps:
+        detail = ", ".join(f"{n}/{total} missing {col}" for col, n in gaps.items())
+        _warn(
+            f"engagement.csv: {detail} — fill these in before Phase 1b "
+            "for valid correlation results."
         )
     else:
-        _ok(f"engagement.csv: {total} rows, all saves + shares present")
+        _ok(f"engagement.csv: {total} rows, views + likes complete")
+
+    # Optional columns: report as information, never as a problem to fix.
+    for col in _OPTIONAL_ENGAGEMENT_COLS:
+        if col not in df.columns:
+            continue
+        present = int(df[col].notna().sum())
+        if present == 0:
+            _note(f"engagement.csv: '{col}' column is empty (not public on YouTube) — not used as an outcome")
+        elif present < total:
+            _note(f"engagement.csv: '{col}' present for {present}/{total} rows — partial, not used as an outcome")
 
 
 def run_batch(cfg: Config, no_analyze: bool = False) -> None:
