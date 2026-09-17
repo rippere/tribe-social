@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0D0D0D;
+  /* Off-black base tone (Grok-like). Placeholder — swap for the exact hex. */
+  --background: #101114;
   --foreground: #F9FAFB;
 
   /* Design tokens */
-  --color-bg: #0D0D0D;
+  --color-bg: #101114;
   --color-panel: #111827;
   --color-border: #1F2937;
   --color-text: #F9FAFB;
@@ -31,7 +32,7 @@
   --font-mono: var(--font-geist-mono);
 
   /* Expose tokens as Tailwind utilities */
-  --color-bg: #0D0D0D;
+  --color-bg: #101114;
   --color-panel: #111827;
   --color-border: #1F2937;
   --color-text: #F9FAFB;
@@ -40,15 +41,45 @@
   --color-post: #16A34A;
   --color-revise: #D97706;
   --color-rethink: #DC2626;
+
+  /* ROI region palette as utilities (bg-roi-vmPFC, text-roi-TPJ, …) */
+  --color-roi-vmPFC: #FFB74D;
+  --color-roi-TPJ: #81C784;
+  --color-roi-IFJa: #4FC3F7;
+  --color-roi-IFJp: #4DD0E1;
+  --color-roi-area45: #CE93D8;
+  --color-roi-MT_V5: #80DEEA;
 }
 
 html {
-  background: #0D0D0D;
-  color: #F9FAFB;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* --- Brand motion: soft floating "bubbles" behind the app window --- */
+@keyframes tribe-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -26px, 0) scale(1.06);
+  }
+}
+
+.tribe-float {
+  animation: tribe-float 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tribe-float {
+    animation: none;
+  }
 }
