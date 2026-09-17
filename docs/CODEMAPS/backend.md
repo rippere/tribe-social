@@ -1,5 +1,5 @@
 # Backend — tribe-social
-<!-- Generated: 2026-09-15 | Scope: apps/api + pod_server + runpod_handler + packages/tribe_scoring | Token estimate: ~950 -->
+<!-- Generated: 2026-09-17 | Scope: apps/api + pod_server + runpod_handler + packages/tribe_scoring | Token estimate: ~950 -->
 
 ## apps/api — FastAPI ("tribe-api"), the product API
 Entry `app/main.py`: `FastAPI(...)`; lifespan loads `data/corpus.json` → `state.corpus_data`, `reconcile_interrupted_jobs()`, spawns `cleanup_loop()`; CORS `*`; mounts 4 routers.
@@ -45,4 +45,4 @@ Dockerfile: `runpod/pytorch…torch260`, installs `tribev2@${TRIBEV2_REF}`, buil
 `run_and_save.py` (278 ln): `_bilateral(*ranges)`, `quick_scores` (per-ROI mean/hook/offset/peak_s/ts_ratio ×7 + `composite_raw`, `gfp_*`, `vmPFC_TPJ_coupling` [Scholz 2017], `pleasantness_index`), `run_single(model,path,text,label)->np.ndarray`, `main()` (CLI `--batch-dir --results-csv`, runs on the pod).
 Imported by `research/visualize.py`, `apps/pod_server/server.py`, `apps/runpod_handler/handler.py`.
 
-> ✅ RESOLVED — **Dual composite-weights (drift risk):** the ROI composite is defined **twice** — `packages/tribe_scoring._BATCH_MASKS` (the scoring pod) and `apps/api/services/scoring.py::COMPOSITE_WEIGHTS` (ported from `demo.py`, the API mapping). Two homes for one fact; they can silently diverge. Candidate for consolidation into the shared package.
+> **Single-home rule:** the ROI composite weights and verdict thresholds live only in `packages/tribe_scoring/composite.py`. The pod computes `composite_raw`, the API scales it to the corpus range and serves the verdict, the web renders what the API returns. This was previously defined in three places and silently drifted — do not reintroduce a second copy.

@@ -1,14 +1,20 @@
-# TRIBE Social Lab
+# research — TRIBE v2 scoring & validation pipeline
 
-**Neural content intelligence for short-form video.**
+**Does a brain-encoding model predict short-form video engagement?**
 
-TRIBE Social Lab applies Meta's TRIBE v2 whole-brain encoding model to short-form video, extracting predicted neural activation across six cortical ROIs and converting those signals into an interpretable score that predicts whether a video is likely to earn saves, shares, and DM engagement. The result: a data-driven pre-post scoring gate for content creators who want to stop guessing and start optimizing against the brain regions the literature says actually drive virality.
+This is the research half of [`tribe-social`](../README.md). It applies Meta's TRIBE v2 whole-brain encoding model to short-form video, extracts predicted activation across seven cortical ROIs, and reduces those signals to an interpretable composite score — then tests whether that score has any relationship to real engagement.
+
+> [!IMPORTANT]
+> **It did not clear its gate.** On the 24-video pilot corpus the composite correlates with engagement at **r = 0.25 (p = 0.24, n = 24)** — not significant, and below the pre-registered r > 0.4 threshold. An independent 2026 paper (arXiv:2607.01400) separately found TRIBE's global predicted signal does not predict YouTube replay behavior.
+> The pipeline works. Whether the number it produces means anything is unresolved, and current evidence leans negative. Every score here is **exploratory**.
 
 ---
 
 ## The Problem
 
-Creators iterate on content using likes and views as feedback — but those metrics arrive days after posting, can't be acted on before publish, and conflate algorithmic reach with genuine neural engagement. TRIBE Social Lab moves the signal upstream: score your draft *before* you post, identify which brain regions underperform, and get targeted revision recommendations.
+Engagement metrics arrive after publication, conflate algorithmic reach with audience response, and offer no per-second diagnosis of *where* a clip loses people. A brain-encoding model is one candidate for a pre-publication signal that decomposes a clip temporally and by cortical region.
+
+Whether that candidate actually carries engagement-relevant information is the question this repository exists to answer — not an assumption it starts from. See [`../docs/VALIDATION-PROTOCOL-AND-ROADMAP.md`](../docs/VALIDATION-PROTOCOL-AND-ROADMAP.md) for the study designed to settle it.
 
 ---
 
@@ -41,7 +47,7 @@ scores.csv  (mean, hook [0–3s], offset [final 3s], peak second per ROI)
     │   POST ≥ 65  |  REVISE 40–65  |  RETHINK < 40
     │
     ├── Phase 1b Correlation Analysis
-    │   Pearson r vs. likes/1K views, saves, shares
+    │   Pearson r vs. likes/1K views (primary available proxy)
     │   Go/No-Go verdict: ≥ 2 ROIs r > 0.3 OR composite r > 0.4
     │
     └── Streamlit Dashboard  (demo.py)
@@ -210,8 +216,9 @@ tribe-social/
 
 | Phase | Status |
 |---|---|
-| Phase 0 — TRIBE v2 on RunPod | Complete |
-| Phase 1a — 24-video corpus collection | Complete |
-| Phase 1b — Correlation analysis | Complete (Go verdict) |
-| Phase 2 — Original content scoring | In progress |
-| Phase 3 — audience conversion + automation | Planned |
+| Phase 0 — TRIBE v2 inference on RunPod | Complete |
+| Phase 1a — 24-video pilot corpus collected + scored | Complete |
+| Phase 1b — Correlation vs. engagement | Complete — **go/no-go gate NOT cleared** (r = 0.25, p = 0.24, n = 24) |
+| Phase 2 — Hardened incremental-validity study | Designed, not run — see [the protocol](../docs/VALIDATION-PROTOCOL-AND-ROADMAP.md) |
+
+Phase 2 is deliberately gated on the validation study rather than on building more product. A pipeline that produces confident-looking scores from an unvalidated signal is the failure mode this project is trying to avoid.

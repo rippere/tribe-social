@@ -1,5 +1,5 @@
 # Data — tribe-social
-<!-- Generated: 2026-09-15 | Scope: research pipeline + scoring data | Token estimate: ~750 -->
+<!-- Generated: 2026-09-17 | Scope: research pipeline + scoring data | Token estimate: ~750 -->
 
 No relational DB. Data is **CSV + on-GPU model artifacts** flowing through the research pipeline; the "tables" are CSVs in `research/`.
 
@@ -11,7 +11,7 @@ No relational DB. Data is **CSV + on-GPU model artifacts** flowing through the r
 | `research/engagement_template.csv` | — | `filename, views, saves, shares, comments` |
 | `research/urls_demo.txt` | 15 | commented list of viral Shorts URLs (yt-dlp source) |
 
-> ⚠ **Schema drift (real):** the template carries `saves` but the live `engagement.csv` omits `saves` and instead has `platform` + `likes`. Consistent with `research/PROJECT.md`'s note that saves/shares were never actually collected (the original primary metric). Anything reading `saves` off `engagement.csv` gets nothing. Reconcile before the pilot uses engagement as an outcome.
+> ⚠ **Schema drift (real):** the template carries `saves` but the live `engagement.csv` omits `saves` and instead has `platform` + `likes`. Saves/shares — the originally-intended primary metric — were never actually collected, so the `shares` column is empty. Anything reading `saves` off `engagement.csv` gets nothing. Reconcile before the pilot uses engagement as an outcome.
 
 ## Join
 `filename` is the key. `apps/api/scripts/build_corpus_json.py` joins `scores.csv` ⨝ `engagement.csv` on `filename` → dashboard corpus JSON. `phase1b_correlation.py` correlates ROI columns ↔ engagement columns on the same key.

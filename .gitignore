@@ -30,3 +30,12 @@ runpod_session.sh
 
 # Stray logs
 openscad_mcp.log
+
+# --- Private / not-for-public-repo -------------------------------------------
+# These stay on disk locally but are deliberately excluded from the public repo.
+# Local-only working material.
+docs/
+# Local-only working material.
+research/PROJECT.md
+# Generated codemap sweep reports (build artifacts).
+.reports/

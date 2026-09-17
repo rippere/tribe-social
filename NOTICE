@@ -1,0 +1,70 @@
+tribe-social
+Copyright 2026 Ben Rippere
+
+This product includes software developed by Ben Rippere.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+
+================================================================================
+IMPORTANT — THE APACHE-2.0 GRANT COVERS THIS REPOSITORY'S CODE ONLY
+================================================================================
+
+The code in this repository is Apache-2.0. The machine-learning model it is
+built to invoke is NOT, and this repository grants you no rights to it.
+
+TRIBE v2 (Meta FAIR / facebookresearch) — the brain-encoding model this
+pipeline scores video with — is released under CC-BY-NC-4.0
+(Attribution–NonCommercial 4.0 International). That license explicitly
+prohibits use "primarily intended for or directed toward commercial advantage
+or monetary compensation."
+
+What this means in practice:
+
+  * Running this code against TRIBE v2 weights for research, education,
+    evaluation, or personal use is fine.
+
+  * Running this code against TRIBE v2 weights as part of a paid product,
+    a client deliverable, or any other commercial offering is NOT covered by
+    Apache-2.0 and is very likely a violation of Meta's model license.
+    Apache-2.0 on this repository does not and cannot relicense TRIBE v2.
+
+  * "Sell the service, not the model" does not resolve this. If the paid
+    deliverable depends on running the NonCommercial model, it is
+    commercial use of that model.
+
+A commercially clean path exists but requires different weights — training an
+architecture with a permissive code license (e.g. VIBE, MIT) from its own
+initialization on CC0 data (e.g. CNeuroMod). Weights derived from, initialized
+from, distilled from, or fine-tuned on CC-BY-NC weights inherit the
+NonCommercial restriction.
+
+Note also that non-commercial *training data* can constrain commercial use of
+an otherwise-permissive model. NSD is CC-BY-NC-ND; HCP's open-access terms are
+ambiguous on redistribution of derived weights; CNeuroMod is CC0 and is the
+cleanest available foundation. This is a summary, not legal advice — get
+counsel before commercializing anything trained on restricted data.
+
+
+================================================================================
+THIRD-PARTY COMPONENTS
+================================================================================
+
+TRIBE v2 ............ Meta FAIR, CC-BY-NC-4.0 (model weights + reference code)
+HCP MMP1.0 atlas .... Glasser et al. 2016, via neuromaps
+CNeuroMod ........... CC0 1.0 (public domain)
+yt-dlp .............. Unlicense
+Python / Node dependencies — see pyproject.toml, uv.lock, apps/web/package.json
+
+Each third-party component remains under its own license.
+
+
+================================================================================
+CORPUS DATA
+================================================================================
+
+research/scores.csv and research/engagement.csv contain model-derived scores and
+publicly-visible engagement counts for 24 public YouTube videos by third-party
+creators, retained for reproducibility of the reported correlation analysis.
+No video content, audio, transcripts, or frames are redistributed in this
+repository. Engagement figures were publicly visible at collection time and are
+point-in-time snapshots, not a live feed.

@@ -1,8 +1,8 @@
 # Architecture — tribe-social
-<!-- Generated: 2026-09-15 | Scope: monorepo | Token estimate: ~850 -->
+<!-- Generated: 2026-09-17 | Scope: monorepo | Token estimate: ~800 -->
 
 ## What it is
-Consolidated monorepo for the **TRIBE v2 neural-content-intelligence** project: a research pipeline that scores short-form video with Meta's TRIBE v2 brain-encoding model, a web/api/GPU **product** that exposes scoring + an ROI dashboard. Canonical branch: `master`.
+Consolidated monorepo for the **TRIBE v2 neural-content-intelligence** project: a research pipeline that scores short-form video with Meta's TRIBE v2 brain-encoding model, plus a web/api/GPU **product** that exposes scoring and an ROI dashboard. Canonical branch: `master`.
 
 ## Service boundaries (one job each)
 | Area | Job | Detail codemap |
@@ -13,8 +13,7 @@ Consolidated monorepo for the **TRIBE v2 neural-content-intelligence** project: 
 | `apps/web/` | Next.js dashboard: upload a clip, view ROI scores (recharts). | `frontend.md` |
 | `apps/pod_server/` | Warm/persistent A100 inference server. | `backend.md` |
 | `apps/runpod_handler/` | RunPod serverless inference handler. | `backend.md` |
-| `docs/` | Local-only working material (not tracked). | `CONTRIBUTING.md` |
-| `docs/` | Cross-cutting docs: validation protocol + these codemaps. | — |
+| `docs/` | Cross-cutting docs: the validation protocol + these codemaps. | — |
 
 ## Scoring lifecycle (core data flow)
 ```
@@ -39,4 +38,4 @@ Offline corpus path: `apps/api/scripts/build_corpus_json.py` reads `research/sco
 
 ## Two tracks (why both exist)
 - **Product** (`apps/` + `packages/`) — the scorer + dashboard, deployable today.
-- **Research** (`research/`) — the validation that decides whether the score *means* anything. The pilot (`docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` §7) GO/NO-GO gates the product's core claim; a paper (`arXiv:2607.01400`) already found TRIBE's global signal null vs. re-watch, so the honest-diagnostic framing is load-bearing.
+- **Research** (`research/`) — the validation that decides whether the score *means* anything. The Phase-1b pilot did **not** clear its pre-registered go/no-go gate (r = 0.25, p = 0.24, n = 24), and an independent 2026 paper (arXiv:2607.01400) found TRIBE's global predicted signal does not predict YouTube replay. The honest-diagnostic framing is therefore load-bearing, not modesty. The study designed to settle the question is `docs/VALIDATION-PROTOCOL-AND-ROADMAP.md`.

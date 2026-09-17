@@ -1,5 +1,5 @@
 # Frontend — tribe-social/apps/web
-<!-- Generated: 2026-09-15 | Scope: Next.js 16 App Router / React 19 | Token estimate: ~800 -->
+<!-- Generated: 2026-09-17 | Scope: Next.js 16 App Router / React 19 | Token estimate: ~800 -->
 
 Pure client of `apps/api` — **no route handlers, no app/api**. Stack: next 16.2.6, react 19.2.4, swr 2, recharts 3, react-dropzone 15, tailwind 4, shadcn.
 
@@ -33,7 +33,6 @@ Poll       JobProgress useSWR('/jobs/{id}', refresh 2s)      → GET /jobs/{id} 
 ## Deploy
 `railway.toml` (NIXPACKS, `npm run start`, healthcheck `/`). Env: `NEXT_PUBLIC_API_URL`. Framework rules: `apps/web/AGENTS.md` (`CLAUDE.md` just `@AGENTS.md`).
 
-## ⚠ Findings
-- ✅ **RESOLVED — composite-weights:** `lib/scoring.ts` re-implements weights / computeComposite / computeVerdict / pearsonR **client-side** — a THIRD copy, alongside `packages/tribe_scoring._BATCH_MASKS` (pod) and `apps/api/services/scoring.py COMPOSITE_WEIGHTS`. One rule, three homes → drift risk.
-- **Stale hardcodes:** `app/page.tsx` hardcodes "63.8" corpus avg + 12/8/4 verdict chips (not API-driven) — drifts from the real corpus.
-- **`apps/web/README.md`** was create-next-app boilerplate (replaced this sweep).
+## Known issues
+- **Stale landing-page hardcodes:** `app/page.tsx` hardcodes a "63.8" corpus average and 12/8/4 verdict chips rather than reading `/corpus/stats`. These drift from the real corpus every time it is rescored. Fix by fetching, not by editing the numbers.
+- **Scoring stays server-side:** `lib/scoring.ts` must not re-implement composite weights, verdicts, or correlation. Those have one home (`packages/tribe_scoring/composite.py`) and reach the client through the API.
