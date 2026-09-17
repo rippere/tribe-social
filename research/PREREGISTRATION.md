@@ -33,7 +33,7 @@ This design fixes all five problems: the hook is manipulated inside each item, d
 
 Within a base, the 4 variants share identical body footage, audio, cut and length to the frame. Only the first 3 seconds differ, across four conditions: spoken hook, visual or motion hook, text on screen, and cold open. Across bases everything differs, so results are not about one product.
 
-Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized to about -14 LUFS, no licensed music, no third-party brands. Full brief: `STIMULUS-BRIEF.md`.
+Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized to about -14 LUFS, no licensed music, no third-party brands. (The shooting brief issued to the stimulus creator is held separately and is not part of this repository; the specs that bind the design are the ones stated here.)
 
 ## 4. Delivery protocol
 
