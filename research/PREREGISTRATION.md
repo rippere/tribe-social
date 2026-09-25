@@ -1,8 +1,8 @@
 # Pre-registration: does predicted cortical response add anything to a content model for short-form hook rate?
 
 **Status:** DRAFT until frozen. Freeze by committing this file, the extracted features and the analysis code, tagging the commit, and recording the tag and SHA in section 12. Nothing is measured before that.
-**Version:** 0.2, written 2026-09-17. Changed after the power simulation (`power_sim.py`, `power_sim2.py`) showed version 0.1 could not succeed: the fixed rank bar was unreachable and the rank test was the weaker instrument. Both changes are pre-data.
-**Investigator:** Ben Rippere. **Stimuli:** Lucas Blais. **Model license:** TRIBE v2 is CC BY-NC 4.0, so this is non-commercial research only.
+**Version:** 0.3, written 2026-09-24. Version 0.2 (2026-09-17) changed the design after the power simulation (`power_sim.py`, `power_sim2.py`) showed version 0.1 could not succeed: the fixed rank bar was unreachable and the rank test was the weaker instrument. Version 0.3 spreads stimulus production across the team, adds a frame-exact hook rule and an automated stimulus gate (section 3), and adds an exploratory human-guess comparison (section 7a). All changes are pre-data.
+**Investigator:** Ben Rippere. **Stimuli:** ENTRP 490 Team 2 (six shooters, Lucas Blais as edit lead). **Model license:** TRIBE v2 is CC BY-NC 4.0, so this is non-commercial research only.
 **Registry:** OSF (public, no embargo).
 
 ---
@@ -31,7 +31,9 @@ This design fixes all five problems: the hook is manipulated inside each item, d
 
 18 base videos about ordinary consumer subjects, 4 opening variants each, 72 clips. The count comes from the power simulation in section 8, not from convenience.
 
-Within a base, the 4 variants share identical body footage, audio, cut and length to the frame. Only the first 3 seconds differ, across four conditions: spoken hook, visual or motion hook, text on screen, and cold open. Across bases everything differs, so results are not about one product.
+Within a base, the 4 variants share identical body footage, audio, cut and length to the frame. Only the first 3 seconds differ, across four conditions: spoken hook, visual or motion hook, text on screen, and cold open. Every hook is exactly 90 frames, so the body starts on frame 91 in all four variants. Across bases everything differs, so results are not about one product.
+
+Six team members each shoot three bases. The shooter varies only between bases, never within one, so the within-base centring in section 7 removes any shooter effect along with every other between-base difference. Before scoring, every clip must pass `validate_stimuli.py`, which checks the specs below and compares every pair of variants in a base: identical frame count, body starting on the same frame, body footage (SSIM at least 0.95) and body audio (correlation at least 0.95, offset under 10 ms). A base that fails is re-edited or dropped before freeze, never after. The gate's per-clip manifest, including a SHA-256 for every file, is part of the freeze record.
 
 Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized to about -14 LUFS, no licensed music, no third-party brands. (The shooting brief issued to the stimulus creator is held separately and is not part of this repository; the specs that bind the design are the ones stated here.)
 
@@ -81,6 +83,16 @@ Bar: ΔR²(C minus A) at least 0.03 AND conditional permutation p < 0.05 (brain 
 **Negative control.** Model R must not clear the H2 bar. If it does, the pipeline is leaking and the result is void.
 
 Secondary tests are corrected with Benjamini-Hochberg.
+
+## 7a. Exploratory: human guesses
+
+The product's named alternative is a person watching drafts and guessing. This section measures that alternative on the same clips. It is exploratory: it cannot change any verdict in section 10.
+
+- **Who guesses:** every team member, plus Phase 2 interviewees who agree to it. Nobody guesses on a base they shot.
+- **The task:** for each base, watch the four variants in a randomized order and rank them from most to least likely to keep a viewer past 3 seconds.
+- **When:** after the stimulus gate passes and before freeze. Guesses go into one CSV (guesser, role, base, variant, rank) whose SHA-256 is recorded in section 12. No guess is collected or changed after ads start.
+- **Analysis:** the mean rank per variant is centred within base and correlated with logit hook rate, with the same within-base permutation as H1. Reported next to the H1 result for Model B and Model C, with individual guessers' correlations shown as a distribution.
+- **What it can say:** whether the model's read beats, matches or trails people guessing, on these clips. It cannot support a product claim on its own.
 
 ## 8. Power, simulated before freezing
 
@@ -136,6 +148,8 @@ If the result lands with rho near 0.3, the study is underpowered by design and t
 Filled in at freeze time, before any ad spend:
 
 - Frozen commit SHA: ______  Tag: ______  Date and time: ______
+- Stimulus manifest hash (`validate_stimuli.py --manifest`, all 72 clips passing): ______
+- Human-guess file hash (section 7a): ______
 - Feature file hash (all 72 clips scored): ______
 - Analysis script hash: ______
 - OSF registration URL: ______
@@ -147,7 +161,7 @@ Any deviation after this point is logged below with the date, what changed and w
 - Ad spend: about $580 for 72 clips at 1,000 impressions each at an $8 CPM. Plan $700 with a $200 reserve, since Reels CPM varies.
 - GPU scoring: about $30 to $80.
 - Timeline: stimuli produced, then scoring and freeze in one day, ads run 4 days, one data pull, analysis and write-up in about two weeks.
-- Roles: Lucas produces stimuli and grants written permission. Ben runs scoring, delivery, analysis and the write-up.
+- Roles: each of the six team members shoots three bases and grants written permission for their clips. Lucas is edit lead and checks every shooter's first base before they shoot the rest. Ben runs the stimulus gate, scoring, freeze, delivery, analysis and the write-up. Every team member takes part in the human-guess round.
 
 ## 14. Publication
 
