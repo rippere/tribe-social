@@ -23,10 +23,6 @@
   --accent: #5CE1F0;             /* selected chip text, activation cyan */
   --accent-bg: rgba(74, 216, 236, 0.12); /* selected chip fill */
 
-  /* Legacy verdict colors: still used by the scorer until stage 3 */
-  --color-post: #16A34A;
-  --color-revise: #D97706;
-  --color-rethink: #DC2626;
 }
 
 @theme inline {
@@ -48,9 +44,6 @@
   --color-border: var(--line);
   --color-accent: var(--accent);
   --color-accent-bg: var(--accent-bg);
-  --color-post: #16A34A;
-  --color-revise: #D97706;
-  --color-rethink: #DC2626;
 
   /* Brain-region palette, keyed by the functional ROI names quick_scores() emits */
   --color-roi-attention: #4FC3F7;

@@ -2,71 +2,59 @@
 
 import { useState } from 'react'
 import type { RevisionTip } from '@/lib/types'
+import { regionLabel } from '@/components/brain/contract'
 
 interface Props {
   tips: RevisionTip[]
 }
 
-function scoreColor(v: number): string {
-  if (v < 0.45) return '#DC2626'
-  if (v < 0.70) return '#D97706'
-  return '#16A34A'
-}
-
 function ScoreBar({ score }: { score: number }) {
-  const color = scoreColor(score)
   return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="flex-1 h-1.5 rounded-full bg-[#1F2937] overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${score * 100}%`, background: color }}
-        />
+    <div className="flex min-w-[110px] items-center gap-2">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-fill">
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${score * 100}%` }} />
       </div>
-      <span className="text-xs font-mono" style={{ color }}>{score.toFixed(2)}</span>
+      <span className="font-mono text-[12px] text-muted">{score.toFixed(2)}</span>
     </div>
   )
 }
 
 function TipSection({ tip }: { tip: RevisionTip }) {
   const [open, setOpen] = useState(true)
-  const color = scoreColor(tip.score)
 
   return (
-    <div className="rounded-lg border border-[#1F2937] overflow-hidden">
+    <div className="overflow-hidden rounded-2xl bg-fill">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-[#111827] hover:bg-[#1A2233] transition-colors"
+        className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-fill"
       >
-        <div className="flex items-center gap-3">
-          <span
-            className="text-sm font-semibold"
-            style={{ color }}
-          >
-            {tip.roi}
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[14px] font-medium text-ink">{regionLabel(tip.roi)}</span>
           <ScoreBar score={tip.score} />
         </div>
         <svg
-          className={`w-4 h-4 text-[#6B7280] transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="px-4 py-4 bg-[#0D0D0D] space-y-3">
-          <p className="text-[#D1D5DB] text-sm leading-relaxed">{tip.tip}</p>
+        <div className="space-y-3 px-4 pb-4">
+          <p className="text-[14px] leading-[22px] text-ink/80">{tip.tip}</p>
           {tip.hook_templates.length > 0 && (
             <div>
-              <p className="text-[#6B7280] text-xs font-medium uppercase tracking-wider mb-2">
-                Hook Templates
-              </p>
+              <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-muted">Openings to try</p>
               <ul className="space-y-1.5">
                 {tip.hook_templates.map((h, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#9CA3AF]">
-                    <span className="text-[#6366F1] mt-0.5">▸</span>
+                  <li key={i} className="flex items-start gap-2 text-[14px] text-ink/70">
+                    <span aria-hidden className="mt-0.5 text-accent">▸</span>
                     <span>{h}</span>
                   </li>
                 ))}
@@ -82,21 +70,16 @@ function TipSection({ tip }: { tip: RevisionTip }) {
 export default function RevisionPanel({ tips }: Props) {
   if (tips.length === 0) {
     return (
-      <div className="rounded-xl border border-[#16A34A]/30 bg-[#16A34A]/10 px-6 py-4 flex items-center gap-3">
-        <svg className="w-5 h-5 text-[#16A34A] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="text-[#16A34A] font-medium text-sm">
-          All regions strong — this content is primed for engagement
-        </p>
-      </div>
+      <p className="rounded-2xl bg-fill px-5 py-4 text-[14px] text-ink/80">
+        No region fell below the revision threshold, so there are no edits to suggest for this clip.
+      </p>
     )
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-[#9CA3AF] text-xs mb-3">
-        Regions below 0.45 need attention. Expand each for revision strategies.
+      <p className="mb-3 text-[13px] text-muted">
+        The lowest-scoring regions, with edits to try. Suggestions are starting points, not guarantees.
       </p>
       {tips.map((tip) => (
         <TipSection key={tip.roi} tip={tip} />
