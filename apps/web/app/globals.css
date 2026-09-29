@@ -1,23 +1,27 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /*
- * fMRIght design tokens. Light, warm-neutral system modeled on the x.ai/bot page
+ * fMRIght design tokens. Dark variant of the warm-neutral system modeled on the x.ai/bot page
  * format (see business/lanes/design-ref/DESIGN-SPEC.md). Layout and scale are
  * mirrored; no third-party brand assets or font files are used.
  */
 :root {
-  --background: #FFFFFF;
-  --foreground: #0A0A0A;
+  /* Dark x.ai/bot variant (decided with Ben 2026-09-29, see docs/CORTEX-VIEW.md) */
+  --background: #0B0B0B;
+  --foreground: #F2F2F0;
 
-  --panel: #F9F8F6;              /* warm feature panels, pricing cards */
-  --fill: rgba(16, 16, 0, 0.04); /* inner cards, bubbles */
-  --ink: #0A0A0A;                /* text, primary button */
-  --ink-2: #111110;              /* dark chips and cards */
-  --muted: #7D8187;              /* lead paragraphs, labels */
-  --btn-2: #EDECEA;              /* secondary pill button */
-  --line: rgba(37, 37, 37, 0.1); /* hairlines */
-  --accent: #0093A3;             /* selected chip text */
-  --accent-bg: #F2FEFF;          /* selected chip fill */
+  --elevated: #121212;           /* app windows, phone screen */
+  --panel: #161615;              /* warm feature panels, pricing cards */
+  --fill: rgba(255, 255, 255, 0.05); /* inner cards, bubbles */
+  --ink: #F2F2F0;                /* text, primary button fill */
+  --on-ink: #0B0B0B;             /* text on ink fills */
+  --ink-2: #1C1C1B;              /* raised dark cards */
+  --muted: #8E929A;              /* lead paragraphs, labels */
+  --btn-2: #242423;              /* secondary pill button */
+  --line: rgba(255, 255, 255, 0.1); /* hairlines */
+  --accent: #5CE1F0;             /* selected chip text, activation cyan */
+  --accent-bg: rgba(74, 216, 236, 0.12); /* selected chip fill */
 
   /* Legacy verdict colors: still used by the scorer until stage 3 */
   --color-post: #16A34A;
@@ -32,6 +36,8 @@
   --font-mono: var(--font-geist-mono);
 
   /* Utilities: bg-panel, bg-fill, text-ink, text-muted, bg-btn-2, border-line, text-accent … */
+  --color-elevated: var(--elevated);
+  --color-on-ink: var(--on-ink);
   --color-panel: var(--panel);
   --color-fill: var(--fill);
   --color-ink: var(--ink);
@@ -67,9 +73,9 @@
   --radius-card: 16px;
   --radius-window: 22px;
 
-  --shadow-window: 0 20px 52px -16px rgba(0, 0, 0, 0.35);
-  --shadow-inner: 0 18px 44px -14px rgba(0, 0, 0, 0.32);
-  --shadow-hairline: 0 0 0 1px rgba(37, 37, 37, 0.1);
+  --shadow-window: 0 24px 60px -18px rgba(0, 0, 0, 0.85);
+  --shadow-inner: 0 18px 44px -14px rgba(0, 0, 0, 0.7);
+  --shadow-hairline: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 html {
@@ -142,7 +148,7 @@ body {
 }
 .btn-primary {
   background: var(--ink);
-  color: #FFFFFF;
+  color: var(--on-ink);
 }
 .btn-primary:hover {
   opacity: 0.85;
@@ -152,7 +158,7 @@ body {
   color: var(--ink);
 }
 .btn-secondary:hover {
-  background: #E4E2DE;
+  background: #2E2E2D;
 }
 .btn-sm {
   font-size: 14px;

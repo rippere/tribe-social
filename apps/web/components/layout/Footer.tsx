@@ -31,12 +31,15 @@ const COLUMNS = [
 
 export default function Footer() {
   return (
-    <footer className="mt-24 bg-white">
+    <footer className="mt-24 border-t border-line bg-background">
       <div className="mx-auto grid max-w-[1232px] gap-10 px-6 py-16 md:grid-cols-[1fr_auto_auto_auto] md:gap-20">
         <div>
           <p className="text-[17px] font-semibold tracking-[-0.3px] text-ink">fMRIght</p>
           <p className="mt-2 max-w-xs text-[13px] leading-5 text-muted">
-            A WSU ENTRP 490 Team 2 project. Non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
+            Non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
+          </p>
+          <p className="mt-4 max-w-xs text-[12px] leading-5 text-muted/80">
+            © 2026 Ben Rippere. Developed with WSU ENTRP 490 Team 2 as a course project.
           </p>
         </div>
 
