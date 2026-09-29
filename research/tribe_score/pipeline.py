@@ -41,6 +41,21 @@ def _note(msg: str) -> None:
     console.print(f"  [dim]·[/dim] [dim]{msg}[/dim]")
 
 
+def _install_tribev2(sess: remote.SSHSession, hf_token: str) -> None:
+    """Install TRIBE v2 on the pod. Exits the process if the install fails."""
+    _step("Installing TRIBE v2 on pod…")
+    setup_cmd = (
+        "pip install -q --upgrade pip && "
+        "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
+        "--extra-index-url https://download.pytorch.org/whl/cu118"
+    )
+    rc = sess.run(setup_cmd, env={"HF_TOKEN": hf_token})
+    if rc != 0:
+        console.print(f"[red]Pod setup failed (exit {rc}) — tribev2 install error[/red]")
+        sys.exit(1)
+    _ok("tribev2 installed")
+
+
 # Engagement fields the correlation analysis can actually use. `saves` and
 # `shares` are deliberately NOT here: neither is exposed publicly by YouTube,
 # which is where the whole corpus comes from. They were the originally-intended
@@ -126,17 +141,7 @@ def run_batch(cfg: Config, no_analyze: bool = False) -> None:
         with remote.ssh_session(host, port, cfg.ssh_user, cfg.ssh_key_path) as sess:
 
             # --- Pod setup -----------------------------------------------
-            _step("Installing TRIBE v2 on pod…")
-            setup_cmd = (
-                "pip install -q --upgrade pip && "
-                "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
-                "--extra-index-url https://download.pytorch.org/whl/cu118"
-            )
-            rc = sess.run(setup_cmd, env={"HF_TOKEN": cfg.hf_token})
-            if rc != 0:
-                console.print(f"[red]Pod setup failed (exit {rc}) — tribev2 install error[/red]")
-                sys.exit(1)
-            _ok("tribev2 installed")
+            _install_tribev2(sess, cfg.hf_token)
 
             # --- Upload --------------------------------------------------
             _step(f"Uploading {len(reels)} videos + scripts…")
@@ -207,17 +212,7 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
         with remote.ssh_session(host, port, cfg.ssh_user, cfg.ssh_key_path) as sess:
 
             # --- Pod setup -----------------------------------------------
-            _step("Installing TRIBE v2 on pod…")
-            setup_cmd = (
-                "pip install -q --upgrade pip && "
-                "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
-                "--extra-index-url https://download.pytorch.org/whl/cu118"
-            )
-            rc = sess.run(setup_cmd, env={"HF_TOKEN": cfg.hf_token})
-            if rc != 0:
-                console.print(f"[red]Pod setup failed (exit {rc}) — tribev2 install error[/red]")
-                sys.exit(1)
-            _ok("tribev2 installed")
+            _install_tribev2(sess, cfg.hf_token)
 
             _step("Uploading video + script…")
             scripts = [_SCORING_DIR / "run_and_save.py"]
