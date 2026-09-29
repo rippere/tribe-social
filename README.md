@@ -18,6 +18,7 @@ Two reasons, and neither is "look at our product."
 1. **The methodology is worth more than the result.** Two designs are published here in full:
    - [`docs/VALIDATION-PROTOCOL-AND-ROADMAP.md`](docs/VALIDATION-PROTOCOL-AND-ROADMAP.md) — an incremental-validity design with negative controls, creator-grouped nested CV, conditional permutation testing and pre-committed kill criteria.
    - [`research/PREREGISTRATION.md`](research/PREREGISTRATION.md) — a cheaper, sharper prospective hook test: 18 base videos × 4 opening variants, analyzed within-base so each base is its own control. Its power analysis is reproducible — [`research/power_sim2.py`](research/power_sim2.py) regenerates the §8 table verbatim.
+     Before it runs, [`research/PRE-FREEZE-CHECKLIST.md`](research/PRE-FREEZE-CHECKLIST.md) tracks what has to be true before freeze and ad spend, including the shooters' [`clip permission`](research/CLIP-PERMISSION.md).
 
    Both are built so a null result is as publishable as a positive one. The approach is reusable by anyone testing whether a neural or embedding-derived feature adds real predictive value over a strong content baseline.
 2. **Nulls should be visible.** The pilot did not clear its gate. Publishing the pipeline, the corpus scores, and the analysis that produced the null is more useful than quietly not mentioning it.
