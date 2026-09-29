@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
+import Footer from "@/components/layout/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TRIBE Social Lab — Neural Content Intelligence",
+  title: "fMRIght: see what a video does to a brain",
   description:
-    "TRIBE v2 neural encoding scores your videos against 6 brain regions that predict viral engagement.",
+    "fMRIght runs Meta's TRIBE v2 brain-encoding model on a short video and shows, second by second, the predicted brain response. A research diagnostic, not a view forecast.",
 };
 
 export default function RootLayout({
@@ -28,10 +29,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
     >
-      <body className="min-h-full flex flex-col bg-[#0D0D0D] text-[#F9FAFB]">
+      <body className="min-h-full flex flex-col bg-white text-ink">
         <NavBar />
         <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

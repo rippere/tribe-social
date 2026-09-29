@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
+/*
+ * fMRIght design tokens. Light, warm-neutral system modeled on the x.ai/bot page
+ * format (see business/lanes/design-ref/DESIGN-SPEC.md). Layout and scale are
+ * mirrored; no third-party brand assets or font files are used.
+ */
 :root {
-  /* Off-black base tone (Grok-like). Placeholder — swap for the exact hex. */
-  --background: #101114;
-  --foreground: #F9FAFB;
+  --background: #FFFFFF;
+  --foreground: #0A0A0A;
 
-  /* Design tokens */
-  --color-bg: #101114;
-  --color-panel: #111827;
-  --color-border: #1F2937;
-  --color-text: #F9FAFB;
-  --color-muted: #9CA3AF;
-  --color-accent: #6366F1;
+  --panel: #F9F8F6;              /* warm feature panels, pricing cards */
+  --fill: rgba(16, 16, 0, 0.04); /* inner cards, bubbles */
+  --ink: #0A0A0A;                /* text, primary button */
+  --ink-2: #111110;              /* dark chips and cards */
+  --muted: #7D8187;              /* lead paragraphs, labels */
+  --btn-2: #EDECEA;              /* secondary pill button */
+  --line: rgba(37, 37, 37, 0.1); /* hairlines */
+  --accent: #0093A3;             /* selected chip text */
+  --accent-bg: #F2FEFF;          /* selected chip fill */
+
+  /* Legacy verdict colors: still used by the scorer until stage 3 */
   --color-post: #16A34A;
   --color-revise: #D97706;
   --color-rethink: #DC2626;
-
-  /* ROI colors */
-  --color-roi-vmPFC: #FFB74D;
-  --color-roi-TPJ: #81C784;
-  --color-roi-IFJa: #4FC3F7;
-  --color-roi-IFJp: #4DD0E1;
-  --color-roi-area45: #CE93D8;
-  --color-roi-MT_V5: #80DEEA;
 }
 
 @theme inline {
@@ -31,29 +31,56 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Expose tokens as Tailwind utilities */
-  --color-bg: #101114;
-  --color-panel: #111827;
-  --color-border: #1F2937;
-  --color-text: #F9FAFB;
-  --color-muted: #9CA3AF;
-  --color-accent: #6366F1;
+  /* Utilities: bg-panel, bg-fill, text-ink, text-muted, bg-btn-2, border-line, text-accent … */
+  --color-panel: var(--panel);
+  --color-fill: var(--fill);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-btn-2: var(--btn-2);
+  --color-line: var(--line);
+  --color-border: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
   --color-post: #16A34A;
   --color-revise: #D97706;
   --color-rethink: #DC2626;
 
-  /* ROI region palette as utilities (bg-roi-vmPFC, text-roi-TPJ, …) */
+  /* Brain-region palette, keyed by the functional ROI names quick_scores() emits */
+  --color-roi-attention: #4FC3F7;
+  --color-roi-social: #81C784;
+  --color-roi-language: #CE93D8;
+  --color-roi-valuation: #FFB74D;
+  --color-roi-auditory: #F48FB1;
+  --color-roi-motion: #80DEEA;
+  --color-roi-narrative: #B0BEC5;
+
+  /* Legacy anatomical keys, still referenced by corpus charts */
   --color-roi-vmPFC: #FFB74D;
   --color-roi-TPJ: #81C784;
   --color-roi-IFJa: #4FC3F7;
   --color-roi-IFJp: #4DD0E1;
   --color-roi-area45: #CE93D8;
   --color-roi-MT_V5: #80DEEA;
+
+  --radius-panel: 24px;
+  --radius-card: 16px;
+  --radius-window: 22px;
+
+  --shadow-window: 0 20px 52px -16px rgba(0, 0, 0, 0.35);
+  --shadow-inner: 0 18px 44px -14px rgba(0, 0, 0, 0.32);
+  --shadow-hairline: 0 0 0 1px rgba(37, 37, 37, 0.1);
 }
 
 html {
   background: var(--background);
   color: var(--foreground);
+  scroll-behavior: smooth;
+}
+
+/* Anchor targets clear the 64px sticky nav */
+[id] {
+  scroll-margin-top: 80px;
 }
 
 body {
@@ -62,7 +89,83 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* --- Brand motion: soft floating "bubbles" behind the app window --- */
+/* Type scale from the reference page */
+.type-h1 {
+  font-size: 60px;
+  line-height: 60px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+}
+.type-h2 {
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 500;
+  letter-spacing: -0.36px;
+}
+.type-h3 {
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 500;
+}
+.type-lead {
+  font-size: 18px;
+  line-height: 29.25px;
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .type-h1 {
+    font-size: 40px;
+    line-height: 44px;
+    letter-spacing: -0.4px;
+  }
+  .type-h2 {
+    font-size: 28px;
+    line-height: 34px;
+  }
+  .type-lead {
+    font-size: 16px;
+    line-height: 26px;
+  }
+}
+
+/* Pill buttons */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+.btn-primary {
+  background: var(--ink);
+  color: #FFFFFF;
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+.btn-secondary {
+  background: var(--btn-2);
+  color: var(--ink);
+}
+.btn-secondary:hover {
+  background: #E4E2DE;
+}
+.btn-sm {
+  font-size: 14px;
+  line-height: 20px;
+  padding: 10px 18px;
+}
+.btn-lg {
+  font-size: 16px;
+  height: 44px;
+  padding: 0 24px;
+}
+
+/* --- Brand motion: soft floating "bubbles" (HexBackground) --- */
 @keyframes tribe-float {
   0%,
   100% {

@@ -39,8 +39,8 @@ export default function ScorerPage() {
         </div>
         <h1 className="text-3xl font-bold text-[#F9FAFB] mb-2">Score a Reel</h1>
         <p className="text-[#9CA3AF] max-w-xl">
-          Drop a clip or paste a YouTube Shorts / Instagram Reel URL — TRIBE v2 will score it
-          against 6 brain regions that predict viral engagement.
+          Drop a clip or paste a YouTube Shorts / Instagram Reel URL. TRIBE v2 predicts how an
+          average brain responds to it, second by second. It&apos;s a read of the video, not a view forecast.
         </p>
       </div>
 
