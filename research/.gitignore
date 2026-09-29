@@ -23,3 +23,6 @@ media/
 
 # RunPod session scripts with embedded keys
 runpod_session.sh
+
+# Hook-test stimulus clips (shared via the team drive, not git)
+stimuli/

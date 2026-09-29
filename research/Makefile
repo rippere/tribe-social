@@ -1,10 +1,11 @@
-.PHONY: demo setup fetch analyze open help score-corpus score-corpus-dry score-corpus-existing
+.PHONY: demo setup fetch analyze open help score-corpus score-corpus-dry score-corpus-existing validate-stimuli
 
 PYTHON = .venv/bin/python
 STREAMLIT = .venv/bin/streamlit
 YT_DLP = $(shell which yt-dlp 2>/dev/null || echo "yt-dlp")
 URLS_FILE = urls_demo.txt
 REELS_DIR = reels
+STIMULI_DIR = stimuli
 
 ## demo   — launch the Streamlit dashboard with pre-scored corpus (zero credentials needed)
 demo: _check_venv
@@ -61,6 +62,10 @@ score-corpus-dry:
 ## score-corpus-existing — score the pre-fetched reels/ corpus (same dir as score-corpus; kept as an explicit alias)
 score-corpus-existing:
 	$(PYTHON) score_corpus.py --corpus reels
+
+## validate-stimuli — QA gate for the hook-test clips in stimuli/ (run before scoring or freeze)
+validate-stimuli:
+	$(PYTHON) validate_stimuli.py $(STIMULI_DIR) --manifest stimuli_manifest.csv
 
 ## help   — print this message
 help:
