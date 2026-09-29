@@ -9,12 +9,12 @@ Section numbers refer to `PREREGISTRATION.md` v0.3 unless marked otherwise.
 | # | Item | Owner | Done when |
 |---|---|---|---|
 | 1.1 | Pre-registration v0.3 and the stimulus gate merged to `main` | Ben | PR #2 merged |
-| 1.2 | IRB decision: submit a determination / exemption request, or record why none is needed | Ben | Determination letter or written rationale saved in the project folder (not the repo) |
-| 1.3 | Advisor or PI named and has read the pre-registration (roadmap §2.9) | Ben | Name and date recorded here |
+| 1.2 | IRB decision (judgment call, not a registered gate): request an exemption determination if the write-up is headed for arXiv/ICWSM, or record why none is needed | Ben | Determination letter or written rationale saved in the project folder (not the repo) |
+| 1.3 | Optional: advisor or PI named and has read the pre-registration before freeze | Ben | Name and date recorded here |
 | 1.4 | OSF project created for third-party timestamping | Ben | OSF URL recorded; §12 has a place for it |
 | 1.5 | Each of the six shooters has signed [`CLIP-PERMISSION.md`](CLIP-PERMISSION.md) | Ben | Six signed copies stored outside the repo |
 
-Note: the roadmap's YouTube-OAuth item (roadmap §2.9) does not apply to v0.3. The outcome is platform-reported ad delivery on an account Ben controls (§4, §5), so no third-party analytics access is involved.
+Note: roadmap §2.9 (IRB, consent, YouTube OAuth) was written for the older creator-corpus protocol and is not a registered gate for v0.3. The outcome here is platform-reported ad delivery on an account Ben controls (§4, §5), so no third-party analytics access is involved. Clip permission is required (§13, §15); IRB and advisor are judgment calls.
 
 ## 2. Ad account (before the shoot finishes)
 
