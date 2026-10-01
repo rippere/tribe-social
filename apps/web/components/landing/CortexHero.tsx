@@ -57,7 +57,7 @@ export default function CortexHero() {
   const figureRef = useRef<HTMLElement>(null)
   const timeRef = useRef<HTMLSpanElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
-  const drag = useRef<{ x: number; y: number; t: number; touch: boolean } | null>(null)
+  const drag = useRef<{ id: number; x: number; y: number; t: number; touch: boolean } | null>(null)
 
   const still = reduced || paused
 
@@ -98,7 +98,7 @@ export default function CortexHero() {
 
   // Mirror the render-loop clock into the readout without re-rendering React.
   useEffect(() => {
-    if (still) {
+    if (still || !visible) {
       if (timeRef.current) timeRef.current.textContent = clock.current.t.toFixed(1)
       if (barRef.current) barRef.current.style.transform = `scaleX(${clock.current.t / DURATION})`
       return
@@ -109,22 +109,26 @@ export default function CortexHero() {
       if (barRef.current) barRef.current.style.transform = `scaleX(${t / DURATION})`
     }, 100)
     return () => clearInterval(id)
-  }, [still])
+  }, [still, visible])
 
   const onReady = useCallback(() => setReady(true), [])
 
   // Drag to turn. Vertical touch moves stay with the page (touch-action: pan-y);
   // the wheel is never captured.
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!ready || (e.pointerType === 'mouse' && e.button !== 0)) return
-    drag.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, touch: e.pointerType !== 'mouse' }
+    if (!ready || drag.current || (e.pointerType === 'mouse' && e.button !== 0)) return
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      return // stale or synthetic pointer: leave the spin alone
+    }
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp, touch: e.pointerType !== 'mouse' }
     rig.current.dragging = true
     rig.current.vel = 0
-    e.currentTarget.setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current
-    if (!d) return
+    if (!d || e.pointerId !== d.id) return // one finger drives the turn
     const r = rig.current
     const dx = (e.clientX - d.x) * 0.008
     const dt = Math.max((e.timeStamp - d.t) / 1000, 1 / 120)
@@ -134,8 +138,8 @@ export default function CortexHero() {
     drag.current = { ...d, x: e.clientX, y: e.clientY, t: e.timeStamp }
     r.invalidate?.()
   }
-  const endDrag = () => {
-    if (!drag.current) return
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current || e.pointerId !== drag.current.id) return
     drag.current = null
     rig.current.dragging = false
     rig.current.vel = Math.max(-2, Math.min(2, rig.current.vel))
@@ -188,8 +192,7 @@ export default function CortexHero() {
               type="button"
               onClick={() => setPaused(p => !p)}
               disabled={reduced}
-              aria-pressed={still}
-              aria-label="Pause the cortex animation"
+              aria-label={still ? 'Play the cortex animation' : 'Pause the cortex animation'}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-btn-2 disabled:opacity-40"
             >
               {still ? (
