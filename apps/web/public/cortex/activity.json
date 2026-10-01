@@ -1,8 +1,8 @@
 {
-  "frames": 30,
+  "frames": 25,
   "vertices": 20484,
   "hz": 1,
-  "source": "illustrative",
-  "label": "Illustrative sequence",
-  "note": "Region-scripted placeholder on real anatomy. Not TRIBE output."
+  "source": "tribe",
+  "label": "Sample creator clip (AI-generated)",
+  "note": "TRIBE v2 predicted cortical response (fsaverage5), 1 frame per second."
 }

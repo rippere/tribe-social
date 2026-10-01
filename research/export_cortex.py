@@ -22,6 +22,11 @@ Usage:
   # real TRIBE output from a scoring run
   uv run --no-project --with nilearn --with scipy python export_cortex.py \\
       --preds reels/batch/ali_005_preds.npy --skip-mesh
+
+The committed cortex.glb is meshopt-compressed (4.75 MB -> 1.56 MB). After any
+mesh export, re-run (custom _SULC/_FSA5_* attributes survive; see
+docs/CORTEX-VIEW.md "GLB compression"):
+  npx @gltf-transform/cli meshopt cortex.glb cortex.glb --level medium
 """
 
 from __future__ import annotations

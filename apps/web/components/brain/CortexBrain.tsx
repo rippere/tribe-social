@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
@@ -162,22 +162,30 @@ export default function CortexBrain({
     [texture],
   )
 
-  const geometry = useMemo(() => {
-    const src = (scene.getObjectByName('cortex') as THREE.Mesh | undefined)?.geometry
-      ?? (scene.children[0] as THREE.Mesh).geometry
-    const g = src.clone()
+  // The node carries the KHR_mesh_quantization dequantisation transform once the
+  // GLB has been through `gltf-transform meshopt`, so keep it with the geometry.
+  const { geometry, node } = useMemo(() => {
+    const node = (scene.getObjectByName('cortex') ?? scene.children[0]) as THREE.Mesh
+    const g = node.geometry.clone()
     // GLTFLoader lower-cases custom attributes; give them shader-safe names.
+    // _SULC/_FSA5_W may arrive as normalised uint16; WebGL hands the shader floats.
     g.setAttribute('aSulc', g.getAttribute('_sulc'))
     g.setAttribute('aIdx', g.getAttribute('_fsa5_idx'))
     g.setAttribute('aW', g.getAttribute('_fsa5_w'))
     g.computeVertexNormals()
-    return g
+    return { geometry: g, node }
   }, [scene])
 
+  // On-demand canvases (reduced motion, paused hero) only redraw when asked.
+  const invalidate = useThree(s => s.invalidate)
   useEffect(() => {
     material.uniforms.uThreshold.value = threshold
     material.uniforms.uIntensity.value = intensity
-  }, [material, threshold, intensity])
+    invalidate()
+  }, [material, threshold, intensity, invalidate])
+  useEffect(() => {
+    invalidate()
+  }, [activity, invalidate])
 
   useEffect(() => () => {
     geometry.dispose()
@@ -189,7 +197,8 @@ export default function CortexBrain({
     if (!activity) return
     const { frames, hz } = activity.meta
     const duration = frames / hz
-    if (clock.playing) clock.t = (clock.t + dt * clock.speed) % duration
+    // Clamp: a resumed or backgrounded tab must not jump the playhead.
+    if (clock.playing) clock.t = (clock.t + Math.min(dt, 0.1) * clock.speed) % duration
 
     // Linear blend between the two bracketing TRIBE seconds.
     const f = clock.t * hz
@@ -207,7 +216,15 @@ export default function CortexBrain({
     texture.needsUpdate = true
   })
 
-  return <mesh geometry={geometry} material={material} />
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      position={node.position}
+      quaternion={node.quaternion}
+      scale={node.scale}
+    />
+  )
 }
 
 useGLTF.preload('/cortex/cortex.glb')

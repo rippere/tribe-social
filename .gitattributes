@@ -1,0 +1,3 @@
+# Raw model-output frames: never diff, merge or EOL-convert as text.
+apps/web/public/cortex/*.bin binary
+*.glb binary
