@@ -54,7 +54,10 @@ _BATCH_MASKS = {
     "narrative": _bilateral((1200, 1600),),
 }
 
-from .composite import compute_composite_raw  # single source of truth
+try:
+    from .composite import compute_composite_raw  # single source of truth
+except ImportError:  # run as a standalone script on a pod, next to composite.py
+    from composite import compute_composite_raw
 
 _CSV_DIMS = list(_BATCH_MASKS.keys())
 _CSV_FIELDS = (

@@ -15,11 +15,12 @@ console = Console()
 
 # The shared scoring module now lives in the monorepo's tribe_scoring package
 # (packages/tribe_scoring/run_and_save.py). It is uploaded to the pod as a
-# standalone file named run_and_save.py and run there with `python run_and_save.py`.
+# standalone file named run_and_save.py and run there with `python run_and_save.py`;
+# composite.py goes with it because run_and_save imports it.
 _SCORING_DIR = Path(__file__).resolve().parents[2] / "packages" / "tribe_scoring"
 
 # Files uploaded to RunPod for batch scoring (absolute source paths)
-_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py"]
+_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py", _SCORING_DIR / "composite.py"]
 _REMOTE_WORK_DIR = "/workspace/tribe"
 
 
@@ -44,10 +45,17 @@ def _note(msg: str) -> None:
 def _install_tribev2(sess: remote.SSHSession, hf_token: str) -> None:
     """Install TRIBE v2 on the pod. Exits the process if the install fails."""
     _step("Installing TRIBE v2 on pod…")
+    # tribev2 transcribes audio by shelling out to `uvx`, which needs ffmpeg;
+    # neither ships in the runpod/pytorch images.
     setup_cmd = (
-        "pip install -q --upgrade pip && "
+        "pip install -q --upgrade pip uv && "
         "pip install -q 'tribev2 @ git+https://github.com/facebookresearch/tribev2.git' "
-        "--extra-index-url https://download.pytorch.org/whl/cu118"
+        "--extra-index-url https://download.pytorch.org/whl/cu118 && "
+        # tribev2 upgrades torch; the image's torchaudio/torchvision are built for
+        # the old one and fail to load (undefined symbol), so rebuild the trio.
+        "pip install -q \"torch==$(python -c 'import torch; print(torch.__version__.split(\"+\")[0])')\" "
+        "torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 && "
+        "{ command -v ffmpeg >/dev/null || { apt-get update -qq && apt-get install -y -qq ffmpeg; }; }"
     )
     rc = sess.run(setup_cmd, env={"HF_TOKEN": hf_token})
     if rc != 0:
@@ -215,7 +223,7 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
             _install_tribev2(sess, cfg.hf_token)
 
             _step("Uploading video + script…")
-            scripts = [_SCORING_DIR / "run_and_save.py"]
+            scripts = list(_REMOTE_SCRIPTS)
             sess.upload(scripts + [video_path], _REMOTE_WORK_DIR)
 
             _step("Running TRIBE v2 inference…")
