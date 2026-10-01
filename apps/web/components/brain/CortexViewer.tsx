@@ -39,14 +39,14 @@ export default function CortexViewer() {
   }
 
   return (
-    <div className="relative h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-bg">
+    <div className="relative h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-background">
       <CortexScene activity={activity} clock={clock.current} view={view} threshold={threshold} />
 
       <div className="pointer-events-none absolute left-6 top-6 max-w-sm space-y-2">
         <p className="font-mono text-xs uppercase tracking-widest text-muted">
           fsaverage · cortical surface
         </p>
-        <h1 className="text-2xl font-medium text-text">{activity?.meta.label ?? 'Loading cortex…'}</h1>
+        <h1 className="text-2xl font-medium text-ink">{activity?.meta.label ?? 'Loading cortex…'}</h1>
         {activity && (
           <span
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${
@@ -67,7 +67,7 @@ export default function CortexViewer() {
             key={v}
             onClick={() => setView(v)}
             className={`rounded-full px-3 py-1 text-xs transition-colors ${
-              view === v ? 'bg-white text-black' : 'text-muted hover:text-text'
+              view === v ? 'bg-white text-black' : 'text-muted hover:text-ink'
             }`}
           >
             {VIEW_LABELS[v]}
