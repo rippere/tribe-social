@@ -1,0 +1,29 @@
+{
+  "name": "fmright-explainer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Remotion source for the fMRIght scoring explainer (landing 16:9 + vertical 9:16).",
+  "scripts": {
+    "sync": "bash scripts/sync-media.sh",
+    "studio": "remotion studio --ipv4 --port 3200",
+    "render:landing": "remotion render Explainer-16x9 out/fmright-explainer-16x9.mp4 --gl=angle",
+    "render:vertical": "remotion render Explainer-9x16 out/fmright-explainer-9x16.mp4 --gl=angle",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.7.0",
+    "@remotion/cli": "4.0.531",
+    "@remotion/google-fonts": "4.0.531",
+    "@remotion/media": "4.0.531",
+    "@remotion/three": "4.0.531",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "remotion": "4.0.531",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/three": "^0.186.0",
+    "typescript": "^5.9.0"
+  }
+}
