@@ -5,6 +5,7 @@
   "description": "Remotion source for the fMRIght scoring explainer (landing 16:9 + vertical 9:16).",
   "scripts": {
     "sync": "bash scripts/sync-media.sh",
+    "mascot:gen": "python3 scripts/gen_mascot.py --media \"${EXPLAINER_MEDIA:-../../business/explainer}\"",
     "studio": "remotion studio --ipv4 --port 3200",
     "render:landing": "remotion render Explainer-16x9 out/fmright-explainer-16x9.mp4 --gl=angle",
     "render:vertical": "remotion render Explainer-9x16 out/fmright-explainer-9x16.mp4 --gl=angle",

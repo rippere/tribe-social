@@ -1,0 +1,117 @@
+{
+  "_doc": "One Kling 3.0 shot per narration beat. Every shot starts and ends on an anchor frame (anchors/A_*.png: the same keyed mascot at a fixed size and ground line), so shots join without a jump and can be generated in parallel without drift. Directions are screen-relative.",
+  "prefix": "Static locked-off camera, no camera movement, no zoom, no cuts. The small brain mascot character is on a flat uniform chroma-key green background that never changes. ",
+  "suffix": " The character keeps exactly the same size and stays on the same ground line. Its small mouth moves as if talking whenever it speaks. Character design never changes: matte graphite cortex body, flat cyan patches, round black eyes, thin graphite stick arms and legs. No glow, no particles, no text, no props, no shadows on the background.",
+  "shots": {
+    "intro_a": [
+      "empty",
+      "C",
+      "The frame starts empty. The character walks into the frame from the left edge with a bouncy, cheerful little walk, stops at the center of the frame, turns to face the camera and gives a big friendly wave hello with one hand, then lowers it."
+    ],
+    "intro_b": [
+      "C",
+      "L",
+      "Facing the camera and talking, it taps the top of its own head with one finger, gives a small playful shrug with both hands, then points straight up above its head for a moment. Then it walks a few steps toward the left side of the frame and stops, facing the camera."
+    ],
+    "intro_c": [
+      "L",
+      "L",
+      "Talking, it opens both arms wide toward the camera as if presenting something to the viewer, then points at the camera with one hand as if saying 'your video', then nods along with a friendly smile."
+    ],
+    "upload_a": [
+      "L",
+      "L",
+      "It looks up and to the upper left, raises its left arm and points up and to the left at something above it, holding the point while talking (small mouth moving), nods once, then lowers its arm and returns to its relaxed standing pose facing the camera."
+    ],
+    "upload_b": [
+      "L",
+      "C",
+      "Talking, it cups both hands together and gently tosses something upward toward the upper right of the frame, watching it fly away. Then it shakes its head and waves one hand side to side in a 'no' gesture. Then it walks toward the center of the frame and stops, facing the camera."
+    ],
+    "enc_a": [
+      "C",
+      "C",
+      "Talking, it points two fingers at its own eyes as if saying 'watch this', then raises one hand and cups it beside its head as if listening carefully to a sound, tilting its head."
+    ],
+    "enc_b": [
+      "C",
+      "C",
+      "Talking, it holds both hands open in front of itself like an open book and mimes reading, its eyes scanning left to right. Then it taps its chin with one finger, looking up thoughtfully."
+    ],
+    "enc_c": [
+      "C",
+      "C",
+      "Talking, it wags one finger side to side and shakes its head as if saying 'no need', then smiles and opens both hands outward, palms up, pleased."
+    ],
+    "ext_a": [
+      "C",
+      "C",
+      "Talking, it looks down at its own folded surface and sweeps both hands over its body from the top to the sides, showing it off, then holds both hands up with all fingers spread wide as if to say 'thousands'."
+    ],
+    "ext_b": [
+      "C",
+      "R",
+      "It looks straight up excitedly and points up with both arms at something big above it, bouncing once on its feet. Then it walks toward the right side of the frame and stops, facing the camera."
+    ],
+    "read_a": [
+      "R",
+      "R",
+      "Talking, it turns slightly toward the left side of the frame and presents something above and to the left with an open palm, like a game-show host, then turns back to the camera."
+    ],
+    "read_b": [
+      "R",
+      "R",
+      "Talking, it turns toward the left side of the frame, raises one arm high and slowly sweeps its pointing finger through the air from the left to the right in a gentle up-and-down wave, as if tracing a graph that is drawn somewhere above it, its eyes following its finger. Only the arm moves; nothing is drawn, no lines, no trails, no marks appear in the air."
+    ],
+    "read_c": [
+      "R",
+      "C",
+      "Talking, it raises one hand high with an excited little hop, then lowers the hand slowly in a wobbly wave while its eyes drift away as if bored. Then it walks toward the center of the frame and stops, facing the camera."
+    ],
+    "play_a": [
+      "C",
+      "SIT",
+      "It walks toward the right side of the frame, turns its body toward the left side of the frame, and sits down on the ground with its thin legs stretched out, looking toward the left as if watching a screen."
+    ],
+    "play_b": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground, it watches something on the left side of the frame attentively, nodding slowly along, then leans back on its hands, still watching."
+    ],
+    "play_c": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground, it keeps watching something on the left side of the frame, tilts its head curiously, and rests its chin on one hand, absorbed."
+    ],
+    "play_d": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground watching the left side of the frame, it suddenly leans forward with wide eyes and an open-mouthed smile, excited by what it sees, bouncing a little, then settles back."
+    ],
+    "play_e": [
+      "SIT",
+      "C",
+      "Sitting on the ground watching the left side of the frame, its expression drops into a slightly unimpressed frown and it tilts its head. Then it stands up, walks to the center of the frame and faces the camera."
+    ],
+    "lim_a": [
+      "C",
+      "C",
+      "Facing the camera and talking with a sincere expression, it raises one index finger as if saying 'one honest note', then lowers it."
+    ],
+    "lim_b": [
+      "C",
+      "C",
+      "Talking, it holds one hand out flat and wobbles it side to side in a 'so-so' gesture, then gives a modest shrug with both hands."
+    ],
+    "lim_c": [
+      "C",
+      "C",
+      "Talking, it gives the camera a warm smile, a friendly nod, and a thumbs up."
+    ],
+    "cta": [
+      "C",
+      "C",
+      "It points up above its head with one hand, then waves goodbye to the camera with a big smile."
+    ]
+  }
+}
