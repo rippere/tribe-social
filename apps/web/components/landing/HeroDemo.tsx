@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 import {
   DEMO_CALLOUTS,
   DEMO_CLIP,
@@ -10,18 +11,6 @@ import {
 } from './demo-data'
 
 const LAST = DEMO_STAGES.length - 1
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduced(mq.matches)
-    const onChange = () => setReduced(mq.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
-  return reduced
-}
 
 export default function HeroDemo() {
   const reducedMotion = usePrefersReducedMotion()
@@ -49,15 +38,15 @@ export default function HeroDemo() {
     <div className="mx-auto w-full max-w-[976px] overflow-hidden rounded-[22px] bg-elevated text-left shadow-[var(--shadow-window),var(--shadow-hairline)]">
       {/* Window chrome */}
       <div className="flex h-11 items-center justify-between border-b border-line px-4">
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
-          <span className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
-          <span className="h-3 w-3 rounded-full bg-[#28C840]" />
-          <span className="ml-3 text-[13px] text-muted">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-3 w-3 shrink-0 rounded-full bg-[#FF5F57]" />
+          <span className="h-3 w-3 shrink-0 rounded-full bg-[#FEBC2E]" />
+          <span className="h-3 w-3 shrink-0 rounded-full bg-[#28C840]" />
+          <span className="ml-3 truncate text-[13px] text-muted">
             {DEMO_CLIP.title} · 0:{String(DEMO_CLIP.seconds).padStart(2, '0')}
           </span>
           {IS_SAMPLE && (
-            <span className="ml-1 rounded-full bg-accent-bg px-2 py-0.5 text-[11px] font-medium text-accent">
+            <span className="ml-1 shrink-0 whitespace-nowrap rounded-full bg-accent-bg px-2 py-0.5 text-[11px] font-medium text-accent">
               Sample data
             </span>
           )}
@@ -72,7 +61,7 @@ export default function HeroDemo() {
         </button>
       </div>
 
-      <div className="grid md:grid-cols-[200px_1fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] md:grid-cols-[200px_minmax(0,1fr)]">
         {/* Stage rail */}
         <ol className="flex gap-1 border-b border-line p-3 md:flex-col md:border-b-0 md:border-r">
           {DEMO_STAGES.map((s, i) => {
@@ -80,7 +69,9 @@ export default function HeroDemo() {
             return (
               <li
                 key={s.key}
-                className={`flex flex-1 items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] transition-colors md:flex-none ${
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] transition-colors md:flex-none ${
+                  state === 'active' ? 'flex-1' : 'flex-none'
+                } ${
                   state === 'active' ? 'bg-fill text-ink' : state === 'done' ? 'text-ink' : 'text-muted'
                 }`}
               >
@@ -92,7 +83,8 @@ export default function HeroDemo() {
                 >
                   {state === 'done' ? '✓' : i + 1}
                 </span>
-                <span className="font-medium">{s.label}</span>
+                {/* Phones show only the active step's name so the rail fits */}
+                <span className={`font-medium ${state === 'active' ? '' : 'sr-only md:not-sr-only'}`}>{s.label}</span>
                 {state === 'active' && !done && (
                   <span className="ml-auto hidden h-1.5 w-1.5 animate-pulse rounded-full bg-accent md:block" />
                 )}
@@ -157,7 +149,7 @@ function Timeline({ revealed }: { revealed: boolean }) {
     <div className="rounded-2xl border border-line p-4">
       <div className="flex items-baseline justify-between">
         <p className="text-[13px] font-medium text-ink">Predicted attention, second by second</p>
-        <p className="font-mono text-[11px] text-muted">0:00 – 0:{String(n).padStart(2, '0')}</p>
+        <p className="shrink-0 whitespace-nowrap pl-3 font-mono text-[11px] text-muted">0:00 – 0:{String(n).padStart(2, '0')}</p>
       </div>
 
       <div className="relative mt-3">
