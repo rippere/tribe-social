@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Audio, Video } from '@remotion/media'
-import { AbsoluteFill, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
+import { AbsoluteFill, Easing, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { AppWindow, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
 import { Cortex, useCortexAssets, type CortexAssets } from './cortex'
 import { Captions, MascotLayer, Spot, cue, cutsFor, cutsLength, lit, pulse, type Cut, type Plate } from './mascot'
@@ -11,8 +11,13 @@ import result from './data/result.json'
 export type Orientation = 'landscape' | 'portrait'
 
 type Talk = keyof typeof narration
-const STIM_SECONDS = 24.03
-const STIM_FRAMES = Math.floor(STIM_SECONDS * FPS)
+// TRIBE predicts a brain scan, and scans trail the video by ~5 s (blood flow). The read
+// scene shows the line sliding back by that lag; from then on the video plays against
+// the aligned curve, which covers its first `ALIGNED.relative.length` seconds.
+const LAG = result.lag_seconds
+const ALIGNED = result.aligned
+const PLAY_SECONDS = ALIGNED.relative.length
+const PLAY_FRAMES = PLAY_SECONDS * FPS
 
 type SceneKey = 'intro' | 'upload' | 'encode' | 'extract' | 'read' | 'play' | 'cta'
 
@@ -28,19 +33,27 @@ interface SceneSpec {
   shots: { clip: string; at?: number }[]
 }
 
-// The watching scene pins its reactions to the result: the excited lean in play_d
-// starts 1.9 s into the shot, landing just after the peak (0:16) on the plateau;
-// play_e frowns from 0.5 s and stands up and walks off at ~2.4 s, over the decline
-// into the biggest drop (0:23).
+// The watching scene (silent Kling shots, mouth closed) pins its reactions to the
+// aligned result: w_c's excited lean lands just after the peak, w_d's attention drifts
+// over the biggest drop, and w_e stands up as the clip ends. *_AT are measured from
+// each shot's track (when the motion starts, seconds into the shot).
+const EXCITE_AT = 1.4
+const DRIFT_AT = 1.5
 const SPECS: SceneSpec[] = [
   { key: 'intro', shots: [{ clip: 'intro_a' }, { clip: 't_intro' }] },
   { key: 'upload', shots: [{ clip: 't_upload' }] },
   { key: 'encode', shots: [{ clip: 't_enc1' }, { clip: 't_enc2' }] },
   { key: 'extract', shots: [{ clip: 't_extract' }] },
-  { key: 'read', shots: [{ clip: 't_read1' }, { clip: 't_read2' }] },
+  { key: 'read', shots: [{ clip: 't_read1' }, { clip: 't_lag' }, { clip: 't_read2' }] },
   {
     key: 'play',
-    shots: [{ clip: 'play_a' }, { clip: 'play_b' }, { clip: 'play_c', at: 10.02 }, { clip: 'play_d', at: result.peak.second - 1 }, { clip: 'play_e', at: result.peak.second + 4.04 }],
+    shots: [
+      { clip: 'w_a' },
+      { clip: 'w_b' },
+      { clip: 'w_c', at: ALIGNED.peak.second + 0.3 - EXCITE_AT },
+      { clip: 'w_d', at: ALIGNED.drop.second - 0.3 - DRIFT_AT },
+      { clip: 'w_e', at: PLAY_SECONDS - 0.8 },
+    ],
   },
   { key: 'cta', shots: [{ clip: 't_outro' }] },
 ]
@@ -66,7 +79,7 @@ export function explainerDuration(): number {
   return SCENES.reduce((n, s) => n + s.frames, 0)
 }
 
-const HAS_RESULT = result.source === 'tribe' && result.relative.length > 1
+const HAS_RESULT = result.source === 'tribe' && result.relative.length > 1 && ALIGNED.relative.length > 1
 const WINDOW_SCENES: Partial<Record<SceneKey, Stage>> = { upload: 'upload', encode: 'encode', extract: 'extract', read: 'read', play: 'read' }
 
 /* ---------- layout ---------- */
@@ -161,7 +174,7 @@ function SceneBody({ scene, L, cortex, t }: { scene: Scene; L: Layout; cortex: C
   const w = scene.words
   switch (scene.key) {
     case 'intro':
-      return <Intro L={L} w={w} t={t} />
+      return <Intro L={L} w={w} t={t} cortex={cortex} />
     case 'upload':
       return <UploadPane L={L} w={w} t={t} />
     case 'encode':
@@ -186,14 +199,14 @@ function Stim({ trim = 0 }: { trim?: number }) {
   return <Video src={staticFile('media/stimulus.mp4')} muted trimBefore={trim} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 }
 
-function CortexBox({ cortex, t, w: width, h: height, rotation }: { cortex: CortexAssets | null; t: number; w: number; h: number; rotation: number }) {
+function CortexBox({ cortex, t, w: width, h: height, rotation, intensity = 1 }: { cortex: CortexAssets | null; t: number; w: number; h: number; rotation: number; intensity?: number }) {
   // ThreeCanvas rejects fractional sizes.
   const w = Math.round(width)
   const h = Math.round(height)
   if (!cortex) return <div style={{ width: w, height: h }} />
   return (
     <div style={{ position: 'relative', width: w, height: h }}>
-      <Cortex assets={cortex} t={t} rotation={rotation} width={w} height={h} />
+      <Cortex assets={cortex} t={t} rotation={rotation} width={w} height={h} intensity={intensity} />
       <div style={{ position: 'absolute', left: 14, bottom: 14 }}>
         {cortex.activity ? <Tag tone="accent">TRIBE v2 output · fsaverage cortex</Tag> : <Tag tone="amber">Awaiting model output · no activity shown</Tag>}
       </div>
@@ -203,17 +216,36 @@ function CortexBox({ cortex, t, w: width, h: height, rotation }: { cortex: Corte
 
 /* ---------- intro: walks in, introduces itself, points up at the name ---------- */
 
-function Intro({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
+function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: CortexAssets | null }) {
+  // The frame is full from the first frame: the clip playing, the cortex reacting, the
+  // line drawing. The brain walks in among them and points at each as it names it.
   const give = cue(w, /^Give/)
+  const brain = cue(w, /^average/)
+  const sbs = cue(w, /^second/)
   const name = cue(w, /^Eff/)
+  const show = (d: number) => interpolate(t, [0.2 + d, 1.1 + d], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
+  const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const box = (land: R, port: R, extra?: CSSProperties) => at(L, land, port, extra)
   return (
-    <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 360 : 150 }}>
-      <Spot on={pulse(t, name, 2.2)} radius={28} style={{ padding: '18px 44px', textAlign: 'center', opacity: interpolate(t, [0.3, 1, name - 0.1, name + 0.2], [0, 0.22, 0.22, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) }}>
-        <div style={{ fontSize: L.portrait ? 132 : 150, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
-      </Spot>
-      <div style={{ marginTop: 24, fontSize: L.portrait ? 38 : 40, color: C.muted, maxWidth: 860, lineHeight: 1.3, textAlign: 'center', opacity: lit(t, give, 0.5) }}>
-        A predicted brain response to your video, second by second.
+    <AbsoluteFill>
+      <div style={{ position: 'absolute', top: L.portrait ? 150 : 60, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: show(0) }}>
+        <Spot on={pulse(t, name, 2.2)} radius={28} style={{ padding: '10px 40px' }}>
+          <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
+        </Spot>
+        <div style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
       </div>
+      <Spot on={pulse(t, give, 2.2)} radius={24} style={box([230, 330, pw, (pw * 16) / 9], [80, 470, pw, (pw * 16) / 9], { opacity: show(0.4) })}>
+        <Phone width={pw}>
+          <Stim />
+        </Phone>
+      </Spot>
+      <Spot on={pulse(t, brain, 2.6)} radius={22} style={box([1340, 300, cw, ch], [420, 470, cw, ch], { opacity: show(0.8) })}>
+        <CortexBox cortex={cortex} t={(t % PLAY_SECONDS) + LAG} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.15} intensity={0.7 + 0.8 * pulse(t, brain, 2.6)} />
+      </Spot>
+      <Spot on={pulse(t, sbs, 2.2)} radius={16} style={box([1340, 720, cw, 150], [420, 950, cw, 180], { ...card, padding: 0, opacity: show(1.2) })}>
+        {HAS_RESULT && <ResponseChart values={ALIGNED.relative} upTo={curveUpTo} width={cw} height={L.portrait ? 180 : 150} />}
+      </Spot>
     </AbsoluteFill>
   )
 }
@@ -308,7 +340,8 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const at3 = [cue(w, /^frames/), cue(w, /^audio/), cue(w, /^words/)]
   const model = cue(w, /^Meta/)
   const learned = cue(w, /^learned/)
-  const scanner = cue(w, /^without/)
+  const mri = cue(w, /^MRI/)
+  const alone = cue(w, /^alone/)
   const bars = Array.from({ length: L.portrait ? 14 : 28 }, (_, i) => 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7 + frame * 0.21) * Math.cos(i * 0.6 + frame * 0.09)))
   const channel = (i: number, title: string, land: R, port: R, body: ReactNode) => (
     <Spot on={pulse(t, at3[i], 1.5)} style={at(L, land, port, { ...card, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden', padding: L.portrait ? 18 : 24 })}>
@@ -357,11 +390,31 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
         <div style={{ fontSize: L.portrait ? 44 : 34, fontWeight: 500 }}>TRIBE v2 · Meta FAIR</div>
         <div style={{ fontSize: L.portrait ? 24 : 20, color: C.muted }}>Trained on fMRI scans of people watching video.</div>
       </Spot>
-      <Spot on={pulse(t, scanner, 2)} style={at(L, [1270, 345, 565, 150], [30, 360, 980, 300], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10 })}>
-        <span style={{ ...label, color: lit(t, scanner) > 0.5 ? C.accent : C.muted }}>No scanner involved</span>
-        <div style={{ fontSize: L.portrait ? 24 : 20, color: C.muted, lineHeight: 1.4 }}>It predicts the response from the video file alone.</div>
+      <Spot on={Math.max(pulse(t, mri, 2.4), pulse(t, alone, 2.2))} style={at(L, [1270, 345, 565, 150], [30, 360, 980, 300], { ...card, display: 'flex', alignItems: 'center', gap: 20 })}>
+        <MriIcon size={L.portrait ? 120 : 92} crossed={lit(t, alone, 0.4)} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ ...label, color: lit(t, mri) > 0.5 ? C.accent : C.muted }}>{lit(t, alone) > 0.5 ? 'Not needed' : 'The usual way'}</span>
+          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: lit(t, alone) > 0.5 ? C.muted : C.ink, textDecoration: lit(t, alone) > 0.5 ? 'line-through' : 'none' }}>
+            Someone lies in an MRI machine while they watch.
+          </div>
+          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: C.accent, opacity: lit(t, alone, 0.4) }}>fMRIght predicts it from the video file.</div>
+        </div>
       </Spot>
     </>
+  )
+}
+
+/** A plain MRI scanner: the bore, the table, a person lying on it. `crossed` (0..1) strikes it out. */
+function MriIcon({ size, crossed }: { size: number; crossed: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ flexShrink: 0 }}>
+      <circle cx={50} cy={44} r={34} fill="none" stroke={C.muted} strokeWidth={7} />
+      <circle cx={50} cy={44} r={15} fill="none" stroke={C.muted} strokeWidth={3} />
+      <rect x={8} y={80} width={84} height={7} rx={3} fill={C.muted} />
+      <circle cx={30} cy={74} r={4.5} fill={C.ink} />
+      <rect x={34} y={71} width={36} height={6} rx={3} fill={C.ink} />
+      {crossed > 0 && <line x1={10} y1={90} x2={10 + 80 * crossed} y2={90 - 80 * crossed} stroke={C.accent} strokeWidth={7} strokeLinecap="round" />}
+    </svg>
   )
 }
 
@@ -383,7 +436,14 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
         <div style={{ fontSize: 19, color: C.muted }}>across the cortex surface</div>
       </Spot>
       <Spot on={Math.max(pulse(t, out, 1.2), pulse(t, glow, 2.2))} radius={22} style={at(L, [585, 0, cw, ch], [30, 20, cw, ch])}>
-        <CortexBox cortex={cortex} t={t % 24} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.12} />
+        <CortexBox
+          cortex={cortex}
+          t={lit(t, glow) > 0 ? ALIGNED.peak.second + LAG : t % PLAY_SECONDS}
+          w={cw}
+          h={ch}
+          rotation={Math.PI / 2 + Math.min(t, glow) * 0.12}
+          intensity={0.25 + 1.75 * lit(t, glow - 0.1, 0.6) - 0.35 * lit(t, glow + 1.2, 0.8) + 0.35 * Math.max(0, Math.sin((t - glow) * 6)) * lit(t, glow, 0.6)}
+        />
       </Spot>
       <Spot on={pulse(t, fps1, 2.4)} style={at(L, [1295, 160, 540, 290], [540, 700, 470, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 })}>
         <span style={label}>One per second</span>
@@ -404,15 +464,18 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
   const real = cue(w, /^real/)
   const line = cue(w, /^line/)
   const done = cue(w, /^second\.$/)
-  const ignore = cue(w, /^Ignore/)
+  const late = cue(w, /^late/)
+  const slide = cue(w, /^slide/)
   const climbs = cue(w, /^climbs/)
   const dips = cue(w, /^dips/)
   const upTo = interpolate(t, [line, done + 0.4], [0, result.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  // The scan trails the video by LAG seconds; on "slide" the line moves back into sync.
+  const shift = interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) })
   const bands = HAS_RESULT
     ? [
-        { from: 0, to: result.warmup_seconds, on: pulse(t, ignore, 3.6), label: 'ignore: the signal lags' },
-        { from: Math.max(result.warmup_seconds, result.peak.second - 4), to: result.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
-        { from: result.drop.second - 1, to: result.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
+        { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind` },
+        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
+        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
       ]
     : []
   const [chartW, chartH] = L.portrait ? [980, 440] : [1535, 440]
@@ -426,12 +489,12 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
       </Spot>
       {L.portrait && (
         <div style={at(L, [0, 0, 0, 0], [360, 20, 650, 533])}>
-          <CortexBox cortex={cortex} t={0} w={650} h={533} rotation={Math.PI / 2} />
+          <CortexBox cortex={cortex} t={LAG} w={650} h={533} rotation={Math.PI / 2} />
         </div>
       )}
-      <Spot on={pulse(t, line, 3.2)} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
+      <Spot on={Math.max(pulse(t, line, 3.2), pulse(t, slide, 2))} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
         {HAS_RESULT ? (
-          <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} warmup={result.warmup_seconds} bands={bands} />
+          <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} bands={bands} shift={shift} />
         ) : (
           <Tag tone="amber">Awaiting model output · no curve shown</Tag>
         )}
@@ -452,11 +515,11 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
 
 function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets | null }) {
   const frame = useCurrentFrame()
-  const s = Math.min(Math.floor(t), result.relative.length - 1)
+  const s = Math.min(Math.floor(t), ALIGNED.relative.length - 1)
   const callouts = HAS_RESULT
     ? [
-        { second: result.peak.second, label: 'Highest', said: result.peak.said },
-        { second: result.drop.second, label: 'Biggest drop', said: result.drop.said },
+        { second: ALIGNED.peak.second, label: 'Highest', said: ALIGNED.peak.said },
+        { second: ALIGNED.drop.second, label: 'Biggest drop', said: ALIGNED.drop.said },
       ].sort((a, b) => a.second - b.second)
     : []
   const [chartW, chartH] = L.portrait ? [980, 300] : [690, 250]
@@ -466,10 +529,10 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
       <div style={at(L, [40, 20, 470, 836], [30, 20, 400, 711])}>
         <Phone width={L.portrait ? 400 : 470}>
           {/* The character walks off over the last drop, a second past the clip's end: hold its last frame. */}
-          {frame < STIM_FRAMES ? (
+          {frame < PLAY_FRAMES ? (
             <Video src={staticFile('media/stimulus.mp4')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <Freeze frame={STIM_FRAMES - 1}>
+            <Freeze frame={PLAY_FRAMES - 1}>
               <Video src={staticFile('media/stimulus.mp4')} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Freeze>
           )}
@@ -479,19 +542,19 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
         </div>
       </div>
       <div style={at(L, [560, 10, cw, ch], [460, 20, cw, ch])}>
-        <CortexBox cortex={cortex} t={t} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.05} />
+        <CortexBox cortex={cortex} t={Math.min(t, PLAY_SECONDS - 1) + LAG} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.05} />
       </div>
       <div style={at(L, [1150, 20, 690, 180], [460, 440, 550, 290], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: L.portrait ? 16 : 10 })}>
         <span style={label}>Now</span>
         <div style={{ fontFamily: MONO, fontSize: L.portrait ? 72 : 52, fontVariantNumeric: 'tabular-nums' }}>0:{String(Math.max(0, s)).padStart(2, '0')}</div>
         <div style={{ height: 12, borderRadius: 6, background: C.fill, overflow: 'hidden' }}>
-          <div style={{ width: `${(HAS_RESULT ? result.relative[Math.max(0, s)] : 0) * 100}%`, height: '100%', background: s < result.warmup_seconds ? C.muted : C.accent }} />
+          <div style={{ width: `${(HAS_RESULT ? ALIGNED.relative[Math.max(0, s)] : 0) * 100}%`, height: '100%', background: C.accent }} />
         </div>
-        <div style={{ fontSize: 18, color: C.muted }}>{s < result.warmup_seconds ? 'Warm-up: the signal lags ~5 s' : 'Predicted response, relative to this clip'}</div>
+        <div style={{ fontSize: 18, color: C.muted }}>Predicted response, lined up with the video</div>
       </div>
       <div style={at(L, [1150, 215, chartW, chartH], [30, 770, chartW, chartH])}>
         {HAS_RESULT ? (
-          <ResponseChart values={result.relative} upTo={t} width={chartW} height={chartH} markers={callouts.map(c => ({ second: c.second, label: c.label }))} warmup={result.warmup_seconds} />
+          <ResponseChart values={ALIGNED.relative} upTo={t} width={chartW} height={chartH} markers={callouts.map(c => ({ second: c.second, label: c.label }))} />
         ) : (
           <Tag tone="amber">Awaiting model output · no curve shown</Tag>
         )}
@@ -505,7 +568,7 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
         ))}
       </div>
       <div style={at(L, [560, 455, 560, 50], [30, 1230, 980, 60], { fontFamily: MONO, fontSize: 14, color: C.muted, lineHeight: 1.4 })}>
-        Whole-cortex predicted response (RMS across 20,484 points), relative to this clip. Model output, not measured brain data.
+        Whole-cortex predicted response (RMS across 20,484 points), relative to this clip, slid back {LAG} s to line up with the video. Model output, not measured brain data.
       </div>
     </>
   )

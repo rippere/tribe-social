@@ -10,7 +10,7 @@
         null
       ],
       "duration": 14,
-      "prompt": "While it says 'Hi! I'm a brain' it puts one hand on its chest. While it says 'Well, a prediction of one' it wobbles one flat hand side to side and gives a small shrug. While it says 'Give me a video' it holds both hands out toward the camera, palms up. While it says 'and I'll show you how an average viewer's brain is predicted to respond to it' it points at the camera, then taps the top of its own head. While it says 'second by second' it taps one finger in the air in a steady beat. While it says 'This is fMRIght' it points straight up above its head with both arms and holds it, then lowers its arms and stands relaxed facing the camera."
+      "prompt": "While it says 'Hi! I'm a brain' it waves and then puts one hand on its chest. While it says 'Well, a prediction of one' it wobbles one flat hand side to side and gives a small shrug. While it says 'Give me a video' it points up and to the upper left, holding the point. While it says 'and I'll predict how an average viewer's brain responds to it' it points up and to the upper right, holding the point. While it says 'second by second' it taps one finger in the air in a steady beat. While it says 'This is fMRIght' it points straight up above its head with both arms and holds it, then lowers its arms and stands relaxed facing the camera."
     },
     "t_upload": {
       "audio": [
@@ -32,12 +32,12 @@
     },
     "t_enc2": {
       "audio": [
-        "n3_encode",
-        7.6,
+        "n3b_scan",
+        0,
         null
       ],
-      "duration": 8,
-      "prompt": "While it says 'It learned from brain scans of people watching videos' it taps the side of its own head with one finger, nodding. While it says 'so it can predict a response' it opens both hands, palms up. While it says 'without anyone lying in a scanner' it points up and to the upper right, then wags one finger side to side and shakes its head with a small smile. Then it lowers its arm and stands relaxed facing the camera."
+      "duration": 12,
+      "prompt": "While it says 'Normally, to see how a brain reacts, you'd put someone in an MRI machine' it points up and to the upper right, holding the point, then lies its open hand flat as if something is lying down. While it says 'TRIBE learned from scans like that' it taps the side of its own head with one finger, nodding. While it says 'so it can predict the reaction from the video alone' it points up and to the upper left, then opens both hands palms up. Then it stands relaxed facing the camera. Its hands are empty: it never holds a stick, pointer or wand."
     },
     "t_extract": {
       "audio": [
@@ -52,10 +52,19 @@
       "audio": [
         "n5_read",
         0,
+        7.6
+      ],
+      "duration": 8,
+      "prompt": "While it says 'Here's a real clip we scored' it points up and to the upper left, holding the point. While it says 'This line is the predicted response across my whole surface, second by second' it points straight up above its head and holds that point, nodding along. Then it lowers its arm and stands relaxed facing the camera. Its hands are empty: it never holds a stick, pointer or wand. No lines, beams, threads or marks ever appear in the air."
+    },
+    "t_lag": {
+      "audio": [
+        "n5_read",
+        7.6,
         null
       ],
-      "duration": 14,
-      "prompt": "While it says 'Here's a real clip we scored' it points up and to the upper left. While it says 'This line tracks my whole surface's predicted response, second by second' it points straight up and slowly sweeps its pointing finger through the air from the left to the right, its eyes following it. While it says 'Ignore the first five seconds' it points up and to the upper left again, then waves that hand dismissively. While it says 'the signal lags, so everything starts low' it holds one flat hand low near the ground. Then it stands relaxed facing the camera. Only the arm moves; nothing is drawn, no lines, no trails, no marks appear in the air."
+      "duration": 9,
+      "prompt": "While it says 'Brain scans run about five seconds late' it taps its wrist with one finger as if checking a watch. While it says 'because blood flow takes time to arrive' it traces a slow wavy line down the front of its own body with one finger. While it says 'So I slide the line back to match the video' it raises one open hand straight up above its head and pushes it slowly from the right to the left, as if sliding something above it toward the left. Then it lowers its arm and stands relaxed facing the camera. Nothing is drawn in the air. Its hands are empty: it never holds a stick, pointer or wand."
     },
     "t_read2": {
       "audio": [

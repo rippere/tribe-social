@@ -1,7 +1,7 @@
 {
   "_doc": "One Kling 3.0 shot per narration beat. Every shot starts and ends on an anchor frame (anchors/A_*.png: the same keyed mascot at a fixed size and ground line), so shots join without a jump and can be generated in parallel without drift. Directions are screen-relative.",
   "prefix": "Static locked-off camera, no camera movement, no zoom, no cuts. The small brain mascot character is on a flat uniform chroma-key green background that never changes. ",
-  "suffix": " The character keeps exactly the same size and stays on the same ground line. Its small mouth moves as if talking whenever it speaks. Character design never changes: matte graphite cortex body, flat cyan patches, round black eyes, thin graphite stick arms and legs. No glow, no particles, no text, no props, no shadows on the background.",
+  "suffix": " The character keeps exactly the same size and stays on the same ground line. Its mouth stays closed the whole time unless the shot says it talks. Character design never changes: matte graphite cortex body, flat cyan patches, round black eyes, thin graphite stick arms and legs. No glow, no particles, no text, no props, no shadows on the background.",
   "shots": {
     "intro_a": [
       "empty",
@@ -112,6 +112,31 @@
       "C",
       "C",
       "It points up above its head with one hand, then waves goodbye to the camera with a big smile."
+    ],
+    "w_a": [
+      "C",
+      "SIT",
+      "Mouth closed, not talking. It walks toward the right side of the frame, turns its body toward the left side of the frame and sits down on the ground with its thin legs stretched out, looking toward the left as if settling in to watch a screen, then twiddles its thumbs."
+    ],
+    "w_b": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground facing the left side of the frame, watching a screen there, mouth closed the whole time, never talking. It twiddles its thumbs slowly while watching attentively, blinking now and then, giving one small curious head tilt."
+    ],
+    "w_c": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground facing the left side of the frame, watching a screen there, mouth closed the whole time, never talking. It suddenly leans forward with wide eyes and a big closed-mouth grin, bouncing a little with excitement, clapping its hands once, then settles back, still smiling and watching."
+    ],
+    "w_d": [
+      "SIT",
+      "SIT",
+      "Sitting on the ground facing the left side of the frame, watching a screen there, mouth closed the whole time, never talking. Its attention slowly drifts: its eyes wander away from the screen, its shoulders slump, it lazily twiddles its thumbs and rests its chin on one hand, bored."
+    ],
+    "w_e": [
+      "SIT",
+      "C",
+      "Mouth closed, not talking. Sitting on the ground, it glances back at the left side of the frame one last time, then stands up, brushes off its hands, walks to the center of the frame and faces the camera with a small smile."
     ]
   }
 }

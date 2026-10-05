@@ -99,6 +99,7 @@ export function ResponseChart({
   markers = [],
   warmup = 0,
   bands = [],
+  shift = 0,
 }: {
   values: number[]
   upTo: number
@@ -109,6 +110,8 @@ export function ResponseChart({
   warmup?: number
   /** Stretches of the curve the narrator is pointing at, faded in by `on` (0..1). */
   bands?: { from: number; to: number; on: number; label: string }[]
+  /** Slide the curve left by this many seconds (the scan delay); the uncovered tail is shaded. */
+  shift?: number
 }) {
   const pad = { l: 16, r: 16, t: 24, b: 40 }
   const w = width - pad.l - pad.r
@@ -119,11 +122,12 @@ export function ResponseChart({
   const reveal = Math.max(0, Math.min(upTo, n - 1))
 
   const pts: [number, number][] = []
-  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s), y(values[s])])
+  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s - shift), y(values[s])])
   const f0 = Math.floor(reveal)
   if (f0 < n - 1 && reveal > f0) {
-    pts.push([x(reveal), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
+    pts.push([x(reveal - shift), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
   }
+  const clipId = `rc-${width}-${height}`
   const head = pts[pts.length - 1]
 
   return (
@@ -147,10 +151,23 @@ export function ResponseChart({
       {Array.from({ length: Math.floor((n - 1) / 5) + 1 }, (_, i) => i * 5).map(s => (
         <text key={s} x={x(s)} y={height - 12} fill={C.muted} fontSize={15} textAnchor="middle">0:{String(s).padStart(2, '0')}</text>
       ))}
-      {pts.length > 1 && (
-        <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={C.accent} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={pad.l - 6} y={0} width={w + 12} height={height} />
+        </clipPath>
+      </defs>
+      {shift > 0.05 && (
+        <g opacity={Math.min(1, shift)}>
+          <rect x={x(n - 1 - shift)} y={pad.t} width={x(n - 1) - x(n - 1 - shift)} height={h} fill="rgba(255,255,255,0.045)" />
+          <text x={x(n - 1) - 10} y={pad.t + 22} fill={C.muted} fontSize={14} textAnchor="end">still arriving</text>
+        </g>
       )}
-      {head && upTo > 0 && upTo < n - 1 && <circle cx={head[0]} cy={head[1]} r={8} fill={C.accent} />}
+      <g clipPath={`url(#${clipId})`}>
+        {pts.length > 1 && (
+          <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={C.accent} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />
+        )}
+        {head && upTo > 0 && upTo < n - 1 && <circle cx={head[0]} cy={head[1]} r={8} fill={C.accent} />}
+      </g>
       {markers.filter(m => m.second <= reveal).map(m => (
         <g key={m.label}>
           <line x1={x(m.second)} x2={x(m.second)} y1={pad.t} y2={pad.t + h} stroke="rgba(255,255,255,0.35)" strokeDasharray="4 6" />

@@ -66,5 +66,39 @@
   "second": 23,
   "said": "I am never going back",
   "size": 0.1838
+ },
+ "lag_seconds": 5,
+ "aligned": {
+  "relative": [
+   0.2581,
+   0.2026,
+   0.2421,
+   0.3767,
+   0.5454,
+   0.5761,
+   0.7515,
+   0.5981,
+   0.5993,
+   0.714,
+   0.8841,
+   1.0,
+   0.9143,
+   0.8572,
+   0.884,
+   0.7312,
+   0.6316,
+   0.6416,
+   0.4579,
+   0.7929
+  ],
+  "peak": {
+   "second": 11,
+   "said": "tells you to use. You save a little pasta water, add"
+  },
+  "drop": {
+   "second": 18,
+   "said": "Okay, yeah",
+   "size": 0.1838
+  }
  }
 }
