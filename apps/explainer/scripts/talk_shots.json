@@ -1,0 +1,79 @@
+{
+  "_doc": "v3 talking shots: Seedance 2.0, lip-synced to the narration. One shot per line (or half line), start and end on the centre anchor. The scorer UI is laid out in three targets around the standing character: up-left, straight up, up-right. Each gesture names one of those directions on the word that names the element, so the point lands on what is being described. 'audio' is [line, from_s, to_s] cut from <media>/v3/narration/<line>.mp3; 'duration' is whole seconds (Seedance max 15).",
+  "prefix": "Static locked-off camera, no camera movement, no zoom, no cuts. The small brain mascot character stands on a flat uniform chroma-key green background that never changes. It is speaking the provided voice recording: its small mouth moves in sync with the spoken words, stays closed in the pauses, and stays closed after the voice ends. Directions are from the viewer's point of view: 'left' is the left edge of the frame, 'right' is the right edge. ",
+  "suffix": " Its hands are always empty: it never holds, throws or tosses anything. It stays at the center of the frame, keeps exactly the same size and stays on the same ground line. Character design never changes: matte graphite cortex body, flat cyan patches, round black eyes, thin graphite stick arms and legs. No glow, no particles, no text, no props, no shadows on the background.",
+  "shots": {
+    "t_intro": {
+      "audio": [
+        "n1_intro",
+        0,
+        null
+      ],
+      "duration": 14,
+      "prompt": "While it says 'Hi! I'm a brain' it puts one hand on its chest. While it says 'Well, a prediction of one' it wobbles one flat hand side to side and gives a small shrug. While it says 'Give me a video' it holds both hands out toward the camera, palms up. While it says 'and I'll show you how an average viewer's brain is predicted to respond to it' it points at the camera, then taps the top of its own head. While it says 'second by second' it taps one finger in the air in a steady beat. While it says 'This is fMRIght' it points straight up above its head with both arms and holds it, then lowers its arms and stands relaxed facing the camera."
+    },
+    "t_upload": {
+      "audio": [
+        "n2_upload",
+        0,
+        null
+      ],
+      "duration": 10,
+      "prompt": "While it says 'First, you upload a clip' it lifts the arm on the left side of the frame high and points far up and out to the upper left corner, holding the point. While it says 'It goes to a graphics card we rent in the cloud' it lowers that arm and stretches the other arm straight up above its head, pointing at the sky, holding the point. While it says 'Once it's scored, we delete the video' it swings that arm out wide and points far up and out to the upper right corner, then shakes its head. While it says 'and keep only the scores' it gives a big thumbs up out toward the upper right with the arm on the right side of the frame and nods, then lowers its arm and stands relaxed facing the camera."
+    },
+    "t_enc1": {
+      "audio": [
+        "n3_encode",
+        0,
+        7.6
+      ],
+      "duration": 8,
+      "prompt": "While it says 'There, Meta's TRIBE v2 model' it raises both open palms upward toward the space above it, presenting something. While it says 'watches the frames' it points up and to the upper left. While it says 'listens to the audio' it points straight up above its head. While it says 'and reads the words' it points up and to the upper right. Then it lowers its arm and stands relaxed facing the camera."
+    },
+    "t_enc2": {
+      "audio": [
+        "n3_encode",
+        7.6,
+        null
+      ],
+      "duration": 8,
+      "prompt": "While it says 'It learned from brain scans of people watching videos' it taps the side of its own head with one finger, nodding. While it says 'so it can predict a response' it opens both hands, palms up. While it says 'without anyone lying in a scanner' it points up and to the upper right, then wags one finger side to side and shakes its head with a small smile. Then it lowers its arm and stands relaxed facing the camera."
+    },
+    "t_extract": {
+      "audio": [
+        "n4_extract",
+        0,
+        null
+      ],
+      "duration": 11,
+      "prompt": "While it says 'Out comes a prediction' it opens both arms upward. While it says 'for about twenty thousand points' it points up and to the upper left, holding the point. While it says 'across my surface' it looks down at itself and sweeps both hands over its own folded body from the top to the sides. While it says 'a new one every second of video' it points up and to the upper right, tapping the air in a steady beat. While it says 'That's me lighting up' it points straight up above its head with both arms and bounces once on its feet, delighted, then lowers its arms and stands relaxed facing the camera."
+    },
+    "t_read1": {
+      "audio": [
+        "n5_read",
+        0,
+        null
+      ],
+      "duration": 14,
+      "prompt": "While it says 'Here's a real clip we scored' it points up and to the upper left. While it says 'This line tracks my whole surface's predicted response, second by second' it points straight up and slowly sweeps its pointing finger through the air from the left to the right, its eyes following it. While it says 'Ignore the first five seconds' it points up and to the upper left again, then waves that hand dismissively. While it says 'the signal lags, so everything starts low' it holds one flat hand low near the ground. Then it stands relaxed facing the camera. Only the arm moves; nothing is drawn, no lines, no trails, no marks appear in the air."
+    },
+    "t_read2": {
+      "audio": [
+        "n6_read2",
+        0,
+        null
+      ],
+      "duration": 8,
+      "prompt": "While it says 'When the line climbs' it points straight up and raises its pointing hand higher in small steps. While it says 'an average viewer is predicted to lock in' it leans forward with wide, focused eyes. While it says 'When it dips' it points up and to the upper right and lets its hand sink. While it says 'they're predicted to drift off' its eyes drift away and its shoulders droop as if bored. Then it straightens up and stands relaxed facing the camera."
+    },
+    "t_outro": {
+      "audio": [
+        "n7_outro",
+        0,
+        null
+      ],
+      "duration": 6,
+      "prompt": "While it says 'That's me, reading a video' it puts one hand on its chest proudly. While it says 'Upload one of yours' it points straight up above its head. While it says 'and watch me light up' it spreads both arms wide with a big smile. After the voice ends it waves goodbye to the camera with one hand, then lowers it and stands relaxed facing the camera."
+    }
+  }
+}

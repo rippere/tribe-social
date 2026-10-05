@@ -16,13 +16,20 @@ OUT="$HERE/public/media"
 mkdir -p "$OUT/mascot" "$OUT/narration" "$HERE/public/cortex"
 
 cp "$SRC/stimulus/mac_and_cheese.mp4" "$OUT/stimulus.mp4"
-# Mascot shots are green-screen Kling clips (scripts/gen_mascot.py); key them to
-# alpha WebM and refresh the per-frame track the composition positions against.
+# Mascot shots are green-screen clips: Kling for the walk-in and the watching scene
+# (scripts/gen_mascot.py), Seedance for the talking shots (scripts/gen_talk.py). Key
+# them to alpha WebM and refresh the per-frame track the composition times against.
 uv run --no-project --with numpy python "$HERE/scripts/key_mascot.py" \
-  --src "$SRC/v2/clips" --out "$OUT/mascot" --track "$HERE/src/data/mascot_track.json"
-for k in n1_intro n2_upload n3_encode n4_extract n5_read n6_limits; do
-  cp "$SRC/narration/$k.mp3" "$SRC/narration/$k.txt" "$OUT/narration/"
-done
+  --src "$SRC/v2/clips" --out "$OUT/mascot" --track "$HERE/src/data/mascot_track.json" \
+  --only intro_a play_a play_b play_c play_d play_e
+talk=$(python3 -c 'import json,sys; print(" ".join(json.load(open(sys.argv[1]))["shots"]))' "$HERE/scripts/talk_shots.json")
+[[ -n "$talk" ]] || { echo "no talking shots in scripts/talk_shots.json" >&2; exit 1; }
+# shellcheck disable=SC2086  # $talk is a space-separated list of shot names
+uv run --no-project --with numpy python "$HERE/scripts/key_mascot.py" \
+  --src "$SRC/v3/clips" --out "$OUT/mascot" --track "$HERE/src/data/mascot_track.json" --only $talk
+# Full lines (for alignment) and each talking shot's audio slice (what plays).
+cp "$SRC"/v3/narration/n*.mp3 "$SRC"/v3/narration/n*.txt "$OUT/narration/"
+cp "$SRC"/v3/clips/t_*.mp3 "$OUT/narration/"
 
 # Cortex mesh + exporter live on feat/cortex-render until it merges.
 git -C "$ROOT" show feat/cortex-render:apps/web/public/cortex/cortex.glb > "$HERE/public/cortex/cortex.glb"

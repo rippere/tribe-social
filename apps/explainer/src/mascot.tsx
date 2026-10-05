@@ -6,13 +6,13 @@ import trackData from './data/mascot_track.json'
 import { C, FONT, FPS } from './theme'
 
 /*
- * The mascot is a chain of one-off Kling shots (scripts/mascot_shots.json), each
- * keyed to alpha WebM. Every shot starts and ends on the same anchor frames, so
- * consecutive shots join without a jump. A scene splits its length evenly over
- * its shots and plays each at whatever rate fills its slot (about 0.85x–1.25x).
+ * The mascot is a chain of one-off shots, each keyed to alpha WebM. Talking shots
+ * are Seedance, lip-synced to their sentence (scripts/talk_shots.json); the walk-in
+ * and the watching scene are Kling (scripts/mascot_shots.json). Every shot starts
+ * and ends on the same anchor frames, so consecutive shots join without a jump.
  *
  * mascot_track.json holds the character's per-frame bounding box (normalised to
- * the clip), written by scripts/key_mascot.py. Bubbles and highlights hang off it.
+ * the clip), written by scripts/key_mascot.py; cutsFor reads clip lengths from it.
  */
 
 type Box = { l: number; r: number; t: number; b: number; cx: number } | null
@@ -37,15 +37,40 @@ export interface Cut {
   rate: number
 }
 
-export function cutsFor(clips: string[], frames: number): Cut[] {
-  const per = frames / clips.length
-  return clips.map((clip, i) => {
-    const from = Math.round(i * per)
-    const dur = Math.round((i + 1) * per) - from
+/**
+ * Shots back to back at their natural speed: one shot per spoken sentence, so a
+ * gesture lands on the word it was generated for. `at` pins a shot's start (in
+ * seconds from the scene start) when it has to meet something on screen, like a
+ * reaction on the result's peak; the shot before it is then sped up or slowed to
+ * fill the gap.
+ */
+export function cutsFor(shots: { clip: string; at?: number }[]): Cut[] {
+  const natural = (clip: string) => {
     const t = TRACKS[clip]
-    const srcFrames = t ? (t.frames.length * FPS) / t.fps : dur
-    return { clip, from, dur, rate: srcFrames / dur }
+    if (!t) throw new Error(`No track for mascot clip "${clip}": key it with scripts/key_mascot.py (npm run sync)`)
+    return Math.round((t.frames.length * FPS) / t.fps)
+  }
+  const starts: number[] = []
+  let f = 0
+  shots.forEach((s, i) => {
+    f = s.at !== undefined ? Math.round(s.at * FPS) : i === 0 ? 0 : f
+    starts.push(f)
+    f += natural(s.clip)
   })
+  return shots.map((s, i) => {
+    const from = starts[i]
+    const dur = (i + 1 < shots.length ? starts[i + 1] : from + natural(s.clip)) - from
+    const rate = natural(s.clip) / dur
+    // A pin too close to (or before) the previous shot would squeeze it past what reads as motion.
+    if (!(rate >= 0.5 && rate <= 2)) throw new Error(`Shot "${s.clip}" would play at ${rate.toFixed(2)}x: move the next shot's pin`)
+    return { clip: s.clip, from, dur, rate }
+  })
+}
+
+/** Length of a chain of cuts, in frames. */
+export function cutsLength(cuts: Cut[]): number {
+  const last = cuts[cuts.length - 1]
+  return last.from + last.dur
 }
 
 function boxAt(cuts: Cut[], frame: number): Box {
@@ -56,18 +81,25 @@ function boxAt(cuts: Cut[], frame: number): Box {
   return t.frames[Math.min(t.frames.length - 1, Math.max(0, i))]
 }
 
-/** Character centre x on the canvas, averaged over ±k frames so a bubble riding on it doesn't jitter. */
-export function charX(cuts: Cut[], frame: number, plate: Plate, k = 8): number | null {
-  let sum = 0
-  let n = 0
-  for (let f = frame - k; f <= frame + k; f++) {
-    const b = boxAt(cuts, f)
-    if (b) {
-      sum += b.cx
-      n++
-    }
+/** The centre anchor (A_C) as keyed: centre x, feet and height, normalised to the clip. */
+const STAND = { cx: 0.498, b: 0.946, h: 0.354 }
+
+/**
+ * Seedance sometimes frames a talking shot tighter than its start image (same pose,
+ * the character twice the size). Such a shot still starts and ends on itself, so
+ * scaling it about its feet back to the anchor's size and spot joins it cleanly.
+ * Small offsets (feet a few pixels high) are only moved, not scaled.
+ */
+function fitToAnchor(clip: string, plate: Plate): CSSProperties {
+  const f = clip.startsWith('t_') ? TRACKS[clip]?.frames[0] : null
+  if (!f) return {}
+  const raw = STAND.h / (f.b - f.t)
+  const s = Math.abs(raw - 1) < 0.04 ? 1 : raw
+  if (s === 1 && Math.abs(STAND.cx - f.cx) < 0.002 && Math.abs(STAND.b - f.b) < 0.002) return {}
+  return {
+    transformOrigin: `${f.cx * 100}% ${f.b * 100}%`,
+    transform: `translate(${(STAND.cx - f.cx) * plate.w}px, ${(STAND.b - f.b) * plate.h}px) scale(${s})`,
   }
-  return n ? plate.x + (sum / n) * plate.w : null
 }
 
 export function MascotLayer({ cuts, plate }: { cuts: Cut[]; plate: Plate }) {
@@ -80,7 +112,7 @@ export function MascotLayer({ cuts, plate }: { cuts: Cut[]; plate: Plate }) {
               src={staticFile(`media/mascot/${c.clip}.webm`)}
               muted
               playbackRate={c.rate}
-              style={{ position: 'absolute', left: plate.x, top: plate.y, width: plate.w, height: plate.h }}
+              style={{ position: 'absolute', left: plate.x, top: plate.y, width: plate.w, height: plate.h, ...fitToAnchor(c.clip, plate) }}
             />
           </Sequence>
         ) : null,
@@ -90,82 +122,29 @@ export function MascotLayer({ cuts, plate }: { cuts: Cut[]; plate: Plate }) {
 }
 
 /**
- * The narration as a speech bubble on the character. `side` puts it beside the
- * head (landscape, where height is scarce) or above it (portrait).
+ * The narration as captions. Landscape: a lower third at the bottom left, clear of
+ * the character, who stands at centre. Portrait: centred in the band between the
+ * scorer UI and the character's head. Words light up as they are spoken.
  */
-export function Bubble({
-  words,
-  t,
-  x,
-  headY,
-  side,
-  canvasW,
-  canvasH,
-  size,
-  maxWidth,
-}: {
-  words: Word[]
-  t: number
-  x: number | null
-  headY: number
-  side: 'left' | 'right' | 'above'
-  canvasW: number
-  canvasH: number
-  size: number
-  maxWidth: number
-}) {
+export function Captions({ words, t, portrait }: { words: Word[]; t: number; portrait: boolean }) {
   const phrase = phraseAt(words, t)
-  if (!phrase || x === null) return null
-  const first = words[0].s
-  const last = words[words.length - 1].e
-  const o = interpolate(t, [first - 0.25, first, last + 0.4, last + 0.7], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  const body: CSSProperties = {
-    position: 'absolute',
-    maxWidth,
-    width: 'max-content',
-    padding: `${size * 0.42}px ${size * 0.62}px`,
-    borderRadius: size * 0.6,
-    background: C.ink,
-    fontFamily: FONT,
-    fontSize: size,
-    fontWeight: 500,
-    lineHeight: 1.22,
-    letterSpacing: -0.3,
-    opacity: o,
-  }
-  const text = phrase.map((w, i) => (
-    <span key={i} style={{ color: t >= w.s ? C.bg : 'rgba(15,15,15,0.32)' }}>
-      {w.display}
-      {i < phrase.length - 1 ? ' ' : ''}
-    </span>
-  ))
-  const tw = size * 0.5
-  const tail = (style: CSSProperties) => <div style={{ position: 'absolute', width: 0, height: 0, opacity: o, ...style }} />
-  if (side === 'above') {
-    // Clamp on the bubble's likely width, not its max, so a short phrase stays over its tail.
-    const est = phrase.reduce((n, w) => n + w.display.length + 1, 0) * size * 0.52 + size * 1.24
-    const half = Math.min(maxWidth, est) / 2
-    const left = Math.min(Math.max(x, 24 + half), canvasW - 24 - half)
-    const bottom = headY - 18 - tw
-    return (
-      <>
-        <div style={{ ...body, left, bottom: canvasH - bottom, transform: 'translateX(-50%)', textAlign: 'center' }}>{text}</div>
-        {tail({ left: x - tw, top: bottom - 1, borderLeft: `${tw}px solid transparent`, borderRight: `${tw}px solid transparent`, borderTop: `${tw}px solid ${C.ink}` })}
-      </>
-    )
-  }
-  const gap = 0.095 * canvasW + 24
-  const top = headY + size * 0.3
-  return side === 'right' ? (
-    <>
-      <div style={{ ...body, left: x + gap, top }}>{text}</div>
-      {tail({ left: x + gap - tw + 1, top: top + size * 0.55, borderTop: `${tw}px solid transparent`, borderBottom: `${tw}px solid transparent`, borderRight: `${tw}px solid ${C.ink}` })}
-    </>
-  ) : (
-    <>
-      <div style={{ ...body, right: canvasW - (x - gap), top }}>{text}</div>
-      {tail({ left: x - gap - 1, top: top + size * 0.55, borderTop: `${tw}px solid transparent`, borderBottom: `${tw}px solid transparent`, borderLeft: `${tw}px solid ${C.ink}` })}
-    </>
+  if (!phrase) return null
+  const size = portrait ? 46 : 40
+  const o = interpolate(t, [phrase[0].s - 0.25, phrase[0].s], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const box: CSSProperties = portrait
+    ? { left: 60, right: 60, bottom: 1920 - 1480, textAlign: 'center', justifyContent: 'center' }
+    : { left: 64, bottom: 64, maxWidth: 660, borderLeft: `4px solid ${C.accent}`, paddingLeft: 24 }
+  return (
+    <div style={{ position: 'absolute', display: 'flex', flexWrap: 'wrap', fontFamily: FONT, fontSize: size, fontWeight: 500, lineHeight: 1.25, letterSpacing: -0.3, opacity: o, textShadow: '0 2px 18px rgba(0,0,0,0.85)', ...box }}>
+      <span>
+        {phrase.map((w, i) => (
+          <span key={i} style={{ color: t >= w.s ? C.ink : 'rgba(242,242,240,0.38)' }}>
+            {w.display}
+            {i < phrase.length - 1 ? ' ' : ''}
+          </span>
+        ))}
+      </span>
+    </div>
   )
 }
 
