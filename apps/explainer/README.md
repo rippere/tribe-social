@@ -82,8 +82,9 @@ green and keyed to alpha:
 - **No real data, nothing shown:** if `activity.*` or `result.json` is missing, the
   scenes show an amber "awaiting model output" tag. They never fall back to
   illustrative data.
-- **Limits:** v3 drops the spoken limits scene. The sign-off card keeps one line
-  ("predictions are model output, not a forecast of views") and the play scene notes
-  "model output, not measured brain data". The pilot evidence (r = 0.25, p = 0.24,
-  n = 24) belongs on the page this video sits on. TRIBE v2 is CC-BY-NC-4.0; check
+- **Limits:** v3 drops the spoken limits scene. The play scene notes "model output,
+  not measured brain data". From v4 the sign-off card carries the caveat on screen,
+  because the video travels without the page around it (e.g. a social post): "not a
+  forecast of views", plus the pilot result (weak, not significant: r = 0.25, p = 0.24,
+  n = 24) and that a pre-registered test is next. TRIBE v2 is CC-BY-NC-4.0; check
   `NOTICE` before this goes anywhere commercial-facing.

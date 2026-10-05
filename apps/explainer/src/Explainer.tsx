@@ -528,6 +528,9 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
       <div style={{ marginTop: 22, fontSize: 24, color: C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Free research preview · predictions are model output, not a forecast of views
       </div>
+      <div style={{ marginTop: 10, fontSize: 24, color: C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
+        Unproven: in our 24-clip pilot the score's link to engagement was weak and not significant (r = 0.25, p = 0.24). A pre-registered test is next.
+      </div>
     </AbsoluteFill>
   )
 }
