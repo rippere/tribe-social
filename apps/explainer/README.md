@@ -65,8 +65,35 @@ green and keyed to alpha:
   `src/data/mascot_track.json` (per-frame bounding box). Clip lengths come from it.
 - **Captions.** Lower third at bottom-left in 16:9 (clear of the character), centred
   above its head in 9:16. Words light up as they are spoken.
-- **Changing a line.** Edit `business/explainer/v3/narration/<line>.txt`, regenerate its
-  TTS, then `npm run talk:gen -- <shot>`, `npm run sync`, and step 4 below.
+- **Changing a line.** Edit `business/explainer/v3/narration/<line>.txt` (and its row in
+  `lines.tsv`), regenerate its TTS (Higgsfield `text2speech_v2`, ElevenLabs voice Isla),
+  update the quoted phrases in that shot's prompt in `scripts/talk_shots.json` (and its
+  `duration` if the audio moves past a whole second), then `npm run talk:gen -- <shot>`,
+  `npm run sync`, and step 4 above. `.txt` is also the caption text, so never change it
+  without the matching `.mp3` and shot, or captions drift off the voice. From a worktree,
+  set `EXPLAINER_MEDIA` to the main checkout's `business/explainer`; `business/` is
+  git-ignored, so a worktree has none.
+- **Check every new talking shot before syncing it.** Seedance sometimes ignores "hands
+  empty" and adds a prop. The 2026-10-05 `t_read1` retake held a pointer stick through the
+  whole sweep and was rejected. A track box much taller than the anchor (`h` ~0.354) is the
+  tell.
+
+## Script status (v4)
+
+The target script is `business/explainer/v4/lines.tsv`. As of 2026-10-05:
+
+| Line | Shot | State |
+|---|---|---|
+| n6_read2 ("I predict an average viewer locks in… I predict they drift off") | t_read2 | **Live.** Audio, shot, prompt and captions all match |
+| n1_intro ("I'll predict how an average viewer's brain responds") | t_intro | **Pending.** TTS done (`v4/narration/n1_intro.*`); shot not generated (63 credits at 14 s) |
+| n5_read ("tracks the predicted response across my whole surface") | t_read1 | **Pending.** TTS done (`v4/narration/n5_read.*`); first retake rejected (`v4/rejected/`); regenerate at 13 s (58.5 credits) |
+| n2, n3, n4, n7 | | Unchanged from v3 |
+
+Pending lines still render with their v3 audio, shot and captions, so the cut stays in
+sync. To land one: copy its `v4/narration/<line>.{mp3,json,txt}` into `v3/narration/`,
+replace its row in `v3/narration/lines.tsv`, update the quoted phrases in its shot prompt
+(for t_read1, also add "it never holds a stick, pointer or wand"), then run `talk:gen`,
+`sync` and `build_data.py`.
 
 ## What's real and what isn't
 

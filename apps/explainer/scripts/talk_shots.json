@@ -64,7 +64,7 @@
         null
       ],
       "duration": 8,
-      "prompt": "While it says 'When the line climbs' it points straight up and raises its pointing hand higher in small steps. While it says 'an average viewer is predicted to lock in' it leans forward with wide, focused eyes. While it says 'When it dips' it points up and to the upper right and lets its hand sink. While it says 'they're predicted to drift off' its eyes drift away and its shoulders droop as if bored. Then it straightens up and stands relaxed facing the camera."
+      "prompt": "While it says 'When the line climbs' it points straight up and raises its pointing hand higher in small steps. While it says 'I predict an average viewer locks in' it leans forward with wide, focused eyes. While it says 'When it dips' it points up and to the upper right and lets its hand sink. While it says 'I predict they drift off' its eyes drift away and its shoulders droop as if bored. Then it straightens up and stands relaxed facing the camera."
     },
     "t_outro": {
       "audio": [

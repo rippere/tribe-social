@@ -791,108 +791,103 @@
   ]
  },
  "t_read2": {
-  "text": "When the line climbs, an average viewer is predicted to lock in. When it dips, they're predicted to drift off.",
-  "duration": 7.2,
+  "text": "When the line climbs, I predict an average viewer locks in. When it dips, I predict they drift off.",
+  "duration": 7.12,
   "words": [
    {
     "w": "When",
     "s": 0.0,
-    "e": 0.16
+    "e": 0.18
    },
    {
     "w": "the",
-    "s": 0.16,
-    "e": 0.28
+    "s": 0.18,
+    "e": 0.34
    },
    {
     "w": "line",
-    "s": 0.28,
-    "e": 0.5
+    "s": 0.34,
+    "e": 0.62
    },
    {
     "w": "climbs,",
-    "s": 0.5,
-    "e": 1.0
+    "s": 0.62,
+    "e": 1.08
    },
    {
-    "w": "an",
-    "s": 1.46,
-    "e": 1.64
-   },
-   {
-    "w": "average",
+    "w": "I",
     "s": 1.64,
+    "e": 1.7
+   },
+   {
+    "w": "predict",
+    "s": 1.7,
     "e": 1.96
    },
    {
-    "w": "viewer",
+    "w": "an",
     "s": 1.96,
-    "e": 2.34
+    "e": 2.18
    },
    {
-    "w": "is",
-    "s": 2.34,
-    "e": 2.58
+    "w": "average",
+    "s": 2.18,
+    "e": 2.56
    },
    {
-    "w": "predicted",
-    "s": 2.58,
-    "e": 2.88
+    "w": "viewer",
+    "s": 2.56,
+    "e": 2.98
    },
    {
-    "w": "to",
-    "s": 2.88,
-    "e": 3.22
-   },
-   {
-    "w": "lock",
-    "s": 3.22,
-    "e": 3.44
+    "w": "locks",
+    "s": 2.98,
+    "e": 3.36
    },
    {
     "w": "in.",
-    "s": 3.44,
-    "e": 3.82
+    "s": 3.36,
+    "e": 3.84
    },
    {
     "w": "When",
-    "s": 4.52,
-    "e": 4.7
+    "s": 4.42,
+    "e": 4.56
    },
    {
     "w": "it",
-    "s": 4.7,
-    "e": 4.86
+    "s": 4.56,
+    "e": 4.7
    },
    {
     "w": "dips,",
-    "s": 4.86,
-    "e": 5.28
+    "s": 4.7,
+    "e": 5.06
    },
    {
-    "w": "they're",
-    "s": 5.66,
-    "e": 5.9
+    "w": "I",
+    "s": 5.72,
+    "e": 5.76
    },
    {
-    "w": "predicted",
-    "s": 5.9,
-    "e": 6.16
+    "w": "predict",
+    "s": 5.76,
+    "e": 6.06
    },
    {
-    "w": "to",
-    "s": 6.16,
-    "e": 6.46
+    "w": "they",
+    "s": 6.06,
+    "e": 6.3
    },
    {
     "w": "drift",
-    "s": 6.46,
-    "e": 6.72
+    "s": 6.3,
+    "e": 6.58
    },
    {
     "w": "off.",
-    "s": 6.72,
-    "e": 7.0
+    "s": 6.58,
+    "e": 6.9
    }
   ]
  },
