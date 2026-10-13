@@ -149,14 +149,15 @@ export function SeeItInAction() {
   return (
     <section className="mx-auto max-w-[1232px] px-6 pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
-      <div className="mt-10 flex aspect-video items-center justify-center rounded-[24px] bg-ink-2">
-        <div className="text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-ink/10 text-ink" aria-hidden>
-            ▶
-          </span>
-          <p className="mt-4 text-[15px] text-ink/70">Demo video coming soon</p>
-        </div>
-      </div>
+      <video
+        className="mt-10 aspect-video w-full rounded-[24px] bg-ink-2 object-cover"
+        src="/demo/fmright-demo.mp4"
+        poster="/demo/fmright-demo-poster.jpg"
+        controls
+        playsInline
+        preload="metadata"
+        aria-label="fMRIght demo: a predicted brain response to a video, second by second"
+      />
     </section>
   )
 }
