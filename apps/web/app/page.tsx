@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ClipChat from '@/components/landing/ClipChat'
 import CortexHero from '@/components/landing/CortexHero'
 import HeroDemo from '@/components/landing/HeroDemo'
 import { Faq, UseCases } from '@/components/landing/Interactive'
@@ -55,6 +56,11 @@ export default function HomePage() {
         </div>
 
         <CortexHero />
+      </section>
+
+      {/* Chat grounded in the hero clip's real TRIBE v2 prediction */}
+      <section className="mx-auto max-w-[1232px] px-6 pt-16 md:pt-20">
+        <ClipChat />
       </section>
 
       {/* The scorer, replayed on sample data, right under the hero */}
