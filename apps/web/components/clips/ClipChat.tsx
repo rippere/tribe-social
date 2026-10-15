@@ -5,8 +5,9 @@ import type { Clip } from '@/lib/clips'
 
 type Turn = { role: 'user' | 'assistant'; content: string }
 
-// "11 s", "11s", "11 sec", "second 11", "0:11"
-const TIME_RE = /\b(?:(\d):(\d{2})|seconds? (\d{1,2})|(\d{1,2})(?:\.\d+)? ?(?:s|sec|secs|seconds?)\b)/g
+// "11 s", "11.5s", "11 sec", "3-5 seconds" (jumps to 3), "second 11", "0:11"
+const TIME_RE =
+  /\b(?:(\d):(\d{2})|seconds? (\d{1,2}(?:\.\d+)?)|(\d{1,2}(?:\.\d+)?)(?:\s*[-–]\s*\d{1,2}(?:\.\d+)?)? ?(?:s|sec|secs|seconds?)\b)/gi
 
 /** Turns second references in an answer into buttons that jump the video there. */
 function Linked({ text, max, onSeek }: { text: string; max: number; onSeek?: (s: number) => void }) {
@@ -74,7 +75,8 @@ export default function ClipChat({
       const res = await fetch('/api/clip-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clip: clip.slug, messages: history.slice(-12) }),
+        // An odd count keeps the window starting on a user turn, as chat templates expect.
+        body: JSON.stringify({ clip: clip.slug, messages: history.slice(-11) }),
         signal: ctrl.signal,
       })
       if (!res.ok || !res.body) {

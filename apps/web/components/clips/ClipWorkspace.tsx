@@ -62,6 +62,31 @@ export default function ClipWorkspace({ clip }: { clip: Clip }) {
     return () => cancelAnimationFrame(id)
   }, [last])
 
+  // Hosts that ignore Range requests (e.g. *.pages.dev) make a streamed video
+  // unseekable, and seeking is the point of this page. The clip is a few MB, so load
+  // it whole and play it from memory, keeping the viewer's place if it was playing.
+  useEffect(() => {
+    let url: string | null = null
+    let cancelled = false
+    fetch(clip.video)
+      .then(r => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then(blob => {
+        const v = videoRef.current
+        if (cancelled || !v) return
+        url = URL.createObjectURL(blob)
+        const at = v.currentTime
+        const playing = !v.paused
+        v.src = url
+        v.currentTime = at
+        if (playing) v.play().catch(() => {})
+      })
+      .catch(() => {}) // keep the streamed source
+    return () => {
+      cancelled = true
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [clip.video])
+
   useEffect(() => {
     rig.current.spin = !reduced
     if (reduced) rig.current.vel = 0
@@ -127,7 +152,7 @@ export default function ClipWorkspace({ clip }: { clip: Clip }) {
 
         <Timeline clip={clip} t={t} region={region} onRegion={setRegion} onSeek={seek} />
 
-        <p className="px-1 text-[13px] leading-5 text-muted" aria-live="polite">
+        <p className="px-1 text-[13px] leading-5 text-muted">
           <span className="font-mono text-ink">{mmss(t)}</span>
           {shotIdx >= 0 && <> · shot {shotIdx + 1}</>} · {REGION_LABELS[region]}{' '}
           <span className="font-mono text-ink">
@@ -167,11 +192,15 @@ function Timeline({
   const W = 1000
   const H = 160
   const pad = { top: 22, bottom: 18 }
-  const x = (s: number) => (s / (seconds - 1)) * W
+  // Sample i covers second [i, i+1); plot it at its middle so the playhead (video time)
+  // and the samples share one axis that spans the whole clip.
+  const x = (s: number) => (s / seconds) * W
   const zMax = 2.5
   const y = (v: number) =>
     pad.top + ((zMax - Math.max(-zMax, Math.min(zMax, v))) / (2 * zMax)) * (H - pad.top - pad.bottom)
-  const line = regions[region].vs_cortex_z.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+  const line = regions[region].vs_cortex_z
+    .map((v, i) => `${i ? 'L' : 'M'}${x(i + 0.5).toFixed(1)},${y(v).toFixed(1)}`)
+    .join('')
 
   const gfp = whole_cortex.global_field_power_per_second
   const gMin = Math.min(...gfp)
@@ -179,12 +208,12 @@ function Timeline({
   const base = H - pad.bottom
   const area =
     `M0,${base}` +
-    gfp.map((g, i) => `L${x(i).toFixed(1)},${(base - 4 - ((g - gMin) / gSpan) * 44).toFixed(1)}`).join('') +
+    gfp.map((g, i) => `L${x(i + 0.5).toFixed(1)},${(base - 4 - ((g - gMin) / gSpan) * 44).toFixed(1)}`).join('') +
     `L${W},${base}Z`
 
   const onClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
-    onSeek(((e.clientX - r.left) / r.width) * (seconds - 1))
+    onSeek(((e.clientX - r.left) / r.width) * seconds)
   }
 
   return (
@@ -226,7 +255,7 @@ function Timeline({
             <rect
               x={x(s.from)}
               y={0}
-              width={x(Math.min(s.to, seconds - 1)) - x(s.from)}
+              width={x(Math.min(s.to, seconds)) - x(s.from)}
               height={H}
               fill={i % 2 ? 'rgba(255,255,255,0.03)' : 'transparent'}
             />
@@ -252,10 +281,24 @@ function Timeline({
         />
         <line x1={x(t)} x2={x(t)} y1={0} y2={H} stroke="var(--ink)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
+      <label className="sr-only" htmlFor={`seek-${clip.slug}`}>
+        Jump the video to a second
+      </label>
+      <input
+        id={`seek-${clip.slug}`}
+        type="range"
+        min={0}
+        max={seconds - 1}
+        step={1}
+        value={Math.min(Math.floor(t), seconds - 1)}
+        aria-valuetext={mmss(t)}
+        onChange={e => onSeek(Number(e.target.value))}
+        className="sr-only focus:not-sr-only focus:mt-2 focus:block focus:w-full"
+      />
       <div className="mt-1 flex justify-between gap-2 font-mono text-[11px] text-muted">
         <span>0:00</span>
         <span className="hidden truncate sm:inline">dashed = cortex average · grey = overall drive</span>
-        <span>{mmss(seconds - 1)}</span>
+        <span>{mmss(seconds)}</span>
       </div>
     </div>
   )

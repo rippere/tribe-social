@@ -24,6 +24,7 @@ const WORKERS_AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
 const MAX_TURNS = 12
 const MAX_CHARS = 800
+const MAX_ANSWER_CHARS = 3000
 
 type Turn = { role: 'user' | 'assistant'; content: string }
 
@@ -82,8 +83,9 @@ function parseTurns(body: unknown): Turn[] | string {
   for (const m of msgs) {
     const { role, content } = (m ?? {}) as Partial<Turn>
     if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') return 'bad message'
-    if (content.length > MAX_CHARS) return `messages are limited to ${MAX_CHARS} characters`
-    turns.push({ role, content })
+    if (role === 'user' && content.length > MAX_CHARS) return `messages are limited to ${MAX_CHARS} characters`
+    // Earlier answers can run long when the user asks for detail; keep them, trimmed.
+    turns.push({ role, content: role === 'assistant' ? content.slice(0, MAX_ANSWER_CHARS) : content })
   }
   if (turns[turns.length - 1].role !== 'user') return 'last message must be from the user'
   return turns
@@ -102,11 +104,11 @@ async function modelId(base: string, key: string, configured?: string): Promise<
   return cachedModel
 }
 
-/** Drops any <think>…</think> span from a stream of text chunks. */
+/** Drops any <think>…</think> span from a stream of text chunks. Call flush() at the end. */
 function thinkFilter() {
   let inThink = false
   let buf = ''
-  return (chunk: string): string => {
+  const push = (chunk: string): string => {
     buf += chunk
     let out = ''
     for (;;) {
@@ -134,6 +136,13 @@ function thinkFilter() {
       }
     }
   }
+  // Text held back as a possible "<think" (e.g. "z <1") is real text once the stream ends.
+  const flush = (): string => {
+    const rest = inThink ? '' : buf
+    buf = ''
+    return rest
+  }
+  return { push, flush }
 }
 
 /** OpenAI-style SSE (choices[0].delta.content) or Workers AI SSE ({"response": ...}) to plain text. */
@@ -141,11 +150,27 @@ function sseToText(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array>
   const decoder = new TextDecoder()
   const encoder = new TextEncoder()
   const strip = thinkFilter()
+  const reader = body.getReader()
   let pending = ''
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
-      const reader = body.getReader()
+      const emit = (text: string) => {
+        if (text) controller.enqueue(encoder.encode(text))
+      }
+      const handle = (line: string) => {
+        const data = line.trim()
+        if (!data.startsWith('data:')) return
+        const payload = data.slice(5).trim()
+        if (payload === '[DONE]') return
+        try {
+          const event = JSON.parse(payload)
+          const text = event?.choices?.[0]?.delta?.content ?? event?.response
+          if (typeof text === 'string') emit(strip.push(text))
+        } catch {
+          // ignore keep-alives and partial events
+        }
+      }
       try {
         for (;;) {
           const { done, value } = await reader.read()
@@ -153,28 +178,27 @@ function sseToText(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array>
           pending += decoder.decode(value, { stream: true })
           const lines = pending.split('\n')
           pending = lines.pop() ?? ''
-          for (const line of lines) {
-            const data = line.trim()
-            if (!data.startsWith('data:')) continue
-            const payload = data.slice(5).trim()
-            if (payload === '[DONE]') continue
-            try {
-              const event = JSON.parse(payload)
-              const text = event?.choices?.[0]?.delta?.content ?? event?.response
-              if (typeof text === 'string' && text) {
-                const clean = strip(text)
-                if (clean) controller.enqueue(encoder.encode(clean))
-              }
-            } catch {
-              // ignore keep-alives and partial events
-            }
-          }
+          lines.forEach(handle)
         }
+        handle(pending)
+        emit(strip.flush())
       } catch {
-        // client went away or upstream dropped; end the stream with what we have
+        // Upstream dropped mid-answer: say so rather than pass off a partial answer.
+        try {
+          emit(strip.flush() + ' [answer cut off]')
+        } catch {
+          // the client already went away
+        }
       } finally {
-        controller.close()
+        try {
+          controller.close()
+        } catch {
+          // already cancelled by the client
+        }
       }
+    },
+    cancel(reason) {
+      return reader.cancel(reason)
     },
   })
 }

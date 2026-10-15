@@ -17,8 +17,12 @@ export const API_CONFIGURED = RESOLVED !== null
 // of re-reading process.env.NEXT_PUBLIC_API_URL.
 export const API_BASE = RESOLVED ?? ''
 
-export const fetchCorpus = () => fetch(`${API_BASE}/corpus`).then(r => r.json())
-export const fetchStats  = () => fetch(`${API_BASE}/corpus/stats`).then(r => r.json())
+function requireApi(): void {
+  if (!API_CONFIGURED) throw new Error('The scoring API is offline on this site.')
+}
+
+export const fetchCorpus = async () => (requireApi(), fetch(`${API_BASE}/corpus`).then(r => r.json()))
+export const fetchStats = async () => (requireApi(), fetch(`${API_BASE}/corpus/stats`).then(r => r.json()))
 export const fetchHealth = (): Promise<{ status: string; mode: InferenceMode; runpod_endpoint_configured: boolean }> =>
   fetch(`${API_BASE}/health`).then(r => r.json())
 
