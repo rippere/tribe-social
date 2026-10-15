@@ -8,8 +8,8 @@ const PREREG_URL =
 
 const NAV_LINKS = [
   { label: 'How it works', href: '/#how-it-works' },
+  { label: 'Clips', href: '/clips' },
   { label: 'The science', href: '/#science' },
-  { label: 'Pricing', href: '/#pricing' },
   { label: 'FAQ', href: '/#faq' },
 ]
 
@@ -38,14 +38,15 @@ export default function NavBar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <a
-            href={PREREG_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary btn-sm hidden sm:inline-flex"
-          >
-            Pre-registration
-          </a>
+          <Link href="/clips" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
+            Clips
+          </Link>
+          {/* Wrapped: the unlayered .btn-* display rule would beat a `hidden` utility. */}
+          <span className="hidden lg:inline-flex">
+            <a href={PREREG_URL} target="_blank" rel="noopener noreferrer" className="btn-secondary btn-sm">
+              Pre-registration
+            </a>
+          </span>
           <Link
             href="/scorer"
             aria-current={pathname === '/scorer' ? 'page' : undefined}

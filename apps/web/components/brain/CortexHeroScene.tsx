@@ -79,10 +79,12 @@ interface Props {
   frameloop: 'always' | 'demand' | 'never'
   threshold: number
   onReady: () => void
+  /** Directory holding activity.{json,bin}; defaults to the hero clip's. */
+  base?: string
 }
 
-export default function CortexHeroScene({ clock, rig, frameloop, threshold, onReady }: Props) {
-  const activity = useActivity()
+export default function CortexHeroScene({ clock, rig, frameloop, threshold, onReady, base }: Props) {
+  const activity = useActivity(base)
   return (
     <Canvas
       frameloop={frameloop}

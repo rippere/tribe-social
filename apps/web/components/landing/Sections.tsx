@@ -17,32 +17,6 @@ export function MascotGlyph({ className = '' }: { className?: string }) {
   )
 }
 
-/* ---------- Part 5: warm panel + peeking mascot ---------- */
-export function BrainScanPanel() {
-  return (
-    <section className="mx-auto max-w-[1232px] px-6 pt-32">
-      <div className="relative overflow-hidden rounded-[24px] bg-panel px-8 py-14 md:px-12">
-        <div className="relative z-10 max-w-md">
-          <h2 className="type-h2 text-ink">A brain scan, without the scanner</h2>
-          <p className="mt-4 text-[16px] leading-[26px] text-muted">
-            fMRI is a brain scan that shows which parts of the brain are working. Labs use it to study how people react
-            to what they watch. It used to take a scanner and a room of volunteers. Now a model trained on those scans can
-            make the same kind of prediction from the video file alone.
-          </p>
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/mascot/mascot-wave.webp"
-          alt=""
-          aria-hidden
-          loading="lazy"
-          className="mx-auto mt-8 block w-[240px] md:absolute md:right-10 md:bottom-0 md:mt-0 md:w-[360px]"
-        />
-      </div>
-    </section>
-  )
-}
-
 /* ---------- Part 6: How it works (the non-obvious parts) ---------- */
 const REGION_ORDER: RegionKey[] = ['attention', 'social', 'language', 'valuation', 'auditory', 'motion', 'narrative']
 
@@ -156,43 +130,6 @@ export function SeeItInAction() {
   )
 }
 
-/* ---------- Part 9: pricing ---------- */
-export function Pricing() {
-  return (
-    <section id="pricing" className="mx-auto max-w-[976px] px-6 pt-32">
-      <h2 className="type-h2 text-center text-ink">Pricing</h2>
-      <p className="type-lead mx-auto mt-4 max-w-xl text-center">
-        We&apos;re setting prices by talking to the people who&apos;d use it.
-      </p>
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col rounded-[24px] bg-panel p-8">
-          <p className="text-[14px] font-medium text-muted">Research preview</p>
-          <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.4px] text-ink">Free</p>
-          <p className="mt-3 text-[15px] leading-6 text-ink/70">
-            Score short clips while we test the method. Results are shown as a research read, not a guarantee.
-          </p>
-          <Link href="/scorer" className="btn-primary btn-lg mt-8">
-            Score a clip
-          </Link>
-        </div>
-        <div className="flex flex-col rounded-[24px] bg-panel p-8">
-          <p className="text-[14px] font-medium text-muted">Teams and agencies</p>
-          <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.4px] text-ink">Let&apos;s talk</p>
-          <p className="mt-3 text-[15px] leading-6 text-ink/70">
-            If you review creator content for a living, we want to hear what a read like this is worth to you.
-          </p>
-          <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer" className="btn-secondary btn-lg mt-8">
-            Tell us
-          </a>
-        </div>
-      </div>
-      <p className="mt-6 text-center text-[13px] text-muted">
-        fMRIght is non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
-      </p>
-    </section>
-  )
-}
-
 /* ---------- Part 11: the science ---------- */
 export function Science() {
   return (
@@ -215,15 +152,22 @@ export function FinalCta() {
   return (
     <section className="relative mx-auto max-w-[1232px] overflow-hidden px-6 pt-40 pb-8 text-center">
       <h2 className="type-h2 text-ink">Score your first clip</h2>
-      <p className="type-lead mt-3">Drop in a short video and see the read in a few minutes.</p>
+      <p className="type-lead mt-3">Drop in a short video and see the read in a few minutes. Free while it&apos;s a research preview.</p>
       <div className="mt-8 flex justify-center gap-2">
         <Link href="/scorer" className="btn-primary btn-lg">
           Score a clip
         </Link>
-        <Link href="#how-it-works" className="btn-secondary btn-lg">
-          How it works
+        <Link href="/clips" className="btn-secondary btn-lg">
+          Browse scored clips
         </Link>
       </div>
+      <p className="mx-auto mt-6 max-w-md text-[13px] leading-5 text-muted">
+        Review creator content for a living?{' '}
+        <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer" className="text-ink underline-offset-4 hover:underline">
+          Tell us what a read like this is worth to you
+        </a>
+        . fMRIght is non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
+      </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/mascot/mascot-cheer.webp"
