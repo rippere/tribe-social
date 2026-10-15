@@ -62,16 +62,14 @@ export default function HeroDemo() {
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)] md:grid-cols-[200px_minmax(0,1fr)]">
-        {/* Stage rail */}
-        <ol className="flex gap-1 border-b border-line p-3 md:flex-col md:border-b-0 md:border-r">
+        {/* Stage rail (scrolls sideways on phones instead of widening the window) */}
+        <ol className="flex min-w-0 gap-1 overflow-x-auto border-b border-line p-3 md:flex-col md:overflow-visible md:border-b-0 md:border-r">
           {DEMO_STAGES.map((s, i) => {
             const state = i < index ? 'done' : i === index ? 'active' : 'todo'
             return (
               <li
                 key={s.key}
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] transition-colors md:flex-none ${
-                  state === 'active' ? 'flex-1' : 'flex-none'
-                } ${
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] transition-colors md:flex-none md:gap-2.5 md:px-3 ${
                   state === 'active' ? 'bg-fill text-ink' : state === 'done' ? 'text-ink' : 'text-muted'
                 }`}
               >
@@ -93,8 +91,8 @@ export default function HeroDemo() {
           })}
         </ol>
 
-        <div className="grid gap-4 p-4 md:p-5">
-          <div className="grid gap-4 md:grid-cols-[1fr_1.1fr]">
+        <div className="grid min-w-0 gap-4 p-4 md:p-5">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             {/* Clip being scored (the full 3D cortex lives on the processing page) */}
             <VideoPane stageIndex={index} done={done} />
 
@@ -119,9 +117,16 @@ function VideoPane({ stageIndex, done }: { stageIndex: number; done: boolean }) 
   return (
     <div className="relative flex h-[240px] items-center justify-center overflow-hidden rounded-2xl bg-panel">
       <div className="relative h-[208px] w-[117px] overflow-hidden rounded-xl bg-gradient-to-b from-[#2A2F36] to-[#15171A] shadow-[var(--shadow-inner)]">
-        <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[11px] text-ink/60">
-          {DEMO_CLIP.title}
-        </span>
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src="/demo/sample-clip.mp4"
+          poster="/demo/sample-clip-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-label={DEMO_CLIP.title}
+        />
         {/* Scan line while the model is reading the clip */}
         {!done && stageIndex > 0 && (
           <span className="absolute inset-x-0 h-8 animate-pulse bg-gradient-to-b from-transparent via-accent/25 to-transparent" style={{ top: `${20 + stageIndex * 22}%` }} />

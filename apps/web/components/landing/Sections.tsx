@@ -4,23 +4,16 @@ import { REGION_LABELS, type RegionKey } from '@/components/brain/contract'
 export const REPO = 'https://github.com/rippere/tribe-social'
 export const PREREG_URL = `${REPO}/blob/main/research/PREREGISTRATION.md`
 
-/** Placeholder brain mark for the mascot until the 3D model lands. */
+/** The brain mascot's face in an ink disc, for inline use in headlines. */
 export function MascotGlyph({ className = '' }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={`inline-flex items-center justify-center rounded-full bg-ink align-middle ${className}`}
+      className={`inline-flex items-center justify-center overflow-hidden rounded-full bg-ink align-middle ${className}`}
     >
-      <BrainSquiggle className="h-[58%] w-[58%]" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/mascot/mascot-face.png" alt="" className="h-[86%] w-[86%] translate-y-[4%] object-contain" />
     </span>
-  )
-}
-
-function BrainSquiggle({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="var(--on-ink)" strokeWidth={2} strokeLinecap="round">
-      <path d="M7 9c0-2 1.5-3 3-3s2 1 2 2m0 0c0-1 1-2 2.5-2S17 7 17 9m-10 3c1 0 2 .5 2 2m6-2c-1 0-2 .5-2 2m-6 3c1.5 1 3 1 5 0 2 1 3.5 1 5 0" />
-    </svg>
   )
 }
 
@@ -37,13 +30,14 @@ export function BrainScanPanel() {
             make the same kind of prediction from the video file alone.
           </p>
         </div>
-        {/* Mascot placeholder: swap for the 3D brain when it lands */}
-        <div
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/mascot/mascot-wave.webp"
+          alt=""
           aria-hidden
-          className="absolute -right-16 -bottom-24 hidden h-[360px] w-[360px] items-center justify-center rounded-full bg-ink md:flex"
-        >
-          <BrainSquiggle className="h-44 w-44 -translate-x-8 -translate-y-10 opacity-90" />
-        </div>
+          loading="lazy"
+          className="mx-auto mt-8 block w-[240px] md:absolute md:right-10 md:bottom-0 md:mt-0 md:w-[360px]"
+        />
       </div>
     </section>
   )
@@ -149,14 +143,15 @@ export function SeeItInAction() {
   return (
     <section className="mx-auto max-w-[1232px] px-6 pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
-      <div className="mt-10 flex aspect-video items-center justify-center rounded-[24px] bg-ink-2">
-        <div className="text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-ink/10 text-ink" aria-hidden>
-            ▶
-          </span>
-          <p className="mt-4 text-[15px] text-ink/70">Demo video coming soon</p>
-        </div>
-      </div>
+      <video
+        className="mt-10 aspect-video w-full rounded-[24px] bg-ink-2 object-cover"
+        src="/demo/fmright-demo.mp4"
+        poster="/demo/fmright-demo-poster.jpg"
+        controls
+        playsInline
+        preload="metadata"
+        aria-label="fMRIght demo: a predicted brain response to a video, second by second"
+      />
     </section>
   )
 }
@@ -182,7 +177,7 @@ export function Pricing() {
         </div>
         <div className="flex flex-col rounded-[24px] bg-panel p-8">
           <p className="text-[14px] font-medium text-muted">Teams and agencies</p>
-          <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.4px] text-ink">In progress</p>
+          <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.4px] text-ink">Let&apos;s talk</p>
           <p className="mt-3 text-[15px] leading-6 text-ink/70">
             If you review creator content for a living, we want to hear what a read like this is worth to you.
           </p>
@@ -229,8 +224,14 @@ export function FinalCta() {
           How it works
         </Link>
       </div>
-      {/* Outline placeholder for the large mascot silhouette */}
-      <div aria-hidden className="mx-auto mt-16 h-[240px] w-full max-w-[560px] rounded-t-full border border-b-0 border-line" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/mascot/mascot-cheer.webp"
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className="mx-auto mt-12 block w-[260px] md:w-[320px]"
+      />
     </section>
   )
 }
