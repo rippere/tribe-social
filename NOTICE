@@ -53,9 +53,36 @@ TRIBE v2 ............ Meta FAIR, CC-BY-NC-4.0 (model weights + reference code)
 HCP MMP1.0 atlas .... Glasser et al. 2016, via neuromaps
 CNeuroMod ........... CC0 1.0 (public domain)
 yt-dlp .............. Unlicense
+FreeSurfer fsaverage  FreeSurfer Software License (see below)
+Destrieux atlas ..... Destrieux et al. 2010, FreeSurfer parcellation, via nilearn
 Python / Node dependencies — see pyproject.toml, uv.lock, apps/web/package.json
 
 Each third-party component remains under its own license.
+
+FreeSurfer fsaverage template surfaces
+--------------------------------------
+apps/web/public/cortex/cortex.glb is derived from the FreeSurfer fsaverage6
+pial surface, and the cortex view maps TRIBE v2 output onto fsaverage5 vertex
+indices. The demo activity uses the Destrieux cortical parcellation on
+fsaverage5. All three were obtained through nilearn
+(datasets.fetch_surf_fsaverage, datasets.fetch_atlas_surf_destrieux).
+
+The fsaverage subject is part of FreeSurfer, developed by the Laboratory for
+Computational Neuroimaging at the Athinoula A. Martinos Center for Biomedical
+Imaging, Massachusetts General Hospital, and is distributed under the
+FreeSurfer Software License Agreement:
+https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferSoftwareLicense
+
+  Fischl B, Sereno MI, Tootell RBH, Dale AM. High-resolution intersubject
+  averaging and a coordinate system for the cortical surface. Human Brain
+  Mapping 8(4):272-284, 1999.
+
+  Destrieux C, Fischl B, Dale A, Halgren E. Automatic parcellation of human
+  cortical gyri and sulci using standard anatomical nomenclature. NeuroImage
+  53(1):1-15, 2010.
+
+The FreeSurfer license, not Apache-2.0, governs the fsaverage geometry in
+cortex.glb.
 
 
 ================================================================================
