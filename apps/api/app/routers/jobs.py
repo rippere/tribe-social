@@ -12,9 +12,27 @@ from app.store import jobs as job_store
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
+# Anchored allow-list, matched with fullmatch(): the whole string must be an
+# https URL on one of these hosts. An unanchored search() let values like
+# "http://127.0.0.1/?youtube.com/shorts/x" (SSRF) or
+# "--exec=...youtube.com/shorts/x" (yt-dlp option injection) through.
+# The path charset excludes ".", ":", "@" and "#", so the host cannot be
+# extended ("youtube.com.evil.example") or swapped via userinfo.
 VIDEO_URL_PATTERN = re.compile(
-    r"(youtube\.com/shorts/|youtu\.be/|youtube\.com/watch\?v=|instagram\.com/reel/|instagram\.com/p/)[A-Za-z0-9_\-/?=&%]+"
+    r"https://(?:"
+    r"(?:www\.|m\.)?youtube\.com/(?:shorts/|watch\?v=)"
+    r"|youtu\.be/"
+    r"|(?:www\.)?instagram\.com/(?:reel|p)/"
+    r")[A-Za-z0-9_\-/?=&%]+"
 )
+
+
+def _safe_upload_name(raw: str | None) -> str:
+    """Basename of a client-supplied filename; never a path component."""
+    name = Path(raw or "").name
+    if name in ("", ".", ".."):
+        return "video_upload.mp4"
+    return name
 
 _MODE = "pod" if _POD_URL else ("real" if _REAL_MODE else "mock")
 
@@ -57,9 +75,9 @@ async def create_job(
     filename: str
 
     if file is not None:
-        if not file.filename.endswith(".mp4"):
+        filename = _safe_upload_name(file.filename)
+        if not filename.endswith(".mp4"):
             raise HTTPException(422, "Only .mp4 files are supported")
-        filename = file.filename
         if _INFER_ENABLED:
             video_bytes = await file.read()
             if len(video_bytes) > MAX_UPLOAD_BYTES:
@@ -75,7 +93,8 @@ async def create_job(
                     "Upload a shorter clip or paste a YouTube URL.",
                 )
     else:
-        if not VIDEO_URL_PATTERN.search(video_url):
+        video_url = video_url.strip()
+        if not VIDEO_URL_PATTERN.fullmatch(video_url):
             raise HTTPException(422, "Invalid URL — paste a YouTube Shorts or Instagram Reel link")
 
         tail = video_url.split("?v=")[-1].split("/")[-1].split("?")[0]
