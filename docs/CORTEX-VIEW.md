@@ -72,8 +72,8 @@ The current `activity.bin` is a **region-scripted placeholder**:
    `cd research && uv run --no-project --with nilearn --with scipy python export_cortex.py --preds <file> --skip-mesh`
 2. **Licensing.** TRIBE v2 is CC-BY-NC-4.0. Showing its output on a
    commercial-facing page needs a check against `NOTICE` and
-   `business/canon/MODEL-LICENSE-DECISION.md`. fsaverage is a FreeSurfer template:
-   add its attribution to `NOTICE` before this ships.
+   `business/canon/MODEL-LICENSE-DECISION.md`. fsaverage is a FreeSurfer template;
+   its attribution (and Destrieux's) is now in `NOTICE`.
 3. **Asset weight.** The GLB is 4.8 MB uncompressed (float32 positions, no
    quantisation). Run `gltf-transform meshopt` or quantise to around 1.5 MB before
    production. Custom `_SULC/_FSA5_*` attributes must survive the pass.
