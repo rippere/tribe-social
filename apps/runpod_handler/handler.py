@@ -39,10 +39,19 @@ def _get_model():
     return _model
 
 
+
+def _safe_filename(raw) -> str:
+    """Basename of a client-supplied filename so writes/unlinks stay in tmp_dir."""
+    name = Path(str(raw or "")).name
+    if name in ("", ".", ".."):
+        return "video.mp4"
+    return name
+
+
 def handler(event: dict) -> dict:
     inp       = event.get("input", {})
     video_b64 = inp.get("video_b64")
-    filename  = inp.get("filename", "video.mp4")
+    filename  = _safe_filename(inp.get("filename", "video.mp4"))
 
     if not video_b64:
         return {"error": "Missing video_b64 in input"}

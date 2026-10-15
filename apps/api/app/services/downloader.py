@@ -40,7 +40,8 @@ def fetch_video(url: str) -> Path:
     if cookies_file and Path(cookies_file).is_file():
         cmd += ["--cookies", cookies_file]
 
-    cmd.append(url)
+    # "--" ends option parsing so a URL can never be read as a yt-dlp flag.
+    cmd += ["--", url]
 
     # On every failure path below (and on timeout) we must remove tmp_dir before
     # re-raising, otherwise each failed download leaks a temp directory. Only the
