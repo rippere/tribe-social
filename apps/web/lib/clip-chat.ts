@@ -44,6 +44,23 @@ function contextTable(clip: ClipContext): string {
   return [header, ...rows].join('\n')
 }
 
+/** Highs and lows computed here, so the model quotes them instead of scanning the table. */
+function keyFacts(clip: ClipContext): string {
+  const ext = (xs: number[]) => {
+    let hi = 0
+    let lo = 0
+    xs.forEach((v, i) => {
+      if (v > xs[hi]) hi = i
+      if (v < xs[lo]) lo = i
+    })
+    return `highest ${xs[hi].toFixed(2)} at ${hi} s, lowest ${xs[lo].toFixed(2)} at ${lo} s`
+  }
+  return [
+    `- overall predicted drive: ${ext(clip.whole_cortex.global_field_power_per_second)}`,
+    ...KEYS.map(k => `- ${k} (vs cortex): ${ext(clip.regions[k].vs_cortex_z)}`),
+  ].join('\n')
+}
+
 function systemPrompt(clip: ClipContext): string {
   return `You are fMRIght's clip analyst. You answer questions about ONE video using ONLY the data below: Meta TRIBE v2's predicted cortical response to it. Be concrete: cite seconds and values from the table.
 
@@ -56,6 +73,9 @@ ${KEYS.map(k => `- ${k}: ${clip.regions[k].area}`).join('\n')}
 
 TABLE: per second, cortexGFP = global field power (spread of the predicted response across the cortex; higher = stronger overall drive). Region columns = that region's predicted response minus the whole-cortex mean at the same second, in cortex SDs (positive = above the cortex average).
 ${contextTable(clip)}
+
+KEY FACTS (computed from the table; use these for any highest/lowest/peak/strongest question):
+${keyFacts(clip)}
 
 RULES (non-negotiable; this is shown to scientists):
 - Say "predicted response" or "the model predicts", never "the viewer's brain did" or "brain activity". It is a group-average encoding model, not a measurement of anyone.
