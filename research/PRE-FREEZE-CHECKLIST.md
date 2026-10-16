@@ -2,7 +2,7 @@
 
 Everything that has to be true before the freeze record in [`PREREGISTRATION.md`](PREREGISTRATION.md) §12 is filled in and any ad money is spent. Work top to bottom. An item is done when the evidence in the right-hand column exists, not when someone says it's handled.
 
-Section numbers refer to `PREREGISTRATION.md` v0.3 unless marked otherwise.
+Section numbers refer to `PREREGISTRATION.md` v0.4 unless marked otherwise.
 
 ## 1. Governance (before anyone shoots)
 
@@ -26,7 +26,7 @@ Meta reviews new ad accounts and individual ads. Finding a problem after freeze 
 | 2.2 | Budget approved: about $580, plan $700 with a $200 reserve (§13) | Funding source confirmed |
 | 2.3 | Delivery settings rehearsed on the test ad set: reach objective, CBO off, US 18–65, Reels-only placement, frequency cap 1/day (§4) | Screenshot of the test ad set's settings |
 | 2.4 | Ad-set capacity: can the account run 72 ad sets at once? If not, plan waves of complete bases (§4) | Wave plan written, or "single wave" confirmed |
-| 2.5 | Audio: every clip uses original or licensed audio. Ads with unlicensed music get rejected or muted, which would break the within-base design | Rule sent to all shooters before they shoot |
+| 2.5 | Audio: original sound, CC0/public domain, or Meta Sound Collection, body only (§3a). Ads with unlicensed music get rejected or muted, which would break the within-base design | Rule sent to all shooters before they shoot |
 
 ## 3. Stimuli
 
@@ -35,6 +35,7 @@ Meta reviews new ad accounts and individual ads. Finding a problem after freeze 
 | 3.1 | Every shooter has the stimulus spec: 1080x1920, 30 fps, 15–25 s, −14 LUFS ±1, exact 90-frame hooks (§3) | Spec sent |
 | 3.2 | Lucas has checked each shooter's first base before they shoot the other two (§13) | Six first bases signed off |
 | 3.3 | No identifiable bystanders without their own release; no restricted ad categories (§15) | Lucas confirms per base |
+| 3.5 | Every third-party asset has a complete ledger row, and every visible brand has written permission on file (§3a) | Ledger saved; its hash and the brand list go in §12 |
 | 3.4 | All 72 clips pass `make validate-stimuli`. A failing base is re-edited or dropped now, never after freeze (§3) | Manifest written; hash goes in §12 |
 
 ## 4. Before freeze
