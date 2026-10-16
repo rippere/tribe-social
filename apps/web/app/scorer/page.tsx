@@ -5,7 +5,8 @@ import VideoDropzone from '@/components/scorer/VideoDropzone'
 import JobProgress from '@/components/scorer/JobProgress'
 import ResultsCard from '@/components/scorer/ResultsCard'
 import { DEMO_STAGES } from '@/components/landing/demo-data'
-import { fetchHealth } from '@/lib/api'
+import Link from 'next/link'
+import { API_CONFIGURED, fetchHealth } from '@/lib/api'
 import type { ScoreResult, InferenceMode } from '@/lib/types'
 
 const MODE_LABEL: Record<InferenceMode, string> = {
@@ -21,6 +22,7 @@ export default function ScorerPage() {
   const [processingStage, setProcessingStage] = useState(0)
 
   useEffect(() => {
+    if (!API_CONFIGURED) return
     fetchHealth().then(h => setInferenceMode(h.mode)).catch(() => {})
   }, [])
 
@@ -43,7 +45,7 @@ export default function ScorerPage() {
       <div className="mx-auto max-w-[976px]">
         <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] text-muted shadow-[var(--shadow-hairline)]">
           <span className={`h-1.5 w-1.5 rounded-full ${isReal ? 'bg-[#34D399]' : 'bg-muted'} animate-pulse`} />
-          {MODE_LABEL[inferenceMode]}
+          {API_CONFIGURED ? MODE_LABEL[inferenceMode] : 'Scoring offline'}
         </div>
         <h1 className="type-h2 text-ink">Score a clip</h1>
         <p className="type-lead mt-3 max-w-2xl">
@@ -96,7 +98,19 @@ export default function ScorerPage() {
           </ol>
 
           <div className="p-4 md:p-5">
-            {!jobId && !result && <VideoDropzone onJobCreated={setJobId} />}
+            {!API_CONFIGURED && (
+              <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[16px] bg-fill px-6 text-center">
+                <p className="text-[16px] font-medium text-ink">Scoring isn&apos;t live on this site yet</p>
+                <p className="mt-2 max-w-sm text-[14px] leading-6 text-muted">
+                  Each score runs TRIBE v2 on a rented GPU, which is switched on for study sessions. Meanwhile, the
+                  scored clips show the full read.
+                </p>
+                <Link href="/clips" className="btn-primary btn-sm mt-5">
+                  Browse scored clips
+                </Link>
+              </div>
+            )}
+            {API_CONFIGURED && !jobId && !result && <VideoDropzone onJobCreated={setJobId} />}
 
             {jobId && !result && (
               <JobProgress jobId={jobId} onComplete={setResult} onStageChange={onStageChange} />
