@@ -24,6 +24,8 @@ uv run --no-project --with numpy python "$HERE/scripts/key_mascot.py" \
   --only intro_a w_a w_b w_c w_d w_e
 uv run --no-project --with numpy python "$HERE/scripts/key_mascot.py" \
   --still "$SRC/v2/anchors/A_C.png" "$OUT/mascot/idle.png"
+# The guide cut's run cycle, cut from the keyed walk-in.
+bash "$HERE/scripts/run-frames.sh"
 # Ben's narration (or its stand-ins) → public/media/narration_v6. Word timings: npm run data.
 uv run --no-project --with numpy python "$HERE/scripts/vo.py" sync --media "$SRC"
 

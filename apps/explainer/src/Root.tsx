@@ -24,6 +24,25 @@ export function Root() {
         durationInFrames={durationInFrames}
         defaultProps={{ orientation: 'portrait' as const }}
       />
+      {/* The guide cut: the mascot travels to whatever the narration names (src/guide.tsx). */}
+      <Composition
+        id="Explainer-16x9-guide"
+        component={Explainer}
+        width={1920}
+        height={1080}
+        fps={FPS}
+        durationInFrames={durationInFrames}
+        defaultProps={{ orientation: 'landscape' as const, guide: true }}
+      />
+      <Composition
+        id="Explainer-9x16-guide"
+        component={Explainer}
+        width={1080}
+        height={1920}
+        fps={FPS}
+        durationInFrames={durationInFrames}
+        defaultProps={{ orientation: 'portrait' as const, guide: true }}
+      />
     </>
   )
 }

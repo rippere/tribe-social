@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { createContext, useContext, useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { Video } from '@remotion/media'
 import { Easing, Img, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { phraseAt, type Word } from './components'
@@ -131,7 +131,7 @@ export interface Beat {
 }
 
 /** The keyed centre anchor's feet, as a fraction of the plate (scripts/key_mascot.py --still). */
-const FEET = { x: 0.498, y: 0.954 }
+export const FEET = { x: 0.498, y: 0.954 }
 
 /** 0→1, held, →0 around a beat: ease in over `rise`, hold, ease out over `fall`. */
 function envelope(t: number, at: number, rise: number, hold: number, fall: number): number {
@@ -142,15 +142,22 @@ function envelope(t: number, at: number, rise: number, hold: number, fall: numbe
   })
 }
 
+/** The idle character's procedural offset from its anchor: px in the 1920-wide plate, degrees, scale. */
+export interface Pose {
+  x: number
+  y: number
+  rot: number
+  sx: number
+  sy: number
+}
+
 /**
- * The idle character: the keyed anchor still with procedural life, so it never moves
- * its mouth. Breathing (~1.2 % vertical scale), a slow bob and sway run on global
- * time (`clock`, seconds since the video started) so they carry across scene cuts;
- * beats add a hop, a lean toward a UI element (left / right / up), a nod or a droop.
+ * Breathing (~1.2 % vertical scale), a slow bob and sway on global time (`clock`,
+ * seconds since the video started, so they carry across scene cuts), plus the beats
+ * around scene time `t`: a hop, a lean toward a UI element (left / right / up), a nod
+ * or a droop.
  */
-export function IdleMascot({ plate, beats, clock, opacity = 1 }: { plate: Plate; beats: Beat[]; clock: number; opacity?: number }) {
-  const t = useCurrentFrame() / FPS
-  const u = plate.w / 1920 // px in the 1920-wide plate → canvas px
+export function idlePose(t: number, clock: number, beats: Beat[]): Pose {
   const breathe = Math.sin((2 * Math.PI * clock) / 3.4)
   let sx = 1 - 0.006 * breathe
   let sy = 1 + 0.012 * breathe
@@ -200,6 +207,14 @@ export function IdleMascot({ plate, beats, clock, opacity = 1 }: { plate: Plate;
       }
     }
   }
+  return { x, y, rot, sx, sy }
+}
+
+/** The idle character: the keyed anchor still with procedural life (idlePose), so it never moves its mouth. */
+export function IdleMascot({ plate, beats, clock, opacity = 1 }: { plate: Plate; beats: Beat[]; clock: number; opacity?: number }) {
+  const t = useCurrentFrame() / FPS
+  const u = plate.w / 1920 // px in the 1920-wide plate → canvas px
+  const { x, y, rot, sx, sy } = idlePose(t, clock, beats)
   return (
     <Img
       src={staticFile('media/mascot/idle.png')}
@@ -221,11 +236,11 @@ export function IdleMascot({ plate, beats, clock, opacity = 1 }: { plate: Plate;
  * The intro walk-in (Kling intro_a) handed off to the idle still. intro_a's mouth
  * starts moving at source frame 78, right after it reaches its mark, so it is cut
  * at frame 76 (mouth closed, a blink) and cross-faded into the idle anchor, which
- * matches its position and size.
+ * matches its position and size. `still` swaps in another idle (the guide cut's).
  */
 export const WALK_IN = { clip: 'intro_a', cutAt: 76 / 24, fade: 6 }
 
-export function WalkInMascot({ plate, beats, clockStart }: { plate: Plate; beats: Beat[]; clockStart: number }) {
+export function WalkInMascot({ plate, beats, clockStart, still }: { plate: Plate; beats: Beat[]; clockStart: number; still?: (opacity: number) => ReactNode }) {
   const frame = useCurrentFrame()
   const cut = Math.round(WALK_IN.cutAt * FPS)
   const fade = interpolate(frame, [cut - WALK_IN.fade, cut], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
@@ -238,7 +253,7 @@ export function WalkInMascot({ plate, beats, clockStart }: { plate: Plate; beats
           style={{ position: 'absolute', left: plate.x, top: plate.y, width: plate.w, height: plate.h, opacity: 1 - fade }}
         />
       </Sequence>
-      {frame >= cut - WALK_IN.fade && <IdleMascot plate={plate} beats={beats} clock={clockStart + frame / FPS} opacity={fade} />}
+      {frame >= cut - WALK_IN.fade && (still ? still(fade) : <IdleMascot plate={plate} beats={beats} clock={clockStart + frame / FPS} opacity={fade} />)}
     </>
   )
 }
@@ -287,10 +302,73 @@ export function lit(t: number, at: number, dur = 0.25): number {
   return interpolate(t, [at, at + dur], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
 }
 
-/** A UI element the narrator is talking about: an accent ring while `on` is up. */
-export function Spot({ on, style, radius = 18, children }: { on: number; style?: CSSProperties; radius?: number; children: ReactNode }) {
+/** A Spot's layout box on the composition (px, before its own pulse scale) and the cue times it lights up on. */
+export interface SpotBox {
+  x: number
+  y: number
+  w: number
+  h: number
+  cues: number[]
+}
+
+/**
+ * Where the guide cut (src/guide.tsx) collects its targets: every Spot in the scene
+ * reports its box here, measured against `root` (the composition-sized scene root).
+ * Absent in the plain cuts, where Spots measure nothing.
+ */
+export interface SpotRegistry {
+  root: RefObject<HTMLDivElement | null>
+  report: (id: string, box: SpotBox) => void
+}
+export const SpotContext = createContext<SpotRegistry | null>(null)
+
+/**
+ * Reports the element's box to the guide cut's SpotContext (a no-op elsewhere). With
+ * no cues it is UI the guide keeps clear of, not a target (useKeepClear).
+ */
+function useSpotBox(cue: number[]): RefObject<HTMLDivElement | null> {
+  const registry = useContext(SpotContext)
+  const ref = useRef<HTMLDivElement>(null)
+  const id = useId()
+  const cues = cue.filter(Number.isFinite)
+  // Every render: the box moves with entrance transforms, and fonts can shift layout.
+  // Studio scales the whole composition, so divide by the root's on-screen scale; the
+  // centre is unaffected by a Spot's own pulse scale and offsetWidth ignores it.
+  useLayoutEffect(() => {
+    const el = ref.current
+    const root = registry?.root.current
+    if (!registry || !el || !root) return
+    const r = root.getBoundingClientRect()
+    const k = r.width / root.offsetWidth || 1
+    const b = el.getBoundingClientRect()
+    const cx = (b.left + b.width / 2 - r.left) / k
+    const cy = (b.top + b.height / 2 - r.top) / k
+    registry.report(id, { x: cx - el.offsetWidth / 2, y: cy - el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight, cues })
+  })
+  return ref
+}
+
+/** A ref for UI that is not a Spot but that the guide must not stand on (captions aside). */
+export function useKeepClear(): RefObject<HTMLDivElement | null> {
+  return useSpotBox([])
+}
+
+/** An invisible guide target for something the narration names that is not a Spot of its own (a band on a chart). */
+export function CueMark({ cue, style }: { cue: number; style: CSSProperties }) {
+  const ref = useSpotBox([cue])
+  return <div ref={ref} style={{ position: 'absolute', ...style }} />
+}
+
+/**
+ * A UI element the narrator is talking about: an accent ring while `on` is up.
+ * `cue` (seconds into the scene, one or more) is when the narration names it; in the
+ * guide cut the mascot travels to it then.
+ */
+export function Spot({ on, cue, style, radius = 18, children }: { on: number; cue?: number | number[]; style?: CSSProperties; radius?: number; children: ReactNode }) {
+  const ref = useSpotBox(Array.isArray(cue) ? cue : cue === undefined ? [] : [cue])
   return (
     <div
+      ref={ref}
       style={{
         borderRadius: radius,
         boxShadow: on > 0 ? `0 0 0 ${2 + on}px rgba(92,225,240,${on}), 0 0 ${56 * on}px rgba(92,225,240,${0.22 * on})` : 'none',

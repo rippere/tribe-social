@@ -127,6 +127,35 @@ it is.
   Seedance shots: `scripts/gen_talk.py`, `scripts/talk_shots.json`, `npm run talk:gen`.
   They are kept for reference; v6 uses none of them. The v5 source is commit `6edc00a`.
 
+## The guide cut (experimental)
+
+`Explainer-16x9-guide` / `Explainer-9x16-guide` (`npm run render:v6-guide` →
+`out/fmright-explainer-v6-guide-{16x9,9x16}.mp4`) are the same v6 scenes and narration,
+but the mascot is an attention guide: it travels to whatever Ben is talking about and
+lands beside it just before the word. No new footage: the same idle still, and for long
+level moves a run cycle looped from the walk-in itself (`intro_a` source frames 49–55,
+a side-on step, mouth closed; `scripts/run-frames.sh` writes them to
+`public/media/mascot/run/`).
+
+- **Targets** are the Spots: each `Spot` takes the cue time(s) it lights up on (`cue`)
+  and, inside the guide's `GuideStage`, reports its on-screen box (measured each frame,
+  divided by the root's scale so Studio and render agree). Other UI the guide must not
+  stand on registers with `useKeepClear()`. In the plain cut nothing is measured.
+- **Where it stands** (`place`, src/guide.tsx): beside the element with its feet on the
+  element's bottom edge, perched on its top edge, under it, on the floor below it, or on
+  top of the caption block; never over the captions or the element it points at, inside
+  the scorer window; covering other UI costs most. 16:9 mostly stands beside or under
+  the cards; 9:16, where the captions sit between the UI and the floor, walks along the
+  floor under the named column and looks up.
+- **How it gets there**: short → shuffle, medium → hop, long and level → run, a big
+  change in height → jump (crouch, arc, squash on landing). Cues closer than 0.6 s to the
+  last one, or that would leave it less than 0.35 s at a target, are skipped.
+- **Seams**: each scene starts and ends at the anchor's feet, small between narrated
+  scenes and full size where the walk-in hands over and before the play scene's Kling
+  shots, so cuts join without a jump. The cue-word hop, nod and droop beats are kept;
+  the leans are replaced by its travel.
+- **Knobs**: `GUIDE` in src/guide.tsx (size, lead, gaps, hop and jump heights, run speed).
+
 ## What's real and what isn't
 
 - **Real model output:** the cortex activity (`activity.bin`, `source: "tribe"`) and

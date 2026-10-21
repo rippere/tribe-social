@@ -3,7 +3,8 @@ import { Audio, Video } from '@remotion/media'
 import { AbsoluteFill, Easing, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { AppWindow, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
 import { Cortex, useCortexAssets, type CortexAssets } from './cortex'
-import { Captions, IdleMascot, MascotLayer, Spot, WALK_IN, WalkInMascot, cue, cutsFor, cutsLength, lit, pulse, type Beat, type Cut, type Plate } from './mascot'
+import { GUIDE, GuideMascot, GuideStage, anchorStop, type GuideScene } from './guide'
+import { Captions, CueMark, IdleMascot, MascotLayer, Spot, WALK_IN, WalkInMascot, cue, cutsFor, cutsLength, lit, pulse, useKeepClear, type Beat, type Cut, type Plate } from './mascot'
 import { C, FONT, FPS, MONO } from './theme'
 import narration from './data/narration.json'
 import result from './data/result.json'
@@ -143,7 +144,8 @@ function at(L: Layout, land: R, port: R, extra?: CSSProperties): CSSProperties {
 
 /* ---------- composition ---------- */
 
-export function Explainer({ orientation }: { orientation: Orientation }) {
+/** `guide`: the guide cut (src/guide.tsx), where the mascot travels to what Ben names. */
+export function Explainer({ orientation, guide = false }: { orientation: Orientation; guide?: boolean }) {
   const L = layout(orientation)
   const cortex = useCortexAssets()
   return (
@@ -155,7 +157,7 @@ export function Explainer({ orientation }: { orientation: Orientation }) {
               <Audio src={staticFile(`media/narration_v6/${k.line}.mp3`)} />
             </Sequence>
           ))}
-          <SceneFrame scene={s} L={L} cortex={cortex} first={s.key === 'upload'} />
+          <SceneFrame scene={s} L={L} cortex={cortex} first={s.key === 'upload'} guide={guide} />
         </Sequence>
       ))}
       {STANDIN && (
@@ -192,38 +194,86 @@ function beatsFor(key: SceneKey, w: Word[]): Beat[] {
   }
 }
 
-function SceneFrame({ scene, L, cortex, first }: { scene: Scene; L: Layout; cortex: CortexAssets | null; first: boolean }) {
+function SceneFrame({ scene, L, cortex, first, guide }: { scene: Scene; L: Layout; cortex: CortexAssets | null; first: boolean; guide: boolean }) {
   const frame = useCurrentFrame()
   const t = frame / FPS
   const stage = WINDOW_SCENES[scene.key]
   const content = <SceneBody scene={scene} L={L} cortex={cortex} t={t} />
   const beats = beatsFor(scene.key, scene.words)
   const clock = (scene.start + frame) / FPS
+  const shown = stage ? (
+    <div
+      style={{
+        position: 'absolute',
+        left: L.win.x,
+        top: L.win.y,
+        opacity: first ? fadeIn(frame, 0, 14) : 1,
+        transform: first ? `translateY(${(1 - fadeIn(frame, 0, 14)) * 24}px)` : undefined,
+      }}
+    >
+      <AppWindow stage={stage} width={L.win.w} height={L.win.h}>
+        <div style={{ position: 'absolute', inset: 0, opacity: fadeIn(frame, 0, 10) }}>{content}</div>
+      </AppWindow>
+    </div>
+  ) : (
+    content
+  )
+  if (guide) {
+    const g = guideScene(scene, L)
+    return (
+      <AbsoluteFill>
+        <GuideStage>
+          {spots => (
+            <>
+              {shown}
+              {scene.mascot === 'shots' && <MascotLayer cuts={scene.cuts} plate={L.plate} />}
+              {scene.mascot === 'idle' && <GuideMascot spots={spots} scene={g} beats={beats} clock={clock} />}
+              {scene.mascot === 'walk-in' && (
+                <WalkInMascot plate={L.plate} beats={beats} clockStart={scene.start / FPS} still={o => <GuideMascot spots={spots} scene={g} beats={beats} clock={clock} opacity={o} />} />
+              )}
+              <Captions words={scene.words} t={t} portrait={L.portrait} />
+            </>
+          )}
+        </GuideStage>
+      </AbsoluteFill>
+    )
+  }
   return (
     <AbsoluteFill>
-      {stage ? (
-        <div
-          style={{
-            position: 'absolute',
-            left: L.win.x,
-            top: L.win.y,
-            opacity: first ? fadeIn(frame, 0, 14) : 1,
-            transform: first ? `translateY(${(1 - fadeIn(frame, 0, 14)) * 24}px)` : undefined,
-          }}
-        >
-          <AppWindow stage={stage} width={L.win.w} height={L.win.h}>
-            <div style={{ position: 'absolute', inset: 0, opacity: fadeIn(frame, 0, 10) }}>{content}</div>
-          </AppWindow>
-        </div>
-      ) : (
-        content
-      )}
+      {shown}
       {scene.mascot === 'shots' && <MascotLayer cuts={scene.cuts} plate={L.plate} />}
       {scene.mascot === 'idle' && <IdleMascot plate={L.plate} beats={beats} clock={clock} />}
       {scene.mascot === 'walk-in' && <WalkInMascot plate={L.plate} beats={beats} clockStart={scene.start / FPS} />}
       <Captions words={scene.words} t={t} portrait={L.portrait} />
     </AbsoluteFill>
   )
+}
+
+/*
+ * The guide cut's geometry per scene. Its body stays inside the scorer window (or the
+ * canvas, outside it) and off the caption block (lower third bottom-left in 16:9, the
+ * band above the character in 9:16, held clear even between phrases). It starts and
+ * ends each scene at the anchor's feet: small between narrated scenes, full size
+ * where the walk-in or the play scene's Kling shots join it.
+ */
+function guideScene(scene: Scene, L: Layout): GuideScene {
+  const i = SCENES.indexOf(scene)
+  const [prev, next] = [SCENES[i - 1], SCENES[i + 1]]
+  const small = anchorStop(L.plate, GUIDE.scale)
+  const full = anchorStop(L.plate, 1)
+  const area = WINDOW_SCENES[scene.key]
+    ? { x0: L.win.x + 8, y0: L.win.y + 50, x1: L.win.x + L.win.w - 8, y1: L.win.y + L.win.h }
+    : { x0: 16, y0: 16, x1: L.W - 16, y1: L.H }
+  const captions = L.portrait ? { x0: 40, y0: 1280, x1: 1040, y1: 1500 } : { x0: 40, y0: 860, x1: 790, y1: 1050 }
+  return {
+    plate: L.plate,
+    area,
+    avoid: [captions],
+    from: scene.mascot === 'walk-in' ? WALK_IN.cutAt : 0,
+    end: scene.frames / FPS,
+    start: scene.mascot === 'walk-in' || prev?.mascot === 'shots' ? full : small,
+    home: !next ? null : next.mascot === 'shots' ? full : small,
+  }
 }
 
 function SceneBody({ scene, L, cortex, t }: { scene: Scene; L: Layout; cortex: CortexAssets | null; t: number }) {
@@ -284,27 +334,28 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
   const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
   const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const box = (land: R, port: R, extra?: CSSProperties) => at(L, land, port, extra)
+  const [tagline, chip] = [useKeepClear(), useKeepClear()]
   return (
     <AbsoluteFill>
       <div style={{ position: 'absolute', top: L.portrait ? 150 : 60, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: show(0) }}>
-        <Spot on={pulse(t, name, 2.2)} radius={28} style={{ padding: '10px 40px' }}>
+        <Spot on={pulse(t, name, 2.2)} cue={name} radius={28} style={{ padding: '10px 40px' }}>
           <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
         </Spot>
-        <div style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
+        <div ref={tagline} style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
         {/* The voice is Ben's, not the brain's: say so the moment he gives his name. */}
-        <div style={{ marginTop: 18, opacity: lit(t, ben - 0.1, 0.4) }}>
+        <div ref={chip} style={{ marginTop: 18, opacity: lit(t, ben - 0.1, 0.4) }}>
           <Tag tone="accent">Narrated by Ben, who built it</Tag>
         </div>
       </div>
-      <Spot on={pulse(t, give, 2.2)} radius={24} style={box([230, 330, pw, (pw * 16) / 9], [80, 470, pw, (pw * 16) / 9], { opacity: show(0.4) })}>
+      <Spot on={pulse(t, give, 2.2)} cue={give} radius={24} style={box([230, 330, pw, (pw * 16) / 9], [80, 470, pw, (pw * 16) / 9], { opacity: show(0.4) })}>
         <Phone width={pw}>
           <Stim />
         </Phone>
       </Spot>
-      <Spot on={pulse(t, brain, 2.6)} radius={22} style={box([1340, 300, cw, ch], [420, 470, cw, ch], { opacity: show(0.8) })}>
+      <Spot on={pulse(t, brain, 2.6)} cue={brain} radius={22} style={box([1340, 300, cw, ch], [420, 470, cw, ch], { opacity: show(0.8) })}>
         <CortexBox cortex={cortex} t={(t % PLAY_SECONDS) + LAG} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.15} intensity={0.7 + 0.8 * pulse(t, brain, 2.6)} />
       </Spot>
-      <Spot on={pulse(t, sbs, 2.2)} radius={16} style={box([1340, 720, cw, 150], [420, 950, cw, 180], { ...card, padding: 0, opacity: show(1.2) })}>
+      <Spot on={pulse(t, sbs, 2.2)} cue={sbs} radius={16} style={box([1340, 720, cw, 150], [420, 950, cw, 180], { ...card, padding: 0, opacity: show(1.2) })}>
         {HAS_RESULT && <ResponseChart values={ALIGNED.relative} upTo={curveUpTo} width={cw} height={L.portrait ? 180 : 150} />}
       </Spot>
     </AbsoluteFill>
@@ -321,16 +372,17 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const p = interpolate(t, [up + 0.3, gpu + 1.4], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const gone = lit(t, del + 0.3)
   const status = p <= 0 ? 'Ready to send' : p < 1 ? `Sending to the GPU… ${Math.round(p * 100)}%` : 'Delivered'
+  const phone = useKeepClear()
   return (
     <>
       {L.portrait && (
-        <div style={at(L, [0, 0, 0, 0], [340, 30, 360, 640], { opacity: 1 - 0.75 * gone })}>
+        <div ref={phone} style={at(L, [0, 0, 0, 0], [340, 30, 360, 640], { opacity: 1 - 0.75 * gone })}>
           <Phone width={360}>
             <Stim />
           </Phone>
         </div>
       )}
-      <Spot on={pulse(t, up, 2)} style={at(L, [40, 120, 640, 340], [30, 700, 315, 420], card)}>
+      <Spot on={pulse(t, up, 2)} cue={up} style={at(L, [40, 120, 640, 340], [30, 700, 315, 420], card)}>
         <div style={{ display: 'flex', gap: 28, height: '100%' }}>
           {!L.portrait && (
             <div style={{ opacity: 1 - 0.75 * gone }}>
@@ -351,7 +403,7 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
         </div>
       </Spot>
       <Arrow L={L} p={p} />
-      <Spot on={pulse(t, gpu, 2.2)} style={at(L, [755, 120, 360, 340], [365, 700, 315, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 })}>
+      <Spot on={pulse(t, gpu, 2.2)} cue={gpu} style={at(L, [755, 120, 360, 340], [365, 700, 315, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 })}>
         <span style={label}>Rented cloud GPU</span>
         <div style={{ fontSize: 34, fontWeight: 500 }}>NVIDIA A100</div>
         <div style={{ fontFamily: MONO, fontSize: 17, color: C.muted }}>80 GB · billed by the second</div>
@@ -361,13 +413,13 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
         </div>
       </Spot>
       <div style={at(L, [1185, 120, 650, 340], [700, 700, 310, 420], { display: 'flex', flexDirection: 'column', gap: 20 })}>
-        <Spot on={pulse(t, del, 1.6)} style={{ ...card, flex: 1, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 14, fontSize: L.portrait ? 21 : 24 }}>
+        <Spot on={pulse(t, del, 1.6)} cue={del} style={{ ...card, flex: 1, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 14, fontSize: L.portrait ? 21 : 24 }}>
           <span style={{ fontFamily: MONO, fontSize: 28, color: gone > 0.5 ? C.ink : C.muted }}>{gone > 0.5 ? '✕' : '·'}</span>
           <span>
             Video <span style={{ color: C.muted }}>· deleted after scoring</span>
           </span>
         </Spot>
-        <Spot on={pulse(t, scores, 1.8)} style={{ ...card, flex: 1, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 14, fontSize: L.portrait ? 21 : 24 }}>
+        <Spot on={pulse(t, scores, 1.8)} cue={scores} style={{ ...card, flex: 1, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 14, fontSize: L.portrait ? 21 : 24 }}>
           <span style={{ fontFamily: MONO, fontSize: 28, color: lit(t, scores) > 0.5 ? C.accent : C.muted }}>✓</span>
           <span>
             The numbers <span style={{ color: C.muted }}>· kept</span>
@@ -405,7 +457,7 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const alone = cue(w, /^alone/)
   const bars = Array.from({ length: L.portrait ? 14 : 28 }, (_, i) => 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7 + frame * 0.21) * Math.cos(i * 0.6 + frame * 0.09)))
   const channel = (i: number, title: string, land: R, port: R, body: ReactNode) => (
-    <Spot on={pulse(t, at3[i], 1.5)} style={at(L, land, port, { ...card, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden', padding: L.portrait ? 18 : 24 })}>
+    <Spot on={pulse(t, at3[i], 1.5)} cue={at3[i]} style={at(L, land, port, { ...card, display: 'flex', flexDirection: 'column', gap: 14, overflow: 'hidden', padding: L.portrait ? 18 : 24 })}>
       <span style={{ ...label, color: lit(t, at3[i]) > 0.5 ? C.accent : C.muted }}>{title}</span>
       <div style={{ flex: 1, minHeight: 0, opacity: 0.35 + 0.65 * lit(t, at3[i]) }}>{body}</div>
     </Spot>
@@ -446,12 +498,12 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
           <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 15, color: C.muted }}>transcript, word-timed</div>
         </div>,
       )}
-      <Spot on={Math.max(pulse(t, model, 1.6), pulse(t, learned, 2.6))} style={at(L, [40, 345, 1175, 150], [30, 30, 980, 300], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10 })}>
+      <Spot on={Math.max(pulse(t, model, 1.6), pulse(t, learned, 2.6))} cue={[model, learned]} style={at(L, [40, 345, 1175, 150], [30, 30, 980, 300], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10 })}>
         <span style={label}>The model</span>
         <div style={{ fontSize: L.portrait ? 44 : 34, fontWeight: 500 }}>TRIBE v2 · Meta FAIR</div>
         <div style={{ fontSize: L.portrait ? 24 : 20, color: C.muted }}>Trained on fMRI scans of people watching video.</div>
       </Spot>
-      <Spot on={Math.max(pulse(t, mri, 2.4), pulse(t, alone, 2.2))} style={at(L, [1270, 345, 565, 150], [30, 360, 980, 300], { ...card, display: 'flex', alignItems: 'center', gap: 20 })}>
+      <Spot on={Math.max(pulse(t, mri, 2.4), pulse(t, alone, 2.2))} cue={[mri, alone]} style={at(L, [1270, 345, 565, 150], [30, 360, 980, 300], { ...card, display: 'flex', alignItems: 'center', gap: 20 })}>
         <MriIcon size={L.portrait ? 120 : 92} crossed={lit(t, alone, 0.4)} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span style={{ ...label, color: lit(t, mri) > 0.5 ? C.accent : C.muted }}>{lit(t, alone) > 0.5 ? 'Not needed' : 'The usual way'}</span>
@@ -491,12 +543,12 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
   const [cw, ch] = L.portrait ? [980, 640] : [700, 480]
   return (
     <>
-      <Spot on={pulse(t, pts, 2.2)} style={at(L, [40, 160, 540, 290], [30, 700, 470, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 })}>
+      <Spot on={pulse(t, pts, 2.2)} cue={pts} style={at(L, [40, 160, 540, 290], [30, 700, 470, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 })}>
         <span style={label}>Points predicted</span>
         <div style={{ fontFamily: MONO, fontSize: 64, fontVariantNumeric: 'tabular-nums' }}>{n.toLocaleString('en-US')}</div>
         <div style={{ fontSize: 19, color: C.muted }}>across the cortex surface</div>
       </Spot>
-      <Spot on={Math.max(pulse(t, out, 1.2), pulse(t, glow, 2.2))} radius={22} style={at(L, [585, 0, cw, ch], [30, 20, cw, ch])}>
+      <Spot on={Math.max(pulse(t, out, 1.2), pulse(t, glow, 2.2))} cue={[out, glow]} radius={22} style={at(L, [585, 0, cw, ch], [30, 20, cw, ch])}>
         <CortexBox
           cortex={cortex}
           t={lit(t, glow) > 0 ? ALIGNED.peak.second + LAG : t % PLAY_SECONDS}
@@ -506,7 +558,7 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
           intensity={0.25 + 1.75 * lit(t, glow - 0.1, 0.6) - 0.35 * lit(t, glow + 1.2, 0.8) + 0.35 * Math.max(0, Math.sin((t - glow) * 6)) * lit(t, glow, 0.6)}
         />
       </Spot>
-      <Spot on={pulse(t, fps1, 2.4)} style={at(L, [1295, 160, 540, 290], [540, 700, 470, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 })}>
+      <Spot on={pulse(t, fps1, 2.4)} cue={fps1} style={at(L, [1295, 160, 540, 290], [540, 700, 470, 420], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 })}>
         <span style={label}>One per second</span>
         <div style={{ display: 'flex', gap: 4 }}>
           {Array.from({ length: 24 }, (_, i) => (
@@ -534,33 +586,41 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
   const shift = interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) })
   const bands = HAS_RESULT
     ? [
-        { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind` },
-        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
-        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
+        { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind`, at: late },
+        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs', at: climbs },
+        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips', at: dips },
       ]
     : []
   const [chartW, chartH] = L.portrait ? [980, 440] : [1535, 440]
+  const [brainBox, legend] = [useKeepClear(), useKeepClear()]
+  // The bands as guide targets, at ResponseChart's own x scale (16 px side padding, 24 top, 40 bottom).
+  const bandX = (s: number) => 16 + (s / (result.relative.length - 1)) * (chartW - 32)
   return (
     <>
-      <Spot on={pulse(t, real, 2)} style={at(L, [40, 20, 230, 450], [30, 20, 300, 560])}>
+      <Spot on={pulse(t, real, 2)} cue={real} style={at(L, [40, 20, 230, 450], [30, 20, 300, 560])}>
         <Phone width={L.portrait ? 300 : 230}>
           <Stim />
         </Phone>
         <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 15, color: C.muted }}>scored · 0:24</div>
       </Spot>
       {L.portrait && (
-        <div style={at(L, [0, 0, 0, 0], [360, 20, 650, 533])}>
+        <div ref={brainBox} style={at(L, [0, 0, 0, 0], [360, 20, 650, 533])}>
           <CortexBox cortex={cortex} t={LAG} w={650} h={533} rotation={Math.PI / 2} />
         </div>
       )}
-      <Spot on={Math.max(pulse(t, line, 3.2), pulse(t, slide, 2))} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
+      <Spot on={Math.max(pulse(t, line, 3.2), pulse(t, slide, 2))} cue={[line, slide]} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
         {HAS_RESULT ? (
-          <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} bands={bands} shift={shift} />
+          <>
+            <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} bands={bands} shift={shift} />
+            {bands.map(b => (
+              <CueMark key={b.label} cue={b.at} style={{ left: bandX(b.from), top: 24, width: bandX(b.to) - bandX(b.from), height: chartH - 64 }} />
+            ))}
+          </>
         ) : (
           <Tag tone="amber">Awaiting model output · no curve shown</Tag>
         )}
       </Spot>
-      <div style={at(L, [1300, 474, 535, 70], [30, 1080, 980, 50], { display: 'flex', flexDirection: L.portrait ? 'row' : 'column', gap: L.portrait ? 30 : 6, fontSize: 20, color: C.muted })}>
+      <div ref={legend} style={at(L, [1300, 474, 535, 70], [30, 1080, 980, 50], { display: 'flex', flexDirection: L.portrait ? 'row' : 'column', gap: L.portrait ? 30 : 6, fontSize: 20, color: C.muted })}>
         <span style={{ opacity: 0.4 + 0.6 * lit(t, climbs) }}>
           <span style={{ color: C.accent }}>▲ Climbs</span> predicted to lock in
         </span>
@@ -643,18 +703,19 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const light = cue(w, /^fMRIght/)
   const forecast = cue(w, /^forecast/)
   const testing = cue(w, /^testing/)
+  const [preview, pilot] = [useKeepClear(), useKeepClear()]
   return (
     <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 420 : 150, opacity: fadeIn(frame, 0, 15) }}>
-      <Spot on={pulse(t, light, 1.6)} radius={28} style={{ padding: '10px 40px' }}>
+      <Spot on={pulse(t, light, 1.6)} cue={light} radius={28} style={{ padding: '10px 40px' }}>
         <div style={{ fontSize: L.portrait ? 120 : 140, fontWeight: 500, letterSpacing: -3 }}>fMRIght</div>
       </Spot>
-      <Spot on={pulse(t, upload, 2.4)} radius={999} style={{ marginTop: 30 }}>
+      <Spot on={pulse(t, upload, 2.4)} cue={upload} radius={999} style={{ marginTop: 30 }}>
         <div style={{ padding: '20px 40px', borderRadius: 999, background: C.ink, color: C.bg, fontSize: 34, fontWeight: 500 }}>Score a clip</div>
       </Spot>
-      <div style={{ marginTop: 22, fontSize: 24, color: lit(t, forecast, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
+      <div ref={preview} style={{ marginTop: 22, fontSize: 24, color: lit(t, forecast, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Free research preview · predictions are model output, not a forecast of views
       </div>
-      <div style={{ marginTop: 10, fontSize: 24, color: lit(t, testing, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
+      <div ref={pilot} style={{ marginTop: 10, fontSize: 24, color: lit(t, testing, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Unproven: in our 24-clip pilot the score's link to engagement was weak and not significant (r = 0.25, p = 0.24). A pre-registered test is next.
       </div>
     </AbsoluteFill>

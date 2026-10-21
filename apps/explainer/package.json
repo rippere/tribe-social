@@ -14,6 +14,7 @@
     "render:landing": "remotion render Explainer-16x9 out/fmright-explainer-16x9.mp4 --gl=angle --pixel-format=yuv420p --color-space=bt709",
     "render:vertical": "remotion render Explainer-9x16 out/fmright-explainer-9x16.mp4 --gl=angle --pixel-format=yuv420p --color-space=bt709",
     "render:v6": "bash scripts/render-v6.sh",
+    "render:v6-guide": "bash scripts/render-v6-guide.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
