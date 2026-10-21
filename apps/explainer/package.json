@@ -5,11 +5,15 @@
   "description": "Remotion source for the fMRIght scoring explainer (landing 16:9 + vertical 9:16).",
   "scripts": {
     "sync": "bash scripts/sync-media.sh",
+    "vo:standin": "uv run --no-project --with numpy --with piper-tts python scripts/vo.py standin --media \"${EXPLAINER_MEDIA:-../../business/explainer}\" && npm run data",
+    "vo:ingest": "uv run --no-project --with numpy python scripts/vo.py ingest --media \"${EXPLAINER_MEDIA:-../../business/explainer}\" && npm run data",
+    "data": "uv run --no-project --with faster-whisper --with numpy python scripts/build_data.py",
     "mascot:gen": "python3 scripts/gen_mascot.py --media \"${EXPLAINER_MEDIA:-../../business/explainer}\"",
     "talk:gen": "python3 scripts/gen_talk.py --media \"${EXPLAINER_MEDIA:-../../business/explainer}\"",
     "studio": "remotion studio --ipv4 --port 3200",
     "render:landing": "remotion render Explainer-16x9 out/fmright-explainer-16x9.mp4 --gl=angle --pixel-format=yuv420p --color-space=bt709",
     "render:vertical": "remotion render Explainer-9x16 out/fmright-explainer-9x16.mp4 --gl=angle --pixel-format=yuv420p --color-space=bt709",
+    "render:v6": "bash scripts/render-v6.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -12,6 +12,11 @@ anchors match edge for edge.
 
     uv run --no-project --with numpy python scripts/key_mascot.py \
         --src $EXPLAINER_MEDIA/v2/clips --out public/media/mascot --track src/data/mascot_track.json
+
+A still (the idle anchor the v6 cut animates in Remotion) keys to a PNG with alpha:
+
+    uv run --no-project --with numpy python scripts/key_mascot.py \
+        --still $EXPLAINER_MEDIA/v2/anchors/A_C.png public/media/mascot/idle.png
 """
 
 from __future__ import annotations
@@ -85,13 +90,36 @@ def process(src: Path, dst: Path) -> tuple[float, list]:
     return num / den, track
 
 
+def key_still(src: Path, dst: Path) -> None:
+    """Key one green-screen image to an RGBA PNG (same size), via ffmpeg."""
+    w, h, _ = probe(src)
+    rgb = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(src), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+        check=True, capture_output=True,
+    ).stdout
+    rgba = key_frame(np.frombuffer(rgb, np.uint8).reshape(h, w, 3))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{w}x{h}", "-i", "-",
+         "-frames:v", "1", "-pix_fmt", "rgba", str(dst)],
+        input=rgba.tobytes(), check=True,
+    )
+    print(f"{src.name} → {dst} {bbox(rgba[..., 3], w, h)}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--src", type=Path, required=True)
-    p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--track", type=Path, required=True, help="where to write the per-frame track json")
+    p.add_argument("--still", nargs=2, type=Path, metavar=("SRC_PNG", "DST_PNG"), help="key one image and exit")
+    p.add_argument("--src", type=Path)
+    p.add_argument("--out", type=Path)
+    p.add_argument("--track", type=Path, help="where to write the per-frame track json")
     p.add_argument("--only", nargs="*", help="clip names to (re)process; default all")
     a = p.parse_args()
+    if a.still:
+        key_still(*a.still)
+        return
+    if not (a.src and a.out and a.track):
+        p.error("--src, --out and --track are required (or --still)")
     a.out.mkdir(parents=True, exist_ok=True)
     track_path = a.track
     tracks = json.loads(track_path.read_text()) if track_path.exists() else {}

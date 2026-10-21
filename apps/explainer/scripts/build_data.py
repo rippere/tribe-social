@@ -4,8 +4,9 @@
         [--preds ../../research/demo_mac_and_cheese_preds.npy]
 
 Writes
-  src/data/narration.json  per talking shot (scripts/talk_shots.json): its audio slice's
-                           duration + word-timed captions (script text, Whisper timing)
+  src/data/narration.json  per v6 narration line (public/media/narration_v6/lines.tsv,
+                           synced by scripts/vo.py): its duration, word-timed captions
+                           (script text, Whisper timing) and whether it is a stand-in
   src/data/result.json     per-second whole-cortex response for the scored clip (only with --preds)
 
 The per-second line is global field power (RMS across all 20,484 fsaverage5
@@ -28,7 +29,8 @@ HERE = Path(__file__).resolve().parent.parent
 MEDIA = HERE / "public" / "media"
 DATA = HERE / "src" / "data"
 
-SHOTS = json.loads((HERE / "scripts" / "talk_shots.json").read_text())["shots"]
+NARRATION = MEDIA / "narration_v6"
+PACE = 2.6  # words/s, for evenly timed captions when there is no voice to align to
 
 
 def _pcm(path: Path) -> np.ndarray:
@@ -51,10 +53,11 @@ def _norm(w: str) -> str:
     return re.sub(r"[^a-z0-9]", "", w.lower())
 
 
-def _align(script_words: list[str], timed: list[dict]) -> list[dict]:
+def _align(script_words: list[str], timed: list[dict]) -> tuple[list[dict], int]:
     """Give each script word a time. Whisper's words are used only for timing:
     its spelling ('weekly', '20,000', 'F.M.A. Right') never reaches the screen.
-    Unmatched script words are spread between their matched neighbours."""
+    Unmatched script words are spread between their matched neighbours. Also returns
+    how many script words were matched."""
     out: list[dict] = []
     j = 0
     for w in script_words:
@@ -66,6 +69,7 @@ def _align(script_words: list[str], timed: list[dict]) -> list[dict]:
             j = k + 1
         else:
             out.append({"w": w, "s": None, "e": None})
+    matched = sum(1 for o in out if o["s"] is not None)
     last_end = 0.0
     for i, item in enumerate(out):
         if item["s"] is not None:
@@ -74,35 +78,46 @@ def _align(script_words: list[str], timed: list[dict]) -> list[dict]:
         nxt = next((o["s"] for o in out[i + 1:] if o["s"] is not None), last_end + 0.4)
         item["s"], item["e"] = last_end, max(nxt, last_end + 0.05)
         last_end = item["e"]
-    return out
+    return out, matched
+
+
+def _even(words: list[str], duration: float) -> list[dict]:
+    """Evenly spaced word timings over the line, for a silent placeholder."""
+    step = duration / max(1, len(words))
+    return [{"w": w, "s": round(i * step, 2), "e": round((i + 0.85) * step, 2)} for i, w in enumerate(words)]
 
 
 def build_narration(model) -> None:
-    """Align each narration line once, then give every talking shot the words in its
-    audio slice, re-timed from the slice start (the shot's first frame)."""
-    aligned: dict[str, list[dict]] = {}
-    shots = {}
-    for name, shot in SHOTS.items():
-        key, start, end = shot["audio"]
-        if key not in aligned:
-            mp3 = MEDIA / "narration" / f"{key}.mp3"
-            text = (MEDIA / "narration" / f"{key}.txt").read_text().strip()
-            segs, _ = model.transcribe(_pcm(mp3), word_timestamps=True)
-            timed = [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2)}
-                     for s in segs for w in s.words]
-            aligned[key] = _align(text.split(), timed)
-        words = [
-            {"w": w["w"], "s": round(w["s"] - start, 2), "e": round(w["e"] - start, 2)}
-            for w in aligned[key]
-            if start <= (w["s"] + w["e"]) / 2 and (end is None or (w["s"] + w["e"]) / 2 < end)
-        ]
-        shots[name] = {
-            "text": " ".join(w["w"] for w in words),
-            "duration": round(_duration(MEDIA / "narration" / f"{name}.mp3"), 3),
-            "words": words,
-        }
-    (DATA / "narration.json").write_text(json.dumps(shots, indent=1) + "\n")
-    print(f"narration.json  {len(shots)} shots")
+    """Align each v6 line (Ben's take, or its stand-in) against its script text. The
+    .txt is the caption text; Whisper only supplies the timing."""
+    rows = [r.split("\t", 1)[0].strip() for r in (NARRATION / "lines.tsv").read_text().splitlines() if r.strip()]
+    out = {}
+    for line in rows:
+        mp3 = NARRATION / f"{line}.mp3"
+        text = (NARRATION / f"{line}.txt").read_text().strip()
+        duration = _duration(mp3)
+        script = text.split()
+        pcm = _pcm(mp3)
+
+        def transcribe(**kw) -> list[dict]:
+            segs, _ = model.transcribe(pcm, word_timestamps=True, condition_on_previous_text=False, **kw)
+            return [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2)} for s in segs for w in s.words]
+
+        words, matched = _align(script, transcribe())
+        if matched < 0.9 * len(script):
+            # Whisper sometimes drops a sentence after a pause; primed with the script it
+            # keeps going. Only the timing is used either way.
+            primed, n = _align(script, transcribe(initial_prompt=text))
+            if n > matched:
+                words, matched = primed, n
+        if matched < len(script) / 2:
+            # No voice to align to (a silent placeholder): spread the words evenly instead.
+            words = _even(script, duration)
+        standin = (NARRATION / f"{line}.standin").exists()
+        out[line] = {"text": text, "duration": round(duration, 3), "standin": standin, "words": words}
+        print(f"  {line}: {duration:.2f}s  {matched}/{len(script)} words matched{'  (stand-in)' if standin else ''}")
+    (DATA / "narration.json").write_text(json.dumps(out, indent=1) + "\n")
+    print(f"narration.json  {len(out)} lines")
 
 
 def build_result(model, preds_path: Path) -> None:
