@@ -34,6 +34,10 @@ npm run render:v6         # out/fmright-explainer-v6[-standin]-{16x9,9x16}.mp4
 # no GPU GL (e.g. a driver/library mismatch)? bash scripts/render-v6.sh --gl=swangle
 ```
 
+Scrub each render before shipping it: GPU GL occasionally drops the cortex canvas
+mid-render and leaves a white box for the rest of a scene (seen once on the 16:9 play
+scene, 2026-10-20). Re-rendering that cut fixed it.
+
 Media (`public/media/`, `public/cortex/`) and renders (`out/`) are git-ignored. The
 source media lives in the git-ignored `business/explainer/` folder; point
 `EXPLAINER_MEDIA` elsewhere to swap it. From a worktree, set `EXPLAINER_MEDIA` to the
