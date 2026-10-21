@@ -35,8 +35,6 @@ import numpy as np
 HERE = Path(__file__).resolve().parent.parent
 ROOT = HERE.parent.parent
 PUBLIC = HERE / "public" / "media" / "narration_v6"
-V5_REF = HERE / "public" / "media" / "narration" / "n1_intro.mp3"
-V5_LUFS = -11.5  # n1_intro.mp3, measured 2026-10-20; used when the file is not synced
 TRUE_PEAK = -1.0
 PAD = 0.15
 SR = 44100
@@ -95,8 +93,13 @@ def loudness(path: Path, extra: list[str] | None = None) -> dict:
     return json.loads(out[out.rindex("{"): out.rindex("}") + 1])
 
 
+# v5's -11.5 LUFS read as too loud with a real voice (Ben, 2026-10-21). Lines are mono at
+# -16; the stereo render doubles the channel and measures about -13 LUFS, near web norms.
+TARGET_LUFS = -16.0
+
+
 def target_lufs() -> float:
-    return float(loudness(V5_REF)["input_i"]) if V5_REF.exists() else V5_LUFS
+    return TARGET_LUFS
 
 
 def level(src: Path, dst: Path, lufs: float) -> float:
