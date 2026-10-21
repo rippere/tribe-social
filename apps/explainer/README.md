@@ -1,8 +1,9 @@
 # fMRIght explainer
 
-Remotion source for the scoring explainer: a brain-mascot narrator walks through
-upload → encode → extract → read, then a real clip plays against its real TRIBE v2
-result. Two compositions from one source:
+Remotion source for the scoring explainer: Ben (who built fMRIght) narrates off-screen
+in the first person while the brain mascot walks in, stands by the scorer UI through
+upload → encode → extract → read, then watches a real clip play against its real
+TRIBE v2 result. The mascot never talks. Two compositions from one source:
 
 | Composition | Size | Use |
 |---|---|---|
@@ -15,85 +16,112 @@ result. Two compositions from one source:
 # 1. score the stimulus clip (rents one A100 pod, terminates it after)
 cd research && uv run tribe-score score <clip.mp4> --label demo_mac_and_cheese
 
-# 2. mascot shots: Kling walk-in + watching scene, Seedance talking shots (skip existing)
-cd apps/explainer && npm ci && npm run mascot:gen && npm run talk:gen
+# 2. mascot shots: Kling walk-in + watching scene (skip existing)
+cd apps/explainer && npm ci && npm run mascot:gen
 
-# 3. copy media in, key the mascot to alpha WebM + track, export cortex activity
+# 3. copy media in: key the mascot to alpha WebM + track, key the idle still,
+#    copy the v6 narration, export cortex activity
 npm run sync
 
-# 4. narration timings + per-second result
+# 4. narration word timings (+ per-second result with --preds)
+npm run data
 uv run --no-project --with faster-whisper --with numpy python scripts/build_data.py \
   --preds ../../research/demo_mac_and_cheese_preds.npy
 
 # 5. preview / render
 npm run studio            # http://<host>:3200
-npm run render:landing    # out/fmright-explainer-16x9.mp4
-npm run render:vertical   # out/fmright-explainer-9x16.mp4
-# no GPU GL (e.g. a driver/library mismatch)? append: -- --gl=swangle  (software, slower)
+npm run render:v6         # out/fmright-explainer-v6[-standin]-{16x9,9x16}.mp4
+# no GPU GL (e.g. a driver/library mismatch)? bash scripts/render-v6.sh --gl=swangle
 ```
 
 Media (`public/media/`, `public/cortex/`) and renders (`out/`) are git-ignored. The
 source media lives in the git-ignored `business/explainer/` folder; point
-`EXPLAINER_MEDIA` elsewhere to swap it. To use a filmed clip instead of the
-AI-generated one, replace `stimulus/mac_and_cheese.mp4` there, re-score, and re-run
-steps 2–4. The callouts and quotes are derived from the new result.
+`EXPLAINER_MEDIA` elsewhere to swap it. From a worktree, set `EXPLAINER_MEDIA` to the
+main checkout's `business/explainer`: `business/` is git-ignored, so a worktree has
+none. To use a filmed clip instead of the AI-generated one, replace
+`stimulus/mac_and_cheese.mp4` there, re-score, and re-run steps 3–4. The callouts and
+quotes are derived from the new result.
+
+## Narration (v6: Ben's voice)
+
+The script is `business/explainer/v6/lines.tsv`, one row per line (`b1_intro` …
+`b9_outro`); `v6/narration/<line>.txt` is that line's exact wording and also the
+caption text. Each line's audio is `v6/narration/<line>.mp3`. A scene lasts as long as
+its lines (0.25 s lead, 0.35 s between lines, 0.6 s tail), so a longer or shorter take
+just moves the cut.
+
+| Scene | Lines |
+|---|---|
+| intro | b1_intro |
+| upload | b2_upload |
+| encode | b3_encode, b4_scan |
+| extract | b5_extract |
+| read | b6_read, b7_lag, b8_read2 |
+| play | none (the clip's own audio) |
+| cta | b9_outro |
+
+**Stand-ins.** Until Ben records, every line is a free offline TTS stand-in (piper,
+voice `en_US-ryan-medium`, paced to ~2.6 words/s): `npm run vo:standin`. A stand-in
+line carries a `v6/narration/<line>.standin` marker. While any marker is left, the
+video shows an amber "Stand-in voice" tag and `render:v6` names the files
+`-v6-standin-*`.
+
+**Dropping in Ben's takes** (any subset of lines; the rest stay stand-ins):
+
+```bash
+# 1. save each take as business/explainer/v6/recordings/<line>.{wav,m4a,mp3}
+# 2. trim, level, replace the stand-in, re-align the captions
+npm run vo:ingest
+# 3. render both cuts
+npm run render:v6
+```
+
+`vo:ingest` trims leading/trailing silence to 0.15 s, levels the take to the v5
+narration's loudness (measured from `public/media/narration/n1_intro.mp3`, -11.5 LUFS,
+peaks under -1 dBTP), writes `v6/narration/<line>.mp3`, removes that line's marker,
+copies the narration into `public/media/narration_v6/` and re-runs the Whisper word
+alignment (`npm run data`). Read the takes against the `.txt` exactly: the captions
+show the script, and Whisper only times it. If a line's wording has to change, edit
+its `.txt` and its row in `lines.tsv` together.
 
 ## The mascot
 
-The brain narrates and teaches from inside the scorer. Two kinds of shot, all on chroma
-green and keyed to alpha:
+The brain never speaks: Ben's voice is off-screen, and the mascot's mouth stays shut
+whenever he talks. An intro chip ("Narrated by Ben, who built it") says whose voice
+it is.
 
-- **Talking shots (Seedance 2.0, `scripts/talk_shots.json`).** One per sentence or two,
-  lip-synced to that slice of the narration: the mouth moves only while Isla speaks.
-  Each prompt ties a gesture to a phrase ("while it says 'graphics card' it points
-  straight up"). Shots play at natural speed with their own audio slice from the first
-  frame, so gestures land on their words. `npm run talk:gen [-- <name>]` (720p, about
-  4.5 credits/s; Higgsfield runs at most 6 at once).
-- **Walk-in and watching (Kling 3.0, `scripts/mascot_shots.json`).** `intro_a` walks in;
-  `play_a`–`play_e` sit and watch the scored clip. The watching shots are pinned to the
-  result: the excited lean lands just after the peak, and the frown and walk-off land on
-  the decline into the biggest drop.
-- **Pointing at the UI.** The character stands at centre in every scorer scene, and the
-  UI is laid out as three targets around it: up-left, straight up, up-right. A prompt
-  names the direction on the word that names the element, and the accent ring is cued
-  from the same word.
-- **Anchors.** `business/explainer/v2/anchors/A_{empty,C,SIT}.png`: the same keyed
-  character at a fixed size and ground line. Every shot starts and ends on one, so shots
-  join without a jump. Seedance sometimes frames a shot tighter than its start image;
-  `fitToAnchor` (src/mascot.tsx) scales those back about the feet.
+- **Walk-in (intro).** Kling `intro_a` walks in from the left. Its mouth starts moving
+  (a "hi") at source frame 78, right after it reaches the centre, so it is cut at
+  frame 76 and cross-faded over 6 frames into the idle still (`WALK_IN`, src/mascot.tsx).
+- **Idle (upload, encode, extract, read, cta).** The centre anchor
+  `business/explainer/v2/anchors/A_C.png`, keyed to `public/media/mascot/idle.png`
+  (`key_mascot.py --still`), at the same size and ground line as the shots. Remotion
+  animates it: breathing (~1.2 % vertical scale), a slow bob and sway on global time
+  (so it carries across cuts), and a beat per cue word: it leans toward the UI
+  element Ben names (the UI sits up-left, up and up-right of it), hops on the payoff
+  words and droops on "dips" (`beatsFor`, src/Explainer.tsx).
+- **Watching (play).** Kling `w_a`–`w_e` (`scripts/mascot_shots.json`), silent. They
+  are pinned to the result: the excited lean lands just after the peak, and the frown
+  and walk-off land on the decline into the biggest drop.
+- **Rejected for v6.** Every talking shot (Seedance `t_*`, `scripts/talk_shots.json`,
+  and the v2 `enc_`/`ext_`/`read_`/`lim_`/`intro_b`/`intro_c` clips) moves its mouth.
+  The v2 `cta` wave opens into a grin from about frame 42, so the sign-off uses idle
+  as well.
+- **Anchors.** `business/explainer/v2/anchors/A_{empty,C,SIT}.png`: the same character
+  at a fixed size and ground line. Every shot starts and ends on one, so shots and
+  the idle still join without a jump.
 - **Keying.** `scripts/key_mascot.py` keys to VP9 alpha WebM and writes
   `src/data/mascot_track.json` (per-frame bounding box). Clip lengths come from it.
 - **Captions.** Lower third at bottom-left in 16:9 (clear of the character), centred
-  above its head in 9:16. Words light up as they are spoken.
-- **Changing a line.** Edit `business/explainer/v3/narration/<line>.txt` (and its row in
-  `lines.tsv`), regenerate its TTS (Higgsfield `text2speech_v2`, ElevenLabs voice Isla),
-  update the quoted phrases in that shot's prompt in `scripts/talk_shots.json` (and its
-  `duration` if the audio moves past a whole second), then `npm run talk:gen -- <shot>`,
-  `npm run sync`, and step 4 above. `.txt` is also the caption text, so never change it
-  without the matching `.mp3` and shot, or captions drift off the voice. From a worktree,
-  set `EXPLAINER_MEDIA` to the main checkout's `business/explainer`; `business/` is
-  git-ignored, so a worktree has none.
-- **Check every new talking shot before syncing it.** Seedance sometimes ignores "hands
-  empty" and adds a prop. The 2026-10-05 `t_read1` retake held a pointer stick through the
-  whole sweep and was rejected. A track box much taller than the anchor (`h` ~0.354) is the
-  tell.
-
-## Script status (v4)
-
-The target script is `business/explainer/v4/lines.tsv`. As of 2026-10-05:
-
-| Line | Shot | State |
-|---|---|---|
-| n6_read2 ("I predict an average viewer locks in… I predict they drift off") | t_read2 | **Live.** Audio, shot, prompt and captions all match |
-| n1_intro ("I'll predict how an average viewer's brain responds") | t_intro | **Pending.** TTS done (`v4/narration/n1_intro.*`); shot not generated (63 credits at 14 s) |
-| n5_read ("tracks the predicted response across my whole surface") | t_read1 | **Pending.** TTS done (`v4/narration/n5_read.*`); first retake rejected (`v4/rejected/`); regenerate at 13 s (58.5 credits) |
-| n2, n3, n4, n7 | | Unchanged from v3 |
-
-Pending lines still render with their v3 audio, shot and captions, so the cut stays in
-sync. To land one: copy its `v4/narration/<line>.{mp3,json,txt}` into `v3/narration/`,
-replace its row in `v3/narration/lines.tsv`, update the quoted phrases in its shot prompt
-(for t_read1, also add "it never holds a stick, pointer or wand"), then run `talk:gen`,
-`sync` and `build_data.py`.
+  above its head in 9:16. Words light up as they are spoken. Each UI highlight (accent
+  ring) is cued from a word in the v6 script: "video", "brain", "second" (intro);
+  "upload", "graphics card", "delete", "numbers" (upload); "frames", "audio", "words",
+  "Meta", "trained", "MRI", "alone" (encode); "comes", "twenty thousand", "every",
+  "lighting" (extract); "real", "line", "behind", "slide", "climbs", "dips" (read);
+  "fMRIght", "forecast", "testing", "Try" (sign-off).
+- **v3–v5 history.** Those cuts had the brain narrate (ElevenLabs "Isla") with lip-synced
+  Seedance shots: `scripts/gen_talk.py`, `scripts/talk_shots.json`, `npm run talk:gen`.
+  They are kept for reference; v6 uses none of them. The v5 source is commit `6edc00a`.
 
 ## What's real and what isn't
 
@@ -103,9 +131,10 @@ replace its row in `v3/narration/lines.tsv`, update the quoted phrases in its sh
   masks in `run_and_save.py` / `roi_masks.py` are not anatomical regions.
 - **Warm-up:** the first 5 s are shaded. The fMRI signal TRIBE predicts lags the
   stimulus by about 5 s, so every clip starts low. That is not a weak hook.
-- **Generated media:** the stimulus clip (Veo 3.1), mascot shots (Kling 3.0 and Seedance 2.0, keyed from green screen), and
-  narration (ElevenLabs voice "Isla") come from Higgsfield. The clip is labelled
-  "AI-generated test clip" on screen.
+- **Generated media:** the stimulus clip (Veo 3.1) and mascot shots (Kling 3.0, keyed
+  from green screen) come from Higgsfield. The clip is labelled "AI-generated test
+  clip" on screen. The narration is Ben's own voice; until he records, it is a piper
+  TTS stand-in, tagged on screen.
 - **No real data, nothing shown:** if `activity.*` or `result.json` is missing, the
   scenes show an amber "awaiting model output" tag. They never fall back to
   illustrative data.

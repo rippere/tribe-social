@@ -1,1070 +1,1129 @@
 {
- "t_intro": {
-  "text": "Hi! I'm a brain. Well, a prediction of one. Give me a video, and I'll predict how an average viewer's brain responds to it, second by second. This is Eff-em-aright.",
-  "duration": 13.44,
+ "b1_intro": {
+  "text": "Hey, I'm Ben. I built fMRIght. It predicts how an average viewer's brain responds to a short video, second by second.",
+  "duration": 7.914,
+  "standin": true,
   "words": [
    {
-    "w": "Hi!",
+    "w": "Hey,",
     "s": 0.0,
-    "e": 0.3
+    "e": 0.22
    },
    {
     "w": "I'm",
-    "s": 0.74,
-    "e": 1.06
+    "s": 0.46,
+    "e": 0.78
    },
    {
-    "w": "a",
-    "s": 1.06,
-    "e": 1.18
+    "w": "Ben.",
+    "s": 0.78,
+    "e": 1.04
    },
    {
-    "w": "brain.",
-    "s": 1.18,
-    "e": 1.52
+    "w": "I",
+    "s": 1.46,
+    "e": 1.54
    },
    {
-    "w": "Well,",
-    "s": 2.08,
-    "e": 2.24
+    "w": "built",
+    "s": 1.54,
+    "e": 1.76
    },
    {
-    "w": "a",
-    "s": 2.66,
-    "e": 2.82
-   },
-   {
-    "w": "prediction",
-    "s": 2.82,
-    "e": 3.16
-   },
-   {
-    "w": "of",
-    "s": 3.16,
-    "e": 3.42
-   },
-   {
-    "w": "one.",
-    "s": 3.42,
-    "e": 3.74
-   },
-   {
-    "w": "Give",
-    "s": 4.44,
-    "e": 4.58
-   },
-   {
-    "w": "me",
-    "s": 4.58,
-    "e": 4.76
-   },
-   {
-    "w": "a",
-    "s": 4.76,
-    "e": 4.9
-   },
-   {
-    "w": "video,",
-    "s": 4.9,
-    "e": 5.22
-   },
-   {
-    "w": "and",
-    "s": 5.22,
-    "e": 5.82
-   },
-   {
-    "w": "I'll",
-    "s": 5.82,
-    "e": 6.06
-   },
-   {
-    "w": "predict",
-    "s": 6.06,
-    "e": 6.34
-   },
-   {
-    "w": "how",
-    "s": 6.34,
-    "e": 6.66
-   },
-   {
-    "w": "an",
-    "s": 6.66,
-    "e": 6.76
-   },
-   {
-    "w": "average",
-    "s": 6.76,
-    "e": 7.18
-   },
-   {
-    "w": "viewer's",
-    "s": 7.18,
-    "e": 7.72
-   },
-   {
-    "w": "brain",
-    "s": 7.72,
-    "e": 7.98
-   },
-   {
-    "w": "responds",
-    "s": 7.98,
-    "e": 8.4
-   },
-   {
-    "w": "to",
-    "s": 8.4,
-    "e": 8.72
-   },
-   {
-    "w": "it,",
-    "s": 8.72,
-    "e": 9.04
-   },
-   {
-    "w": "second",
-    "s": 9.16,
-    "e": 9.54
-   },
-   {
-    "w": "by",
-    "s": 9.54,
-    "e": 9.9
-   },
-   {
-    "w": "second.",
-    "s": 9.9,
-    "e": 10.32
-   },
-   {
-    "w": "This",
-    "s": 11.22,
-    "e": 11.42
-   },
-   {
-    "w": "is",
-    "s": 11.42,
-    "e": 11.86
-   },
-   {
-    "w": "Eff-em-aright.",
-    "s": 11.86,
-    "e": 12.26
-   }
-  ]
- },
- "t_upload": {
-  "text": "First, you upload a clip. It goes to a graphics card we rent in the cloud. Once it's scored, we delete the video and keep only the scores.",
-  "duration": 9.84,
-  "words": [
-   {
-    "w": "First,",
-    "s": 0.0,
-    "e": 0.32
-   },
-   {
-    "w": "you",
-    "s": 0.32,
-    "e": 0.58
-   },
-   {
-    "w": "upload",
-    "s": 0.58,
-    "e": 0.88
-   },
-   {
-    "w": "a",
-    "s": 0.88,
-    "e": 1.08
-   },
-   {
-    "w": "clip.",
-    "s": 1.08,
-    "e": 1.34
+    "w": "fMRIght.",
+    "s": 1.76,
+    "e": 3.26
    },
    {
     "w": "It",
-    "s": 2.06,
-    "e": 2.16
+    "s": 3.26,
+    "e": 3.3
    },
    {
-    "w": "goes",
-    "s": 2.16,
-    "e": 2.36
+    "w": "predicts",
+    "s": 3.3,
+    "e": 3.6
+   },
+   {
+    "w": "how",
+    "s": 3.6,
+    "e": 3.94
+   },
+   {
+    "w": "an",
+    "s": 3.94,
+    "e": 4.06
+   },
+   {
+    "w": "average",
+    "s": 4.06,
+    "e": 4.36
+   },
+   {
+    "w": "viewer's",
+    "s": 4.36,
+    "e": 4.84
+   },
+   {
+    "w": "brain",
+    "s": 4.84,
+    "e": 5.06
+   },
+   {
+    "w": "responds",
+    "s": 5.06,
+    "e": 5.56
    },
    {
     "w": "to",
-    "s": 2.36,
-    "e": 2.56
+    "s": 5.56,
+    "e": 5.86
    },
    {
     "w": "a",
-    "s": 2.56,
-    "e": 2.76
+    "s": 5.86,
+    "e": 5.98
    },
    {
-    "w": "graphics",
-    "s": 2.76,
-    "e": 3.04
+    "w": "short",
+    "s": 5.98,
+    "e": 6.18
    },
    {
-    "w": "card",
-    "s": 3.04,
-    "e": 3.48
-   },
-   {
-    "w": "we",
-    "s": 3.48,
-    "e": 3.7
-   },
-   {
-    "w": "rent",
-    "s": 3.7,
-    "e": 3.96
-   },
-   {
-    "w": "in",
-    "s": 3.96,
-    "e": 4.2
-   },
-   {
-    "w": "the",
-    "s": 4.2,
-    "e": 4.32
-   },
-   {
-    "w": "cloud.",
-    "s": 4.32,
-    "e": 4.66
-   },
-   {
-    "w": "Once",
-    "s": 5.64,
-    "e": 5.84
-   },
-   {
-    "w": "it's",
-    "s": 5.84,
-    "e": 6.12
-   },
-   {
-    "w": "scored,",
-    "s": 6.12,
+    "w": "video,",
+    "s": 6.18,
     "e": 6.58
    },
    {
-    "w": "we",
-    "s": 7.06,
-    "e": 7.14
+    "w": "second",
+    "s": 6.9,
+    "e": 7.16
    },
    {
-    "w": "delete",
-    "s": 7.14,
-    "e": 7.4
+    "w": "by",
+    "s": 7.16,
+    "e": 7.44
    },
    {
-    "w": "the",
-    "s": 7.4,
-    "e": 7.66
-   },
-   {
-    "w": "video",
-    "s": 7.66,
-    "e": 7.96
-   },
-   {
-    "w": "and",
-    "s": 7.96,
-    "e": 8.42
-   },
-   {
-    "w": "keep",
-    "s": 8.42,
-    "e": 8.6
-   },
-   {
-    "w": "only",
-    "s": 8.6,
-    "e": 8.94
-   },
-   {
-    "w": "the",
-    "s": 8.94,
-    "e": 9.14
-   },
-   {
-    "w": "scores.",
-    "s": 9.14,
-    "e": 9.44
+    "w": "second.",
+    "s": 7.44,
+    "e": 7.72
    }
   ]
  },
- "t_enc1": {
-  "text": "There, Meta's TRIBE v2 model watches the frames, listens to the audio and reads the words.",
-  "duration": 7.6,
+ "b2_upload": {
+  "text": "You upload a clip. It runs on a graphics card I rent in the cloud. Once it's scored, I delete the video and keep only the numbers.",
+  "duration": 10.457,
+  "standin": true,
   "words": [
    {
-    "w": "There,",
+    "w": "You",
     "s": 0.0,
-    "e": 0.4
+    "e": 0.12
+   },
+   {
+    "w": "upload",
+    "s": 0.12,
+    "e": 0.54
+   },
+   {
+    "w": "a",
+    "s": 0.54,
+    "e": 0.84
+   },
+   {
+    "w": "clip.",
+    "s": 0.84,
+    "e": 1.12
+   },
+   {
+    "w": "It",
+    "s": 1.58,
+    "e": 1.74
+   },
+   {
+    "w": "runs",
+    "s": 1.74,
+    "e": 2.0
+   },
+   {
+    "w": "on",
+    "s": 2.0,
+    "e": 2.3
+   },
+   {
+    "w": "a",
+    "s": 2.3,
+    "e": 2.54
+   },
+   {
+    "w": "graphics",
+    "s": 2.54,
+    "e": 2.96
+   },
+   {
+    "w": "card",
+    "s": 2.96,
+    "e": 3.46
+   },
+   {
+    "w": "I",
+    "s": 3.46,
+    "e": 3.64
+   },
+   {
+    "w": "rent",
+    "s": 3.64,
+    "e": 3.88
+   },
+   {
+    "w": "in",
+    "s": 3.88,
+    "e": 4.12
+   },
+   {
+    "w": "the",
+    "s": 4.12,
+    "e": 4.26
+   },
+   {
+    "w": "cloud.",
+    "s": 4.26,
+    "e": 4.62
+   },
+   {
+    "w": "Once",
+    "s": 5.1,
+    "e": 5.34
+   },
+   {
+    "w": "it's",
+    "s": 5.34,
+    "e": 5.7
+   },
+   {
+    "w": "scored,",
+    "s": 5.7,
+    "e": 6.2
+   },
+   {
+    "w": "I",
+    "s": 6.98,
+    "e": 7.1
+   },
+   {
+    "w": "delete",
+    "s": 7.1,
+    "e": 7.36
+   },
+   {
+    "w": "the",
+    "s": 7.36,
+    "e": 7.64
+   },
+   {
+    "w": "video",
+    "s": 7.64,
+    "e": 8.14
+   },
+   {
+    "w": "and",
+    "s": 8.14,
+    "e": 8.54
+   },
+   {
+    "w": "keep",
+    "s": 8.54,
+    "e": 8.86
+   },
+   {
+    "w": "only",
+    "s": 8.86,
+    "e": 9.28
+   },
+   {
+    "w": "the",
+    "s": 9.28,
+    "e": 9.62
+   },
+   {
+    "w": "numbers.",
+    "s": 9.62,
+    "e": 9.96
+   }
+  ]
+ },
+ "b3_encode": {
+  "text": "The engine is Meta's TRIBE v2 model. It takes in the frames, the audio, and the words.",
+  "duration": 6.407,
+  "standin": true,
+  "words": [
+   {
+    "w": "The",
+    "s": 0.0,
+    "e": 0.14
+   },
+   {
+    "w": "engine",
+    "s": 0.14,
+    "e": 0.5
+   },
+   {
+    "w": "is",
+    "s": 0.5,
+    "e": 0.84
    },
    {
     "w": "Meta's",
-    "s": 0.9,
-    "e": 1.22
+    "s": 0.84,
+    "e": 1.26
    },
    {
     "w": "TRIBE",
-    "s": 1.22,
+    "s": 1.26,
     "e": 1.56
    },
    {
     "w": "v2",
     "s": 1.56,
-    "e": 2.14
+    "e": 2.02
    },
    {
-    "w": "model",
-    "s": 2.14,
-    "e": 2.5
+    "w": "model.",
+    "s": 2.02,
+    "e": 2.36
    },
    {
-    "w": "watches",
-    "s": 2.5,
-    "e": 3.18
+    "w": "It",
+    "s": 2.72,
+    "e": 2.86
+   },
+   {
+    "w": "takes",
+    "s": 2.86,
+    "e": 3.16
+   },
+   {
+    "w": "in",
+    "s": 3.16,
+    "e": 3.48
    },
    {
     "w": "the",
-    "s": 3.18,
-    "e": 3.44
+    "s": 3.48,
+    "e": 3.64
    },
    {
     "w": "frames,",
-    "s": 3.44,
-    "e": 3.96
-   },
-   {
-    "w": "listens",
-    "s": 4.34,
-    "e": 4.6
-   },
-   {
-    "w": "to",
-    "s": 4.6,
-    "e": 4.94
+    "s": 3.64,
+    "e": 4.04
    },
    {
     "w": "the",
-    "s": 4.94,
-    "e": 5.06
+    "s": 4.46,
+    "e": 4.5
    },
    {
-    "w": "audio",
-    "s": 5.06,
-    "e": 5.48
+    "w": "audio,",
+    "s": 4.5,
+    "e": 4.88
    },
    {
     "w": "and",
-    "s": 5.48,
-    "e": 6.08
-   },
-   {
-    "w": "reads",
-    "s": 6.08,
-    "e": 6.36
+    "s": 5.46,
+    "e": 5.64
    },
    {
     "w": "the",
-    "s": 6.36,
-    "e": 6.64
+    "s": 5.64,
+    "e": 5.78
    },
    {
     "w": "words.",
-    "s": 6.64,
-    "e": 6.98
+    "s": 5.78,
+    "e": 6.1
    }
   ]
  },
- "t_enc2": {
-  "text": "Normally, to see how a brain reacts, you'd put someone in an MRI machine. TRIBE learned from scans like that, so it can predict the reaction from the video alone.",
-  "duration": 11.28,
+ "b4_scan": {
+  "text": "Normally, to see how a brain reacts, you'd put someone in an MRI machine. Meta trained TRIBE on scans like that, so it can predict the response from the video alone.",
+  "duration": 11.736,
+  "standin": true,
   "words": [
    {
     "w": "Normally,",
     "s": 0.0,
-    "e": 0.44
+    "e": 0.46
    },
    {
     "w": "to",
-    "s": 0.72,
-    "e": 0.88
+    "s": 0.68,
+    "e": 0.84
    },
    {
     "w": "see",
-    "s": 0.88,
-    "e": 1.08
+    "s": 0.84,
+    "e": 1.04
    },
    {
     "w": "how",
-    "s": 1.08,
+    "s": 1.04,
     "e": 1.28
    },
    {
     "w": "a",
     "s": 1.28,
-    "e": 1.4
+    "e": 1.48
    },
    {
     "w": "brain",
-    "s": 1.4,
-    "e": 1.62
+    "s": 1.48,
+    "e": 1.78
    },
    {
     "w": "reacts,",
-    "s": 1.62,
-    "e": 2.24
+    "s": 1.78,
+    "e": 2.26
    },
    {
     "w": "you'd",
-    "s": 2.74,
-    "e": 2.94
+    "s": 2.76,
+    "e": 2.9
    },
    {
     "w": "put",
-    "s": 2.94,
-    "e": 3.1
+    "s": 2.9,
+    "e": 3.06
    },
    {
     "w": "someone",
-    "s": 3.1,
-    "e": 3.54
+    "s": 3.06,
+    "e": 3.48
    },
    {
     "w": "in",
-    "s": 3.54,
-    "e": 3.84
+    "s": 3.48,
+    "e": 3.66
    },
    {
     "w": "an",
-    "s": 3.84,
-    "e": 3.98
+    "s": 3.66,
+    "e": 3.84
    },
    {
     "w": "MRI",
-    "s": 3.98,
-    "e": 4.38
+    "s": 3.84,
+    "e": 4.48
    },
    {
     "w": "machine.",
-    "s": 4.38,
-    "e": 4.96
+    "s": 4.48,
+    "e": 5.34
+   },
+   {
+    "w": "Meta",
+    "s": 5.88,
+    "e": 6.0
+   },
+   {
+    "w": "trained",
+    "s": 6.0,
+    "e": 6.38
    },
    {
     "w": "TRIBE",
-    "s": 6.12,
-    "e": 6.34
+    "s": 6.38,
+    "e": 6.84
    },
    {
-    "w": "learned",
-    "s": 6.34,
-    "e": 6.54
-   },
-   {
-    "w": "from",
-    "s": 6.54,
-    "e": 6.82
+    "w": "on",
+    "s": 6.84,
+    "e": 7.28
    },
    {
     "w": "scans",
-    "s": 6.82,
-    "e": 7.16
+    "s": 7.28,
+    "e": 7.68
    },
    {
     "w": "like",
-    "s": 7.16,
-    "e": 7.44
+    "s": 7.68,
+    "e": 7.98
    },
    {
     "w": "that,",
-    "s": 7.44,
-    "e": 7.86
-   },
-   {
-    "w": "so",
-    "s": 8.16,
+    "s": 7.98,
     "e": 8.4
    },
    {
+    "w": "so",
+    "s": 8.62,
+    "e": 8.92
+   },
+   {
     "w": "it",
-    "s": 8.4,
-    "e": 8.52
+    "s": 8.92,
+    "e": 9.14
    },
    {
     "w": "can",
-    "s": 8.52,
-    "e": 8.7
+    "s": 9.14,
+    "e": 9.3
    },
    {
     "w": "predict",
-    "s": 8.7,
-    "e": 9.0
-   },
-   {
-    "w": "the",
-    "s": 9.0,
-    "e": 9.22
-   },
-   {
-    "w": "reaction",
-    "s": 9.22,
+    "s": 9.3,
     "e": 9.64
    },
    {
-    "w": "from",
+    "w": "the",
     "s": 9.64,
-    "e": 9.96
-   },
-   {
-    "w": "the",
-    "s": 9.96,
-    "e": 10.12
-   },
-   {
-    "w": "video",
-    "s": 10.12,
-    "e": 10.5
-   },
-   {
-    "w": "alone.",
-    "s": 10.5,
-    "e": 11.0
-   }
-  ]
- },
- "t_extract": {
-  "text": "Out comes a prediction for about twenty thousand points across my surface, a new one every second of video. That's me lighting up.",
-  "duration": 10.32,
-  "words": [
-   {
-    "w": "Out",
-    "s": 0.0,
-    "e": 0.24
-   },
-   {
-    "w": "comes",
-    "s": 0.24,
-    "e": 0.62
-   },
-   {
-    "w": "a",
-    "s": 0.62,
-    "e": 0.78
-   },
-   {
-    "w": "prediction",
-    "s": 0.78,
-    "e": 1.16
-   },
-   {
-    "w": "for",
-    "s": 1.16,
-    "e": 1.76
-   },
-   {
-    "w": "about",
-    "s": 1.76,
-    "e": 1.98
-   },
-   {
-    "w": "twenty",
-    "s": 1.98,
-    "e": 2.88
-   },
-   {
-    "w": "thousand",
-    "s": 2.88,
-    "e": 2.93
-   },
-   {
-    "w": "points",
-    "s": 2.88,
-    "e": 3.22
-   },
-   {
-    "w": "across",
-    "s": 3.22,
-    "e": 3.52
-   },
-   {
-    "w": "my",
-    "s": 3.52,
-    "e": 3.78
-   },
-   {
-    "w": "surface,",
-    "s": 3.78,
-    "e": 4.26
-   },
-   {
-    "w": "a",
-    "s": 4.62,
-    "e": 5.08
-   },
-   {
-    "w": "new",
-    "s": 5.08,
-    "e": 5.32
-   },
-   {
-    "w": "one",
-    "s": 5.32,
-    "e": 5.64
-   },
-   {
-    "w": "every",
-    "s": 5.64,
-    "e": 6.22
-   },
-   {
-    "w": "second",
-    "s": 6.22,
-    "e": 6.64
-   },
-   {
-    "w": "of",
-    "s": 6.64,
-    "e": 6.9
-   },
-   {
-    "w": "video.",
-    "s": 6.9,
-    "e": 7.26
-   },
-   {
-    "w": "That's",
-    "s": 8.32,
-    "e": 8.76
-   },
-   {
-    "w": "me",
-    "s": 8.76,
-    "e": 9.06
-   },
-   {
-    "w": "lighting",
-    "s": 9.06,
-    "e": 9.74
-   },
-   {
-    "w": "up.",
-    "s": 9.74,
-    "e": 10.16
-   }
-  ]
- },
- "t_read1": {
-  "text": "Here's a real clip we scored. This line is the predicted response across my whole surface, second by second.",
-  "duration": 7.6,
-  "words": [
-   {
-    "w": "Here's",
-    "s": 0.0,
-    "e": 0.26
-   },
-   {
-    "w": "a",
-    "s": 0.26,
-    "e": 0.38
-   },
-   {
-    "w": "real",
-    "s": 0.38,
-    "e": 0.56
-   },
-   {
-    "w": "clip",
-    "s": 0.56,
-    "e": 0.8
-   },
-   {
-    "w": "we",
-    "s": 0.8,
-    "e": 1.0
-   },
-   {
-    "w": "scored.",
-    "s": 1.0,
-    "e": 1.38
-   },
-   {
-    "w": "This",
-    "s": 2.2,
-    "e": 2.34
-   },
-   {
-    "w": "line",
-    "s": 2.34,
-    "e": 2.66
-   },
-   {
-    "w": "is",
-    "s": 2.66,
-    "e": 2.92
-   },
-   {
-    "w": "the",
-    "s": 2.92,
-    "e": 3.04
-   },
-   {
-    "w": "predicted",
-    "s": 3.04,
-    "e": 3.44
+    "e": 9.92
    },
    {
     "w": "response",
-    "s": 3.44,
-    "e": 3.96
+    "s": 9.92,
+    "e": 10.32
    },
    {
-    "w": "across",
-    "s": 3.96,
-    "e": 4.32
-   },
-   {
-    "w": "my",
-    "s": 4.32,
-    "e": 4.58
-   },
-   {
-    "w": "whole",
-    "s": 4.58,
-    "e": 4.94
-   },
-   {
-    "w": "surface,",
-    "s": 4.94,
-    "e": 5.54
-   },
-   {
-    "w": "second",
-    "s": 5.54,
-    "e": 6.28
-   },
-   {
-    "w": "by",
-    "s": 6.28,
-    "e": 6.54
-   },
-   {
-    "w": "second.",
-    "s": 6.54,
-    "e": 7.16
-   }
-  ]
- },
- "t_lag": {
-  "text": "Brain scans run about five seconds late, because blood flow takes time to arrive. So I slide the line back to match the video.",
-  "duration": 8.8,
-  "words": [
-   {
-    "w": "Brain",
-    "s": 0.36,
-    "e": 0.64
-   },
-   {
-    "w": "scans",
-    "s": 0.64,
-    "e": 1.08
-   },
-   {
-    "w": "run",
-    "s": 1.08,
-    "e": 1.36
-   },
-   {
-    "w": "about",
-    "s": 1.36,
-    "e": 1.6
-   },
-   {
-    "w": "five",
-    "s": 1.6,
-    "e": 1.94
-   },
-   {
-    "w": "seconds",
-    "s": 1.94,
-    "e": 2.32
-   },
-   {
-    "w": "late,",
-    "s": 2.32,
-    "e": 2.7
-   },
-   {
-    "w": "because",
-    "s": 2.7,
-    "e": 3.34
-   },
-   {
-    "w": "blood",
-    "s": 3.34,
-    "e": 3.64
-   },
-   {
-    "w": "flow",
-    "s": 3.64,
-    "e": 3.96
-   },
-   {
-    "w": "takes",
-    "s": 3.96,
-    "e": 4.22
-   },
-   {
-    "w": "time",
-    "s": 4.22,
-    "e": 4.58
-   },
-   {
-    "w": "to",
-    "s": 4.58,
-    "e": 4.8
-   },
-   {
-    "w": "arrive.",
-    "s": 4.8,
-    "e": 5.22
-   },
-   {
-    "w": "So",
-    "s": 6.0,
-    "e": 6.2
-   },
-   {
-    "w": "I",
-    "s": 6.2,
-    "e": 6.34
-   },
-   {
-    "w": "slide",
-    "s": 6.34,
-    "e": 6.72
+    "w": "from",
+    "s": 10.32,
+    "e": 10.64
    },
    {
     "w": "the",
-    "s": 6.72,
-    "e": 7.0
+    "s": 10.64,
+    "e": 10.76
    },
    {
-    "w": "line",
-    "s": 7.0,
-    "e": 7.22
+    "w": "video",
+    "s": 10.76,
+    "e": 11.04
    },
    {
-    "w": "back",
-    "s": 7.22,
-    "e": 7.56
-   },
-   {
-    "w": "to",
-    "s": 7.56,
-    "e": 7.84
-   },
-   {
-    "w": "match",
-    "s": 7.84,
-    "e": 8.08
-   },
-   {
-    "w": "the",
-    "s": 8.08,
-    "e": 8.3
-   },
-   {
-    "w": "video.",
-    "s": 8.3,
-    "e": 8.6
+    "w": "alone.",
+    "s": 11.04,
+    "e": 11.52
    }
   ]
  },
- "t_read2": {
-  "text": "When the line climbs, I predict an average viewer locks in. When it dips, I predict they drift off.",
-  "duration": 7.12,
+ "b5_extract": {
+  "text": "What comes out is a prediction for about twenty thousand points across the brain's surface, one for every second of video. That's what you see lighting up.",
+  "duration": 10.54,
+  "standin": true,
   "words": [
    {
-    "w": "When",
+    "w": "What",
     "s": 0.0,
     "e": 0.18
    },
    {
-    "w": "the",
+    "w": "comes",
     "s": 0.18,
-    "e": 0.34
+    "e": 0.46
    },
    {
-    "w": "line",
-    "s": 0.34,
-    "e": 0.62
+    "w": "out",
+    "s": 0.46,
+    "e": 0.84
    },
    {
-    "w": "climbs,",
-    "s": 0.62,
-    "e": 1.08
+    "w": "is",
+    "s": 0.84,
+    "e": 1.16
    },
    {
-    "w": "I",
-    "s": 1.64,
-    "e": 1.7
+    "w": "a",
+    "s": 1.16,
+    "e": 1.38
    },
    {
-    "w": "predict",
-    "s": 1.7,
-    "e": 1.96
+    "w": "prediction",
+    "s": 1.38,
+    "e": 1.86
    },
    {
-    "w": "an",
-    "s": 1.96,
-    "e": 2.18
+    "w": "for",
+    "s": 1.86,
+    "e": 2.42
    },
    {
-    "w": "average",
-    "s": 2.18,
-    "e": 2.56
+    "w": "about",
+    "s": 2.42,
+    "e": 2.72
    },
    {
-    "w": "viewer",
-    "s": 2.56,
-    "e": 2.98
-   },
-   {
-    "w": "locks",
-    "s": 2.98,
-    "e": 3.36
-   },
-   {
-    "w": "in.",
-    "s": 3.36,
+    "w": "twenty",
+    "s": 2.72,
     "e": 3.84
    },
    {
-    "w": "When",
-    "s": 4.42,
-    "e": 4.56
+    "w": "thousand",
+    "s": 3.84,
+    "e": 3.8899999999999997
    },
    {
-    "w": "it",
-    "s": 4.56,
-    "e": 4.7
+    "w": "points",
+    "s": 3.84,
+    "e": 4.14
    },
    {
-    "w": "dips,",
-    "s": 4.7,
-    "e": 5.06
+    "w": "across",
+    "s": 4.14,
+    "e": 4.64
+   },
+   {
+    "w": "the",
+    "s": 4.64,
+    "e": 5.0
+   },
+   {
+    "w": "brain's",
+    "s": 5.0,
+    "e": 5.46
+   },
+   {
+    "w": "surface,",
+    "s": 5.46,
+    "e": 6.08
+   },
+   {
+    "w": "one",
+    "s": 6.36,
+    "e": 6.68
+   },
+   {
+    "w": "for",
+    "s": 6.68,
+    "e": 6.94
+   },
+   {
+    "w": "every",
+    "s": 6.94,
+    "e": 7.34
+   },
+   {
+    "w": "second",
+    "s": 7.34,
+    "e": 7.78
+   },
+   {
+    "w": "of",
+    "s": 7.78,
+    "e": 8.08
+   },
+   {
+    "w": "video.",
+    "s": 8.08,
+    "e": 8.5
+   },
+   {
+    "w": "That's",
+    "s": 9.0,
+    "e": 9.24
+   },
+   {
+    "w": "what",
+    "s": 9.24,
+    "e": 9.32
+   },
+   {
+    "w": "you",
+    "s": 9.32,
+    "e": 9.46
+   },
+   {
+    "w": "see",
+    "s": 9.46,
+    "e": 9.76
+   },
+   {
+    "w": "lighting",
+    "s": 9.76,
+    "e": 10.14
+   },
+   {
+    "w": "up.",
+    "s": 10.14,
+    "e": 10.52
+   }
+  ]
+ },
+ "b6_read": {
+  "text": "Here's a real clip I scored. This line is the predicted response across the whole brain, second by second.",
+  "duration": 7.15,
+  "standin": true,
+  "words": [
+   {
+    "w": "Here's",
+    "s": 0.0,
+    "e": 0.28
+   },
+   {
+    "w": "a",
+    "s": 0.28,
+    "e": 0.44
+   },
+   {
+    "w": "real",
+    "s": 0.44,
+    "e": 0.66
+   },
+   {
+    "w": "clip",
+    "s": 0.66,
+    "e": 0.94
    },
    {
     "w": "I",
-    "s": 5.72,
-    "e": 5.76
+    "s": 0.94,
+    "e": 1.28
    },
    {
-    "w": "predict",
-    "s": 5.76,
-    "e": 6.06
+    "w": "scored.",
+    "s": 1.28,
+    "e": 1.7
    },
    {
-    "w": "they",
-    "s": 6.06,
-    "e": 6.3
+    "w": "This",
+    "s": 2.2,
+    "e": 2.48
    },
    {
-    "w": "drift",
-    "s": 6.3,
+    "w": "line",
+    "s": 2.48,
+    "e": 2.8
+   },
+   {
+    "w": "is",
+    "s": 2.8,
+    "e": 3.08
+   },
+   {
+    "w": "the",
+    "s": 3.08,
+    "e": 3.22
+   },
+   {
+    "w": "predicted",
+    "s": 3.22,
+    "e": 3.54
+   },
+   {
+    "w": "response",
+    "s": 3.54,
+    "e": 4.14
+   },
+   {
+    "w": "across",
+    "s": 4.14,
+    "e": 4.56
+   },
+   {
+    "w": "the",
+    "s": 4.56,
+    "e": 4.84
+   },
+   {
+    "w": "whole",
+    "s": 4.84,
+    "e": 5.08
+   },
+   {
+    "w": "brain,",
+    "s": 5.08,
+    "e": 5.52
+   },
+   {
+    "w": "second",
+    "s": 5.96,
+    "e": 6.32
+   },
+   {
+    "w": "by",
+    "s": 6.32,
     "e": 6.58
    },
    {
-    "w": "off.",
+    "w": "second.",
     "s": 6.58,
     "e": 6.9
    }
   ]
  },
- "t_outro": {
-  "text": "That's me, reading a video. Upload one of yours and watch me light up.",
-  "duration": 4.8,
+ "b7_lag": {
+  "text": "Brain scans run about five seconds behind, because blood flow takes time to arrive. So I slide the line back to match the video.",
+  "duration": 9.228,
+  "standin": true,
+  "words": [
+   {
+    "w": "Brain",
+    "s": 0.0,
+    "e": 0.26
+   },
+   {
+    "w": "scans",
+    "s": 0.26,
+    "e": 0.76
+   },
+   {
+    "w": "run",
+    "s": 0.76,
+    "e": 1.18
+   },
+   {
+    "w": "about",
+    "s": 1.18,
+    "e": 1.48
+   },
+   {
+    "w": "five",
+    "s": 1.48,
+    "e": 1.88
+   },
+   {
+    "w": "seconds",
+    "s": 1.88,
+    "e": 2.34
+   },
+   {
+    "w": "behind,",
+    "s": 2.34,
+    "e": 2.82
+   },
+   {
+    "w": "because",
+    "s": 3.4,
+    "e": 3.68
+   },
+   {
+    "w": "blood",
+    "s": 3.68,
+    "e": 4.04
+   },
+   {
+    "w": "flow",
+    "s": 4.04,
+    "e": 4.42
+   },
+   {
+    "w": "takes",
+    "s": 4.42,
+    "e": 4.7
+   },
+   {
+    "w": "time",
+    "s": 4.7,
+    "e": 5.1
+   },
+   {
+    "w": "to",
+    "s": 5.1,
+    "e": 5.36
+   },
+   {
+    "w": "arrive.",
+    "s": 5.36,
+    "e": 5.84
+   },
+   {
+    "w": "So",
+    "s": 6.26,
+    "e": 6.54
+   },
+   {
+    "w": "I",
+    "s": 6.54,
+    "e": 6.74
+   },
+   {
+    "w": "slide",
+    "s": 6.74,
+    "e": 7.04
+   },
+   {
+    "w": "the",
+    "s": 7.04,
+    "e": 7.28
+   },
+   {
+    "w": "line",
+    "s": 7.28,
+    "e": 7.6
+   },
+   {
+    "w": "back",
+    "s": 7.6,
+    "e": 7.88
+   },
+   {
+    "w": "to",
+    "s": 7.88,
+    "e": 8.14
+   },
+   {
+    "w": "match",
+    "s": 8.14,
+    "e": 8.38
+   },
+   {
+    "w": "the",
+    "s": 8.38,
+    "e": 8.66
+   },
+   {
+    "w": "video.",
+    "s": 8.66,
+    "e": 8.96
+   }
+  ]
+ },
+ "b8_read2": {
+  "text": "When the line climbs, the model predicts an average viewer locks in. When it dips, it predicts they drift off.",
+  "duration": 7.858,
+  "standin": true,
+  "words": [
+   {
+    "w": "When",
+    "s": 0.0,
+    "e": 0.14
+   },
+   {
+    "w": "the",
+    "s": 0.14,
+    "e": 0.3
+   },
+   {
+    "w": "line",
+    "s": 0.3,
+    "e": 0.62
+   },
+   {
+    "w": "climbs,",
+    "s": 0.62,
+    "e": 1.16
+   },
+   {
+    "w": "the",
+    "s": 1.7,
+    "e": 1.74
+   },
+   {
+    "w": "model",
+    "s": 1.74,
+    "e": 2.04
+   },
+   {
+    "w": "predicts",
+    "s": 2.04,
+    "e": 2.48
+   },
+   {
+    "w": "an",
+    "s": 2.48,
+    "e": 2.78
+   },
+   {
+    "w": "average",
+    "s": 2.78,
+    "e": 3.28
+   },
+   {
+    "w": "viewer",
+    "s": 3.28,
+    "e": 3.7
+   },
+   {
+    "w": "locks",
+    "s": 3.7,
+    "e": 4.12
+   },
+   {
+    "w": "in.",
+    "s": 4.12,
+    "e": 4.56
+   },
+   {
+    "w": "When",
+    "s": 4.94,
+    "e": 5.04
+   },
+   {
+    "w": "it",
+    "s": 5.04,
+    "e": 5.18
+   },
+   {
+    "w": "dips,",
+    "s": 5.18,
+    "e": 5.54
+   },
+   {
+    "w": "it",
+    "s": 5.94,
+    "e": 6.08
+   },
+   {
+    "w": "predicts",
+    "s": 6.08,
+    "e": 6.48
+   },
+   {
+    "w": "they",
+    "s": 6.48,
+    "e": 6.86
+   },
+   {
+    "w": "drift",
+    "s": 6.86,
+    "e": 7.2
+   },
+   {
+    "w": "off.",
+    "s": 7.2,
+    "e": 7.64
+   }
+  ]
+ },
+ "b9_outro": {
+  "text": "That's fMRIght. It's an early read on the video, and it doesn't forecast views. I'm testing whether it predicts engagement next. Try it on one of yours.",
+  "duration": 10.107,
+  "standin": true,
   "words": [
    {
     "w": "That's",
     "s": 0.0,
-    "e": 0.42
+    "e": 0.22
    },
    {
-    "w": "me,",
-    "s": 0.42,
-    "e": 0.64
+    "w": "fMRIght.",
+    "s": 0.22,
+    "e": 1.38
    },
    {
-    "w": "reading",
-    "s": 0.64,
-    "e": 1.08
+    "w": "It's",
+    "s": 1.66,
+    "e": 1.84
    },
    {
-    "w": "a",
-    "s": 1.08,
-    "e": 1.28
+    "w": "an",
+    "s": 1.84,
+    "e": 1.92
    },
    {
-    "w": "video.",
-    "s": 1.28,
-    "e": 1.64
+    "w": "early",
+    "s": 1.92,
+    "e": 2.22
    },
    {
-    "w": "Upload",
-    "s": 2.18,
-    "e": 2.36
+    "w": "read",
+    "s": 2.22,
+    "e": 2.46
    },
    {
-    "w": "one",
-    "s": 2.36,
-    "e": 2.64
+    "w": "on",
+    "s": 2.46,
+    "e": 2.6
    },
    {
-    "w": "of",
-    "s": 2.64,
-    "e": 2.78
+    "w": "the",
+    "s": 2.6,
+    "e": 2.74
    },
    {
-    "w": "yours",
-    "s": 2.78,
-    "e": 3.04
+    "w": "video,",
+    "s": 2.74,
+    "e": 3.08
    },
    {
     "w": "and",
-    "s": 3.04,
-    "e": 3.58
+    "s": 3.62,
+    "e": 3.74
    },
    {
-    "w": "watch",
-    "s": 3.58,
-    "e": 3.8
+    "w": "it",
+    "s": 3.74,
+    "e": 3.84
    },
    {
-    "w": "me",
-    "s": 3.8,
-    "e": 4.08
+    "w": "doesn't",
+    "s": 3.84,
+    "e": 4.16
    },
    {
-    "w": "light",
-    "s": 4.08,
-    "e": 4.32
+    "w": "forecast",
+    "s": 4.16,
+    "e": 4.58
    },
    {
-    "w": "up.",
-    "s": 4.32,
-    "e": 4.7
+    "w": "views.",
+    "s": 4.58,
+    "e": 5.04
+   },
+   {
+    "w": "I'm",
+    "s": 5.54,
+    "e": 5.72
+   },
+   {
+    "w": "testing",
+    "s": 5.72,
+    "e": 6.04
+   },
+   {
+    "w": "whether",
+    "s": 6.04,
+    "e": 6.32
+   },
+   {
+    "w": "it",
+    "s": 6.32,
+    "e": 6.58
+   },
+   {
+    "w": "predicts",
+    "s": 6.58,
+    "e": 7.04
+   },
+   {
+    "w": "engagement",
+    "s": 7.04,
+    "e": 7.56
+   },
+   {
+    "w": "next.",
+    "s": 7.56,
+    "e": 8.12
+   },
+   {
+    "w": "Try",
+    "s": 8.64,
+    "e": 8.78
+   },
+   {
+    "w": "it",
+    "s": 8.78,
+    "e": 9.0
+   },
+   {
+    "w": "on",
+    "s": 9.0,
+    "e": 9.22
+   },
+   {
+    "w": "one",
+    "s": 9.22,
+    "e": 9.36
+   },
+   {
+    "w": "of",
+    "s": 9.36,
+    "e": 9.54
+   },
+   {
+    "w": "yours.",
+    "s": 9.54,
+    "e": 9.74
    }
   ]
  }

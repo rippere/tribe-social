@@ -3,14 +3,14 @@ import { Audio, Video } from '@remotion/media'
 import { AbsoluteFill, Easing, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { AppWindow, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
 import { Cortex, useCortexAssets, type CortexAssets } from './cortex'
-import { Captions, MascotLayer, Spot, cue, cutsFor, cutsLength, lit, pulse, type Cut, type Plate } from './mascot'
+import { Captions, IdleMascot, MascotLayer, Spot, WALK_IN, WalkInMascot, cue, cutsFor, cutsLength, lit, pulse, type Beat, type Cut, type Plate } from './mascot'
 import { C, FONT, FPS, MONO } from './theme'
 import narration from './data/narration.json'
 import result from './data/result.json'
 
 export type Orientation = 'landscape' | 'portrait'
 
-type Talk = keyof typeof narration
+type Line = keyof typeof narration
 // TRIBE predicts a brain scan, and scans trail the video by ~5 s (blood flow). The read
 // scene shows the line sliding back by that lag; from then on the video plays against
 // the aligned curve, which covers its first `ALIGNED.relative.length` seconds.
@@ -22,15 +22,21 @@ const PLAY_FRAMES = PLAY_SECONDS * FPS
 type SceneKey = 'intro' | 'upload' | 'encode' | 'extract' | 'read' | 'play' | 'cta'
 
 /*
- * One talking shot per sentence (or two), played at its natural speed with its own
- * audio slice from the shot's first frame, so the mouth and every gesture land on
- * their words. The scorer UI around the standing character is laid out in three
- * targets (up-left, straight up, up-right) and each shot's prompt points at one of
- * them on the word that names it; the accent ring is cued from the same word.
+ * v6: Ben narrates off-screen, one recorded line at a time (scripts/vo.py), and the
+ * brain never talks. A narrated scene lasts as long as its lines: LEAD, each line
+ * back to back with GAP between them, then TAIL. The mascot walks in (intro), stands
+ * idle and reacts to cue words while Ben talks, and watches the scored clip (play).
  */
+const LEAD = 0.25
+const GAP = 0.35
+const TAIL = 0.6
+
+type Mascot = 'walk-in' | 'idle' | 'shots'
 interface SceneSpec {
   key: SceneKey
-  shots: { clip: string; at?: number }[]
+  lines?: Line[]
+  shots?: { clip: string; at?: number }[]
+  mascot: Mascot
 }
 
 // The watching scene (silent Kling shots, mouth closed) pins its reactions to the
@@ -40,13 +46,14 @@ interface SceneSpec {
 const EXCITE_AT = 1.4
 const DRIFT_AT = 1.5
 const SPECS: SceneSpec[] = [
-  { key: 'intro', shots: [{ clip: 'intro_a' }, { clip: 't_intro' }] },
-  { key: 'upload', shots: [{ clip: 't_upload' }] },
-  { key: 'encode', shots: [{ clip: 't_enc1' }, { clip: 't_enc2' }] },
-  { key: 'extract', shots: [{ clip: 't_extract' }] },
-  { key: 'read', shots: [{ clip: 't_read1' }, { clip: 't_lag' }, { clip: 't_read2' }] },
+  { key: 'intro', lines: ['b1_intro'], mascot: 'walk-in' },
+  { key: 'upload', lines: ['b2_upload'], mascot: 'idle' },
+  { key: 'encode', lines: ['b3_encode', 'b4_scan'], mascot: 'idle' },
+  { key: 'extract', lines: ['b5_extract'], mascot: 'idle' },
+  { key: 'read', lines: ['b6_read', 'b7_lag', 'b8_read2'], mascot: 'idle' },
   {
     key: 'play',
+    mascot: 'shots',
     shots: [
       { clip: 'w_a' },
       { clip: 'w_b' },
@@ -55,25 +62,45 @@ const SPECS: SceneSpec[] = [
       { clip: 'w_e', at: PLAY_SECONDS - 0.8 },
     ],
   },
-  { key: 'cta', shots: [{ clip: 't_outro' }] },
+  { key: 'cta', lines: ['b9_outro'], mascot: 'idle' },
 ]
 
 interface Scene extends SceneSpec {
+  start: number
   frames: number
   words: Word[]
   cuts: Cut[]
-  talks: { clip: Talk; from: number }[]
+  talks: { line: Line; from: number }[]
 }
 
-const SCENES: Scene[] = SPECS.map(s => {
-  const cuts = cutsFor(s.shots)
-  for (const c of cuts) {
-    if (c.clip.startsWith('t_') && !(c.clip in narration)) throw new Error(`Talking shot "${c.clip}" has no narration: run scripts/build_data.py`)
-  }
-  const talks = cuts.filter(c => c.clip in narration).map(c => ({ clip: c.clip as Talk, from: c.from }))
-  const words = talks.flatMap(k => (narration[k.clip].words as Word[]).map(w => ({ ...w, s: w.s + k.from / FPS, e: w.e + k.from / FPS })))
-  return { ...s, cuts, talks, words, frames: cutsLength(cuts) }
-})
+const SCENES: Scene[] = (() => {
+  let start = 0
+  return SPECS.map(s => {
+    let cuts: Cut[] = []
+    let talks: Scene['talks'] = []
+    let frames: number
+    if (s.shots) {
+      cuts = cutsFor(s.shots)
+      frames = cutsLength(cuts)
+    } else {
+      let t = LEAD
+      for (const line of s.lines ?? []) {
+        if (!(line in narration)) throw new Error(`No narration for "${line}": run scripts/vo.py and scripts/build_data.py`)
+        talks.push({ line, from: Math.round(t * FPS) })
+        t += narration[line].duration + GAP
+      }
+      frames = Math.round((t - GAP + TAIL) * FPS)
+      if (s.mascot === 'walk-in') frames = Math.max(frames, Math.round(WALK_IN.cutAt * FPS) + FPS)
+    }
+    const words = talks.flatMap(k => (narration[k.line].words as Word[]).map(w => ({ ...w, s: w.s + k.from / FPS, e: w.e + k.from / FPS })))
+    const scene = { ...s, start, cuts, talks, words, frames }
+    start += frames
+    return scene
+  })
+})()
+
+/** True while any line is still a stand-in voice (scripts/vo.py standin): the render says so on screen. */
+const STANDIN = Object.values(narration).some(l => l.standin)
 
 export function explainerDuration(): number {
   return SCENES.reduce((n, s) => n + s.frames, 0)
@@ -119,25 +146,50 @@ function at(L: Layout, land: R, port: R, extra?: CSSProperties): CSSProperties {
 export function Explainer({ orientation }: { orientation: Orientation }) {
   const L = layout(orientation)
   const cortex = useCortexAssets()
-  let from = 0
   return (
     <AbsoluteFill style={{ background: C.bg, fontFamily: FONT, color: C.ink }}>
-      {SCENES.map(s => {
-        const start = from
-        from += s.frames
-        return (
-          <Sequence key={s.key} from={start} durationInFrames={s.frames} name={s.key}>
-            {s.talks.map(k => (
-              <Sequence key={k.clip} from={k.from} layout="none">
-                <Audio src={staticFile(`media/narration/${k.clip}.mp3`)} />
-              </Sequence>
-            ))}
-            <SceneFrame scene={s} L={L} cortex={cortex} first={s.key === 'upload'} />
-          </Sequence>
-        )
-      })}
+      {SCENES.map(s => (
+        <Sequence key={s.key} from={s.start} durationInFrames={s.frames} name={s.key}>
+          {s.talks.map(k => (
+            <Sequence key={k.line} from={k.from} layout="none" name={k.line}>
+              <Audio src={staticFile(`media/narration_v6/${k.line}.mp3`)} />
+            </Sequence>
+          ))}
+          <SceneFrame scene={s} L={L} cortex={cortex} first={s.key === 'upload'} />
+        </Sequence>
+      ))}
+      {STANDIN && (
+        <div style={{ position: 'absolute', top: L.portrait ? 30 : 30, right: L.portrait ? 36 : 44 }}>
+          <Tag tone="amber">Stand-in voice · placeholder for Ben's recording</Tag>
+        </div>
+      )}
     </AbsoluteFill>
   )
+}
+
+/*
+ * What the idle character reacts to, per scene: it leans toward the element Ben
+ * names (the UI sits up-left / up / up-right of it), hops on the payoff words, and
+ * droops on "dips". Same cue words as the accent rings.
+ */
+function beatsFor(key: SceneKey, w: Word[]): Beat[] {
+  const b = (re: RegExp, kind: Beat['kind']): Beat => ({ at: cue(w, re), kind })
+  switch (key) {
+    case 'intro':
+      return [b(/^video/, 'lookL'), b(/^brain/, 'lookR'), b(/^second$/, 'nod')]
+    case 'upload':
+      return [b(/^upload/, 'lookL'), b(/^graphics/, 'lookUp'), b(/^delete/, 'lookR'), b(/^numbers/, 'hop')]
+    case 'encode':
+      return [b(/^frames/, 'lookL'), b(/^audio/, 'lookUp'), b(/^words/, 'lookR'), b(/^MRI/, 'lookR'), b(/^alone/, 'hop')]
+    case 'extract':
+      return [b(/^twenty/, 'lookL'), b(/^every/, 'lookR'), b(/^lighting/, 'hop')]
+    case 'read':
+      return [b(/^real/, 'lookL'), b(/^line$/, 'lookUp'), b(/^slide/, 'lookL'), b(/^climbs/, 'hop'), b(/^dips/, 'droop')]
+    case 'cta':
+      return [b(/^fMRIght/, 'nod'), b(/^Try/, 'hop')]
+    default:
+      return []
+  }
 }
 
 function SceneFrame({ scene, L, cortex, first }: { scene: Scene; L: Layout; cortex: CortexAssets | null; first: boolean }) {
@@ -145,6 +197,8 @@ function SceneFrame({ scene, L, cortex, first }: { scene: Scene; L: Layout; cort
   const t = frame / FPS
   const stage = WINDOW_SCENES[scene.key]
   const content = <SceneBody scene={scene} L={L} cortex={cortex} t={t} />
+  const beats = beatsFor(scene.key, scene.words)
+  const clock = (scene.start + frame) / FPS
   return (
     <AbsoluteFill>
       {stage ? (
@@ -164,7 +218,9 @@ function SceneFrame({ scene, L, cortex, first }: { scene: Scene; L: Layout; cort
       ) : (
         content
       )}
-      <MascotLayer cuts={scene.cuts} plate={L.plate} />
+      {scene.mascot === 'shots' && <MascotLayer cuts={scene.cuts} plate={L.plate} />}
+      {scene.mascot === 'idle' && <IdleMascot plate={L.plate} beats={beats} clock={clock} />}
+      {scene.mascot === 'walk-in' && <WalkInMascot plate={L.plate} beats={beats} clockStart={scene.start / FPS} />}
       <Captions words={scene.words} t={t} portrait={L.portrait} />
     </AbsoluteFill>
   )
@@ -214,15 +270,16 @@ function CortexBox({ cortex, t, w: width, h: height, rotation, intensity = 1 }: 
   )
 }
 
-/* ---------- intro: walks in, introduces itself, points up at the name ---------- */
+/* ---------- intro: the brain walks in while Ben introduces himself and the product ---------- */
 
 function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: CortexAssets | null }) {
   // The frame is full from the first frame: the clip playing, the cortex reacting, the
-  // line drawing. The brain walks in among them and points at each as it names it.
-  const give = cue(w, /^Give/)
-  const brain = cue(w, /^average/)
-  const sbs = cue(w, /^second/)
-  const name = cue(w, /^Eff/)
+  // line drawing. Each lights up as Ben names it; the brain walks in among them.
+  const ben = cue(w, /^Ben/)
+  const give = cue(w, /^video/)
+  const brain = cue(w, /^brain/)
+  const sbs = cue(w, /^second$/)
+  const name = cue(w, /^fMRIght/)
   const show = (d: number) => interpolate(t, [0.2 + d, 1.1 + d], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
   const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
@@ -234,6 +291,10 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
           <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
         </Spot>
         <div style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
+        {/* The voice is Ben's, not the brain's: say so the moment he gives his name. */}
+        <div style={{ marginTop: 18, opacity: lit(t, ben - 0.1, 0.4) }}>
+          <Tag tone="accent">Narrated by Ben, who built it</Tag>
+        </div>
       </div>
       <Spot on={pulse(t, give, 2.2)} radius={24} style={box([230, 330, pw, (pw * 16) / 9], [80, 470, pw, (pw * 16) / 9], { opacity: show(0.4) })}>
         <Phone width={pw}>
@@ -256,7 +317,7 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const up = cue(w, /^upload/)
   const gpu = cue(w, /^graphics/)
   const del = cue(w, /^delete/)
-  const scores = cue(w, /^scores/)
+  const scores = cue(w, /^numbers/)
   const p = interpolate(t, [up + 0.3, gpu + 1.4], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const gone = lit(t, del + 0.3)
   const status = p <= 0 ? 'Ready to send' : p < 1 ? `Sending to the GPU… ${Math.round(p * 100)}%` : 'Delivered'
@@ -309,7 +370,7 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
         <Spot on={pulse(t, scores, 1.8)} style={{ ...card, flex: 1, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 14, fontSize: L.portrait ? 21 : 24 }}>
           <span style={{ fontFamily: MONO, fontSize: 28, color: lit(t, scores) > 0.5 ? C.accent : C.muted }}>✓</span>
           <span>
-            Scores <span style={{ color: C.muted }}>· kept</span>
+            The numbers <span style={{ color: C.muted }}>· kept</span>
           </span>
         </Spot>
       </div>
@@ -339,7 +400,7 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const frame = useCurrentFrame()
   const at3 = [cue(w, /^frames/), cue(w, /^audio/), cue(w, /^words/)]
   const model = cue(w, /^Meta/)
-  const learned = cue(w, /^learned/)
+  const learned = cue(w, /^trained/)
   const mri = cue(w, /^MRI/)
   const alone = cue(w, /^alone/)
   const bars = Array.from({ length: L.portrait ? 14 : 28 }, (_, i) => 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7 + frame * 0.21) * Math.cos(i * 0.6 + frame * 0.09)))
@@ -421,7 +482,7 @@ function MriIcon({ size, crossed }: { size: number; crossed: number }) {
 /* ---------- extract: ~20k points (up-left), the cortex (up), one per second (up-right) ---------- */
 
 function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: CortexAssets | null }) {
-  const out = cue(w, /^Out/)
+  const out = cue(w, /^comes/)
   const pts = cue(w, /^twenty/)
   const fps1 = cue(w, /^every/)
   const glow = cue(w, /^lighting/)
@@ -462,9 +523,9 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
 
 function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: CortexAssets | null }) {
   const real = cue(w, /^real/)
-  const line = cue(w, /^line/)
+  const line = cue(w, /^line$/)
   const done = cue(w, /^second\.$/)
-  const late = cue(w, /^late/)
+  const late = cue(w, /^behind/)
   const slide = cue(w, /^slide/)
   const climbs = cue(w, /^climbs/)
   const dips = cue(w, /^dips/)
@@ -578,8 +639,10 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
 
 function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const frame = useCurrentFrame()
-  const upload = cue(w, /^Upload/)
-  const light = cue(w, /^light/)
+  const upload = cue(w, /^Try/)
+  const light = cue(w, /^fMRIght/)
+  const forecast = cue(w, /^forecast/)
+  const testing = cue(w, /^testing/)
   return (
     <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 420 : 150, opacity: fadeIn(frame, 0, 15) }}>
       <Spot on={pulse(t, light, 1.6)} radius={28} style={{ padding: '10px 40px' }}>
@@ -588,10 +651,10 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
       <Spot on={pulse(t, upload, 2.4)} radius={999} style={{ marginTop: 30 }}>
         <div style={{ padding: '20px 40px', borderRadius: 999, background: C.ink, color: C.bg, fontSize: 34, fontWeight: 500 }}>Score a clip</div>
       </Spot>
-      <div style={{ marginTop: 22, fontSize: 24, color: C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
+      <div style={{ marginTop: 22, fontSize: 24, color: lit(t, forecast, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Free research preview · predictions are model output, not a forecast of views
       </div>
-      <div style={{ marginTop: 10, fontSize: 24, color: C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
+      <div style={{ marginTop: 10, fontSize: 24, color: lit(t, testing, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Unproven: in our 24-clip pilot the score's link to engagement was weak and not significant (r = 0.25, p = 0.24). A pre-registered test is next.
       </div>
     </AbsoluteFill>
