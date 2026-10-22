@@ -30,7 +30,6 @@ export function AppStoreBadge() {
     </a>
   ) : (
     <span
-      aria-label="iPhone app coming soon to the App Store"
       className={`${className} cursor-default text-ink shadow-[var(--shadow-hairline)]`}
     >
       {inner}
