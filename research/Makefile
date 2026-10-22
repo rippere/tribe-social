@@ -1,4 +1,4 @@
-.PHONY: demo setup fetch analyze open help score-corpus score-corpus-dry score-corpus-existing validate-stimuli
+.PHONY: demo setup fetch analyze open help score-corpus score-corpus-dry score-corpus-existing validate-stimuli hook-test hook-features-check
 
 PYTHON = .venv/bin/python
 STREAMLIT = .venv/bin/streamlit
@@ -6,6 +6,10 @@ YT_DLP = $(shell which yt-dlp 2>/dev/null || echo "yt-dlp")
 URLS_FILE = urls_demo.txt
 REELS_DIR = reels
 STIMULI_DIR = stimuli
+HOOK_FEATURES = hook_features.csv
+HOOK_OUTCOMES = hook_outcomes.csv
+HOOK_GUESSES = hook_guesses.csv
+HOOK_RESULTS = hook_results.json
 
 ## demo   — launch the Streamlit dashboard with pre-scored corpus (zero credentials needed)
 demo: _check_venv
@@ -66,6 +70,15 @@ score-corpus-existing:
 ## validate-stimuli — QA gate for the hook-test clips in stimuli/ (run before scoring or freeze)
 validate-stimuli:
 	$(PYTHON) validate_stimuli.py $(STIMULI_DIR) --manifest stimuli_manifest.csv
+
+## hook-test — the pre-registered hook-test analysis (PREREGISTRATION.md §5–§10); run once on the results pull
+hook-test:
+	$(PYTHON) hook_test_analysis.py --features $(HOOK_FEATURES) --outcomes $(HOOK_OUTCOMES) \
+		$(if $(wildcard $(HOOK_GUESSES)),--guesses $(HOOK_GUESSES)) --out $(HOOK_RESULTS)
+
+## hook-features-check — before freeze: how much of the brain features survives regressing out Model A (no outcomes needed)
+hook-features-check:
+	$(PYTHON) hook_test_analysis.py --features $(HOOK_FEATURES) --check-features
 
 ## help   — print this message
 help:
