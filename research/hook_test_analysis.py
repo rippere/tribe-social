@@ -6,7 +6,9 @@ pre-registration, and this file's SHA-256 is part of the freeze record (§12), s
 edit after freeze is a deviation.
 
 Inputs, one row per clip, joined on filename (baseNN_{spoken,visual,text,cold}.mp4):
-    features   filename, a_* columns (Model A, content), b_* columns (Model B, TRIBE)
+    features   filename, a_emb_* columns (Model A embedding blocks: visual, transcript),
+               other a_* columns (Model A scalar content features: loudness, motion,
+               duration), b_* columns (Model B, TRIBE)
     outcomes   filename, impressions, plays_3s, plays_15s, and optionally
                rejected (1 = rejected by ad review, blank or 0 = not) and frequency (reported only)
     guesses    guesser, role, base, variant, rank   (optional, §7a; rank 1 = most likely
@@ -17,10 +19,14 @@ What it computes:
                       differing by more than 20% inside a base drops the whole base
     §5   outcome      logit hook rate (3-second plays / impressions), weighted by impressions
     §6   models       A content, B brain, C = A + B, R = A + random features sized like B,
-                      D = variant-type dummies (the H3 baseline). Ridge regression with an
-                      unpenalised intercept, standardised inside each training fold, penalty
-                      chosen by leave-one-base-out inside the training rows; the outer loop
-                      is leave-one-base-out too
+                      D = variant-type dummies (the H3 baseline). Outcome and features are
+                      centred inside each base first (§3: the within-base centring removes
+                      shooter and every other between-base difference). Model A's embedding
+                      columns are reduced to their first 10 principal components, fit inside
+                      each training fold (§6 allows this); its scalar features enter as-is. Ridge regression with an unpenalised intercept,
+                      standardised inside each training fold, penalty chosen by
+                      leave-one-base-out inside the training rows; the outer loop is
+                      leave-one-base-out too
     §7   H1           within-base correlation of out-of-fold prediction and outcome;
                       permutation of variant labels within base, base bootstrap interval,
                       mean Kendall tau-b across bases
@@ -50,8 +56,16 @@ Readings of the pre-registration that the text leaves open, fixed here before an
     - §10's "minimum detectable effect sits above the bar" route to INCONCLUSIVE is not
       computed; INCONCLUSIVE comes only from a mixed H1/H2 result.
     - Benjamini-Hochberg covers the two hold-rate tests. H3 has a bar but no p-value.
-    - R² is measured against the impression-weighted mean of all analysed clips, so it
-      includes between-base variance that H1's within-base centring removes.
+    - Every §7 model works on within-base deviations: logit hook rate centred inside each base
+      (weighted by impressions), features centred inside each base. Without this, R² is
+      dominated by how well whole bases do, which 17 other bases cannot predict; on generated
+      72-clip studies that left H2 unable to detect even a strong planted brain effect.
+    - Model A's embedding columns (a_emb_*) enter every model as their first 10 principal
+      components (standardised columns, fit on the training rows of each fold); its scalar
+      features enter unreduced, so a single predictive feature such as loudness is never
+      discarded as low-variance. At about 1,500 embedding columns against 72 clips, one shared
+      ridge penalty otherwise drowns Model B's 27 columns. 10 is fixed before data.
+      The inner penalty search reuses the outer fold's components.
     - 15-second plays above 3-second plays are reported as a warning, since they only feed
       the secondary outcome. 3-second plays above impressions stop the run: the logit is
       undefined, and the export's column definitions need checking.
@@ -61,7 +75,7 @@ Usage:
     .venv/bin/python hook_test_analysis.py --features hook_features.csv --outcomes hook_outcomes.csv
     .venv/bin/python hook_test_analysis.py ... --guesses hook_guesses.csv --out hook_results.json
 
-Takes roughly 40 minutes: about 36,000 cross-validated refits for the permutations and bootstrap.
+Takes 30 to 45 minutes: about 36,000 cross-validated refits for the permutations and bootstrap.
 Exit code 0 when the analysis completes, whatever the verdict; 2 on bad input.
 """
 
@@ -96,6 +110,7 @@ ALPHAS = np.logspace(-2, 6, 33)  # ridge penalties searched inside each training
 MIN_IMPRESSIONS = 750  # §9
 MAX_IMBALANCE = 1.20  # §9: largest over smallest impressions inside a base
 MIN_BASES = 10  # §10 delivery failure below this
+PCA_K = 10  # components kept from Model A's embedding columns, fit inside each training fold
 H2_MIN_DELTA = 0.03  # §7 H2
 H3_MIN_DELTA = 0.02  # §7 H3
 P_BAR = 0.05
@@ -110,6 +125,10 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def n_emb(a_cols: list[str]) -> int:
+    return sum(c.startswith("a_emb_") for c in a_cols)
+
+
 def elogit(k: np.ndarray, n: np.ndarray) -> np.ndarray:
     return np.log((k + 0.5) / (n - k + 0.5))
 
@@ -118,13 +137,14 @@ def elogit(k: np.ndarray, n: np.ndarray) -> np.ndarray:
 
 def load_features(path: Path) -> tuple[pd.DataFrame, list[str], list[str]]:
     """Read the feature file, parse base and variant from each filename, and check it is complete."""
-    feats = pd.read_csv(path)
+    feats = pd.read_csv(path).copy()  # consolidated; a fragmented 1,500-column frame warns on every merge
     if "filename" not in feats.columns:
         raise InputError("features file is missing column: filename")
     dup = feats.filename[feats.filename.duplicated()]
     if len(dup):
         raise InputError(f"features file lists {dup.iloc[0]} more than once")
-    a_cols = [c for c in feats.columns if c.startswith("a_")]
+    # embedding columns first: everything downstream reduces the leading n_emb(a_cols) columns
+    a_cols = sorted((c for c in feats.columns if c.startswith("a_")), key=lambda c: not c.startswith("a_emb_"))
     b_cols = [c for c in feats.columns if c.startswith("b_")]
     if not a_cols or not b_cols:
         raise InputError("features file needs a_* (Model A) and b_* (Model B) columns")
@@ -135,8 +155,9 @@ def load_features(path: Path) -> tuple[pd.DataFrame, list[str], list[str]]:
     if parsed[0].isna().any():
         bad = feats.filename[parsed[0].isna()].iloc[0]
         raise InputError(f"{bad}: name must look like base03_spoken.mp4")
-    feats["base"] = parsed[0].astype(int)
-    feats["variant"] = pd.Categorical(parsed[1], categories=VARIANTS, ordered=True)
+    keys = pd.DataFrame({"base": parsed[0].astype(int),
+                         "variant": pd.Categorical(parsed[1], categories=VARIANTS, ordered=True)})
+    feats = pd.concat([feats, keys], axis=1)  # one concat, not two inserts into a 1,500-column frame
     sizes = feats.groupby("base").size()
     if (sizes != len(VARIANTS)).any():
         b = sizes[sizes != len(VARIANTS)].index[0]
@@ -243,13 +264,38 @@ def ridge_predict(X_tr: np.ndarray, y_tr: np.ndarray, w_tr: np.ndarray, groups_t
     return ((X_te - mu) / sd) @ (Z.T @ dual) + y_mean
 
 
-def cv_predict(X: np.ndarray, y: np.ndarray, w: np.ndarray, groups: np.ndarray) -> np.ndarray:
-    """Out-of-fold predictions, holding out one base (group) at a time."""
+def reduce_block(X_tr: np.ndarray, X_te: np.ndarray, n: int) -> tuple[np.ndarray, np.ndarray]:
+    """Replace the first n columns (Model A) with their first PCA_K principal components, fit on X_tr."""
+    if n == 0:
+        return X_tr, X_te
+    blk = X_tr[:, :n]
+    mu, sd = blk.mean(axis=0), blk.std(axis=0)
+    sd[sd < 1e-10 * (1 + np.abs(mu))] = 1.0
+    Z = (blk - mu) / sd
+    s2, U = np.linalg.eigh(Z @ Z.T)  # n x n Gram is cheaper than an SVD of 68 x 1,500
+    top = np.argsort(s2)[::-1][:PCA_K]
+    top = top[s2[top] > 1e-10 * s2.max()]
+    axes = Z.T @ (U[:, top] / np.sqrt(s2[top]))
+    return (np.hstack([Z @ axes, X_tr[:, n:]]),
+            np.hstack([((X_te[:, :n] - mu) / sd) @ axes, X_te[:, n:]]))
+
+
+def cv_predict(X: np.ndarray, y: np.ndarray, w: np.ndarray, groups: np.ndarray, n_pca: int = 0) -> np.ndarray:
+    """Out-of-fold predictions, holding out one base (group) at a time. The first n_pca columns are Model A."""
     pred = np.empty_like(y)
     for g in np.unique(groups):
         te = groups == g
-        pred[te] = ridge_predict(X[~te], y[~te], w[~te], groups[~te], X[te])
+        X_tr, X_te = reduce_block(X[~te], X[te], n_pca)
+        pred[te] = ridge_predict(X_tr, y[~te], w[~te], groups[~te], X_te)
     return pred
+
+
+def centre(M: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """Remove each base's weighted mean from every column. Rows are base-major, four per base."""
+    nv = len(VARIANTS)
+    M3 = M.reshape(-1, nv, *M.shape[1:])
+    w3 = w.reshape(-1, nv, *([1] * (M.ndim - 1)))
+    return (M3 - (w3 * M3).sum(axis=1, keepdims=True) / w3.sum(axis=1, keepdims=True)).reshape(M.shape)
 
 
 def r2(y: np.ndarray, pred: np.ndarray, w: np.ndarray) -> float:
@@ -257,10 +303,11 @@ def r2(y: np.ndarray, pred: np.ndarray, w: np.ndarray) -> float:
     return float(1 - np.sum(w * (y - pred) ** 2) / np.sum(w * (y - ybar) ** 2))
 
 
-def residualize(block: np.ndarray, on: np.ndarray, groups: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Split block into its cross-fitted prediction from `on` (leave-one-base-out ridge) and the remainder."""
+def residualize(block: np.ndarray, on: np.ndarray, groups: np.ndarray, n_pca: int) -> tuple[np.ndarray, np.ndarray]:
+    """Split block into its cross-fitted prediction from Model A `on` (leave-one-base-out ridge) and the remainder."""
     ones = np.ones(len(block))
-    fitted = np.column_stack([cv_predict(on, block[:, j], ones, groups) for j in range(block.shape[1])])
+    fitted = np.column_stack([cv_predict(on, block[:, j], ones, groups, n_pca)
+                              for j in range(block.shape[1])])
     return fitted, block - fitted
 
 
@@ -301,7 +348,7 @@ def h1(pred: np.ndarray, y: np.ndarray, w: np.ndarray, rng: np.random.Generator)
 
 
 def conditional_perm(A: np.ndarray, fitted: np.ndarray, resid: np.ndarray, y: np.ndarray,
-                     w: np.ndarray, groups: np.ndarray, r2_a: float, delta: float,
+                     w: np.ndarray, groups: np.ndarray, n_pca: int, r2_a: float, delta: float,
                      rng: np.random.Generator, label: str) -> float:
     """§7 H2: permute the A-residualised block within base, refit, and count ΔR² at least as large."""
     rows = np.arange(len(y)).reshape(-1, len(VARIANTS))
@@ -309,13 +356,16 @@ def conditional_perm(A: np.ndarray, fitted: np.ndarray, resid: np.ndarray, y: np
     for i in track(range(N_PERM), description=label, console=console, transient=True):
         perm = rng.permuted(rows, axis=1).ravel()
         X = np.hstack([A, fitted + resid[perm]])
-        null[i] = r2(y, cv_predict(X, y, w, groups), w) - r2_a
+        null[i] = r2(y, cv_predict(X, y, w, groups, n_pca), w) - r2_a
     return float((1 + np.sum(null >= delta)) / (1 + N_PERM))
 
 
-def bootstrap_r2(models: dict[str, np.ndarray], y: np.ndarray, w: np.ndarray, nb: int,
+def bootstrap_r2(models: dict[str, tuple[np.ndarray, int]], y: np.ndarray, w: np.ndarray, nb: int,
                  rng: np.random.Generator) -> dict[str, np.ndarray]:
-    """Resample bases with replacement and refit; copies of one base are held out together."""
+    """Resample bases with replacement and refit; copies of one base are held out together.
+
+    models maps a name to (features, number of leading Model A columns).
+    """
     nv = len(VARIANTS)
     out = {name: np.empty(N_BOOT) for name in models}
     for i in track(range(N_BOOT), description="bootstrap", console=console, transient=True):
@@ -324,8 +374,8 @@ def bootstrap_r2(models: dict[str, np.ndarray], y: np.ndarray, w: np.ndarray, nb
             pick = rng.integers(0, nb, nb)
         rows = (pick[:, None] * nv + np.arange(nv)).ravel()
         groups = np.repeat(pick, nv)
-        for name, X in models.items():
-            out[name][i] = r2(y[rows], cv_predict(X[rows], y[rows], w[rows], groups), w[rows])
+        for name, (X, n_a) in models.items():
+            out[name][i] = r2(y[rows], cv_predict(X[rows], y[rows], w[rows], groups, n_a), w[rows])
     return out
 
 
@@ -443,8 +493,9 @@ def check_features(path: Path) -> int:
     if df.base.nunique() < 3:
         console.print("[red]need at least three bases to cross-fit[/red]")
         return 2
-    B = df[b_cols].to_numpy(float)
-    _, resid = residualize(B, df[a_cols].to_numpy(float), df.base.to_numpy())
+    ones = np.ones(len(df))
+    B = centre(df[b_cols].to_numpy(float), ones)
+    _, resid = residualize(B, centre(df[a_cols].to_numpy(float), ones), df.base.to_numpy(), n_emb(a_cols))
     console.print(f"{df.base.nunique()} bases, {len(a_cols)} Model A columns, {len(b_cols)} Model B columns")
     console.print(f"Brain-feature variance Model A leaves unexplained (cross-fitted): {unexplained(B, resid):.1%}")
     return 0
@@ -489,37 +540,40 @@ def main(argv: list[str] | None = None) -> int:
     else:
         rng = np.random.default_rng(SEED)
         w = df.impressions.to_numpy(float)
-        y = elogit(df.plays_3s.to_numpy(float), w)
-        y_hold = elogit(df.plays_15s.to_numpy(float), w)
+        ones = np.ones(len(df))
+        y = centre(elogit(df.plays_3s.to_numpy(float), w), w)
+        y_hold = centre(elogit(df.plays_15s.to_numpy(float), w), w)
         groups = df.base.to_numpy()
-        A, B = df[a_cols].to_numpy(float), df[b_cols].to_numpy(float)
-        noise = rng.standard_normal(B.shape)
-        models = {"A": A, "B": B, "C": np.hstack([A, B]), "R": np.hstack([A, noise]),
-                  "D": pd.get_dummies(df.variant).to_numpy(float)}
+        A, B = centre(df[a_cols].to_numpy(float), ones), centre(df[b_cols].to_numpy(float), ones)
+        noise = centre(rng.standard_normal(B.shape), ones)
+        n_a = n_emb(a_cols)
+        models = {"A": (A, n_a), "B": (B, 0), "C": (np.hstack([A, B]), n_a), "R": (np.hstack([A, noise]), n_a),
+                  "D": (centre(pd.get_dummies(df.variant).to_numpy(float), ones), 0)}
 
-        oof = {k: cv_predict(X, y, w, groups) for k, X in models.items()}
+        oof = {k: cv_predict(X, y, w, groups, n) for k, (X, n) in models.items()}
         res["r2"] = {k: r2(y, p, w) for k, p in oof.items()}
         mat = lambda v: v.reshape(nb, nv)
         res["h1"] = {m: h1(mat(oof[m]), mat(y), mat(w), rng) for m in ("B", "C")}
 
         boot = bootstrap_r2({k: models[k] for k in ("A", "C", "R")}, y, w, nb, rng)
-        fit_b, res_b = residualize(B, A, groups)
-        fit_n, res_n = residualize(noise, A, groups)
+        fit_b, res_b = residualize(B, A, groups, n_a)
+        fit_n, res_n = residualize(noise, A, groups, n_a)
         res["brain_unexplained"] = unexplained(B, res_b)
         for key, name, extra in (("h2", "C", (fit_b, res_b)), ("control", "R", (fit_n, res_n))):
             delta = res["r2"][name] - res["r2"]["A"]
-            p = conditional_perm(A, *extra, y, w, groups, res["r2"]["A"], delta, rng, f"H2 permutations, Model {name}")
+            p = conditional_perm(A, *extra, y, w, groups, n_a, res["r2"]["A"], delta, rng,
+                                 f"H2 permutations, Model {name}")
             lo, hi = np.percentile(boot[name] - boot["A"], [2.5, 97.5])
             res[key] = {"delta": delta, "p": p, "ci95": [float(lo), float(hi)],
                         "clears": bool(delta >= H2_MIN_DELTA and p < P_BAR and lo > 0)}
         res["h3"] = {"delta": res["r2"]["C"] - res["r2"]["D"]}
         res["h3"]["clears"] = res["h3"]["delta"] >= H3_MIN_DELTA
 
-        oof_hold = {k: cv_predict(models[k], y_hold, w, groups) for k in ("A", "B", "C")}
+        oof_hold = {k: cv_predict(models[k][0], y_hold, w, groups, models[k][1]) for k in ("A", "B", "C")}
         h1_hold = h1(mat(oof_hold[H1_MODEL]), mat(y_hold), mat(w), rng)
         r2_a_hold = r2(y_hold, oof_hold["A"], w)
         delta_hold = r2(y_hold, oof_hold["C"], w) - r2_a_hold
-        p_hold = conditional_perm(A, fit_b, res_b, y_hold, w, groups, r2_a_hold, delta_hold, rng,
+        p_hold = conditional_perm(A, fit_b, res_b, y_hold, w, groups, n_a, r2_a_hold, delta_hold, rng,
                                   "H2 permutations, hold rate")
         q = benjamini_hochberg([h1_hold["p"], p_hold])
         res["secondary"] = {"h1_hold": {"r": h1_hold["r"], "p": h1_hold["p"], "q": q[0]},

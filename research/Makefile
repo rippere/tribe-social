@@ -9,6 +9,7 @@ STIMULI_DIR = stimuli
 HOOK_FEATURES = hook_features.csv
 HOOK_OUTCOMES = hook_outcomes.csv
 HOOK_GUESSES = hook_guesses.csv
+HOOK_RESULTS = hook_results.json
 
 ## demo   — launch the Streamlit dashboard with pre-scored corpus (zero credentials needed)
 demo: _check_venv
@@ -73,7 +74,7 @@ validate-stimuli:
 ## hook-test — the pre-registered hook-test analysis (PREREGISTRATION.md §5–§10); run once on the results pull
 hook-test:
 	$(PYTHON) hook_test_analysis.py --features $(HOOK_FEATURES) --outcomes $(HOOK_OUTCOMES) \
-		$(if $(wildcard $(HOOK_GUESSES)),--guesses $(HOOK_GUESSES)) --out hook_results.json
+		$(if $(wildcard $(HOOK_GUESSES)),--guesses $(HOOK_GUESSES)) --out $(HOOK_RESULTS)
 
 ## hook-features-check — before freeze: how much of the brain features survives regressing out Model A (no outcomes needed)
 hook-features-check:
