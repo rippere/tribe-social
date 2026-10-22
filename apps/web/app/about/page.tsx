@@ -88,7 +88,7 @@ export default function AboutPage() {
       <section id="team" className="mx-auto max-w-[1232px] px-6 pt-32">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="type-h2 text-ink">The team</h2>
-          <p className="type-lead mt-4">Six seats, one owner each. Here&apos;s who does what.</p>
+          <p className="type-lead mt-4">The six people building fMRIght.</p>
         </div>
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -120,7 +120,7 @@ function TeamCard({ member, photo }: { member: TeamMember; photo?: string }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photo}
-          alt={`${member.name}, ${member.role}`}
+          alt={member.name}
           loading="lazy"
           className="aspect-square w-full rounded-[18px] bg-elevated object-cover"
         />
@@ -134,7 +134,6 @@ function TeamCard({ member, photo }: { member: TeamMember; photo?: string }) {
       )}
       <div className="px-5 pt-5 pb-6">
         <h3 className="text-[18px] leading-6 font-medium text-ink">{member.name}</h3>
-        <p className="mt-1 font-mono text-[13px] text-accent">{member.role}</p>
         <p className="mt-3 text-[15px] leading-[24px] text-ink/70">{member.bio}</p>
       </div>
     </li>
