@@ -6,6 +6,7 @@ const COLUMNS = [
   {
     title: 'Product',
     links: [
+      { label: 'The app', href: '/product' },
       { label: 'Score a clip', href: '/scorer' },
       { label: 'Scored clips', href: '/clips' },
       { label: 'How it works', href: '/#how-it-works' },
@@ -23,6 +24,8 @@ const COLUMNS = [
   {
     title: 'Project',
     links: [
+      { label: 'About us', href: '/about' },
+      { label: 'The team', href: '/about#team' },
       { label: 'GitHub', href: REPO },
       { label: 'License notice', href: `${REPO}/blob/main/NOTICE` },
     ],

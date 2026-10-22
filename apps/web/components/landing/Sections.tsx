@@ -18,7 +18,18 @@ export function MascotGlyph({ className = '' }: { className?: string }) {
 }
 
 /* ---------- Part 6: How it works (the non-obvious parts) ---------- */
-const REGION_ORDER: RegionKey[] = ['attention', 'social', 'language', 'valuation', 'auditory', 'motion', 'narrative']
+export const REGION_ORDER: RegionKey[] = ['attention', 'social', 'language', 'valuation', 'auditory', 'motion', 'narrative']
+
+/** Literal class names, so Tailwind emits every region color (it drops theme vars no class uses). */
+export const REGION_DOT: Record<RegionKey, string> = {
+  attention: 'bg-roi-attention',
+  social: 'bg-roi-social',
+  language: 'bg-roi-language',
+  valuation: 'bg-roi-valuation',
+  auditory: 'bg-roi-auditory',
+  motion: 'bg-roi-motion',
+  narrative: 'bg-roi-narrative',
+}
 
 export function HowItWorks() {
   return (
@@ -48,7 +59,7 @@ export function HowItWorks() {
           <div className="mt-5 flex flex-wrap gap-2">
             {REGION_ORDER.map(key => (
               <span key={key} className="inline-flex items-center gap-2 rounded-full bg-elevated px-3 py-1.5 text-[13px] text-ink">
-                <span className="h-2 w-2 rounded-full" style={{ background: `var(--color-roi-${key})` }} />
+                <span className={`h-2 w-2 rounded-full ${REGION_DOT[key]}`} />
                 {REGION_LABELS[key]}
               </span>
             ))}
