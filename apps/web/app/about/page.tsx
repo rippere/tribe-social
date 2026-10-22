@@ -132,9 +132,8 @@ function TeamCard({ member, photo }: { member: TeamMember; photo?: string }) {
           {initials(member.name)}
         </div>
       )}
-      <div className="px-5 pt-5 pb-6">
+      <div className="px-5 pt-4 pb-5">
         <h3 className="text-[18px] leading-6 font-medium text-ink">{member.name}</h3>
-        <p className="mt-3 text-[15px] leading-[24px] text-ink/70">{member.bio}</p>
       </div>
     </li>
   )
