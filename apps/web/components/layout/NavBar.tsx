@@ -7,10 +7,11 @@ const PREREG_URL =
   'https://github.com/rippere/tribe-social/blob/main/research/PREREGISTRATION.md'
 
 const NAV_LINKS = [
+  { label: 'The app', href: '/product' },
   { label: 'How it works', href: '/#how-it-works' },
   { label: 'Clips', href: '/clips' },
   { label: 'The science', href: '/#science' },
-  { label: 'FAQ', href: '/#faq' },
+  { label: 'About', href: '/about' },
 ]
 
 export default function NavBar() {
@@ -38,8 +39,11 @@ export default function NavBar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/clips" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
-            Clips
+          <Link href="/product" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
+            App
+          </Link>
+          <Link href="/about" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
+            About
           </Link>
           {/* Wrapped: the unlayered .btn-* display rule would beat a `hidden` utility. */}
           <span className="hidden lg:inline-flex">
