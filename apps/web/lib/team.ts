@@ -44,6 +44,8 @@ export const TEAM: TeamMember[] = [
   {
     slug: 'julie-weninger',
     name: 'Julie Weninger',
+    role: 'UI and mobile app',
+    bio: 'Julie works on how fMRIght looks and feels, from the interface to the mobile app. The goal is a brain read a creator can take in at a glance.',
   },
 ]
 
