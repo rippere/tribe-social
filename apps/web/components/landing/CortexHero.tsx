@@ -199,7 +199,7 @@ export default function CortexHero() {
               onClick={() => setPaused(p => !p)}
               disabled={capture}
               aria-label={still ? 'Play the cortex animation' : 'Pause the cortex animation'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-btn-2 disabled:opacity-40"
+              className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors after:absolute after:-inset-1.5 hover:bg-btn-2 disabled:opacity-40"
             >
               {still ? (
                 <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>

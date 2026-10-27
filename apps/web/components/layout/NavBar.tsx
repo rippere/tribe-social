@@ -39,10 +39,10 @@ export default function NavBar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/product" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
+          <Link href="/product" className="flex h-10 items-center px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
             App
           </Link>
-          <Link href="/about" className="px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
+          <Link href="/about" className="flex h-10 items-center px-2 text-sm text-ink/70 transition-colors hover:text-ink md:hidden">
             About
           </Link>
           {/* Wrapped: the unlayered .btn-* display rule would beat a `hidden` utility. */}

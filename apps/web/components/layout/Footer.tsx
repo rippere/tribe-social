@@ -35,8 +35,8 @@ const COLUMNS = [
 export default function Footer() {
   return (
     <footer className="mt-24 border-t border-line bg-background">
-      <div className="mx-auto grid max-w-[1232px] gap-10 px-6 py-16 md:grid-cols-[1fr_auto_auto_auto] md:gap-20">
-        <div>
+      <div className="mx-auto grid max-w-[1232px] grid-cols-2 gap-x-6 gap-y-10 px-6 py-12 md:grid-cols-[1fr_auto_auto_auto] md:gap-20 md:py-16">
+        <div className="col-span-2 md:col-span-1">
           <p className="text-[17px] font-semibold tracking-[-0.3px] text-ink">fMRIght</p>
           <p className="mt-2 max-w-xs text-[13px] leading-5 text-muted">
             Non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
@@ -49,7 +49,7 @@ export default function Footer() {
         {COLUMNS.map(col => (
           <div key={col.title}>
             <p className="text-[13px] font-medium text-ink">{col.title}</p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-1">
               {col.links.map(link => (
                 <li key={link.label}>
                   {link.href.startsWith('http') ? (
@@ -57,12 +57,12 @@ export default function Footer() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[13px] text-muted transition-colors hover:text-ink"
+                      className="inline-block py-1 text-[13px] text-muted transition-colors hover:text-ink"
                     >
                       {link.label}
                     </a>
                   ) : (
-                    <Link href={link.href} className="text-[13px] text-muted transition-colors hover:text-ink">
+                    <Link href={link.href} className="inline-block py-1 text-[13px] text-muted transition-colors hover:text-ink">
                       {link.label}
                     </Link>
                   )}

@@ -34,7 +34,7 @@ export const REGION_DOT: Record<RegionKey, string> = {
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="mx-auto max-w-[1232px] px-6 pt-32">
+    <section id="how-it-works" className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="type-h2 text-ink">How it works, and why</h2>
         <p className="type-lead mt-4">
@@ -92,7 +92,7 @@ export function HowItWorks() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col rounded-[24px] bg-panel p-8 text-[15px] leading-[24px] text-ink/70">
+    <div className="flex flex-col rounded-[24px] bg-panel p-6 text-[15px] md:p-8 leading-[24px] text-ink/70">
       <h3 className="type-h3 mb-2 text-ink">{title}</h3>
       {children}
     </div>
@@ -127,7 +127,7 @@ function MiniBars() {
 /* ---------- Part 8: demo video ---------- */
 export function SeeItInAction() {
   return (
-    <section className="mx-auto max-w-[1232px] px-6 pt-32">
+    <section className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
       <DemoVideo
         src="/demo/fmright-demo.mp4"
@@ -141,7 +141,7 @@ export function SeeItInAction() {
 /* ---------- Part 11: the science ---------- */
 export function Science() {
   return (
-    <section id="science" className="mx-auto max-w-[1232px] px-6 pt-32 text-center">
+    <section id="science" className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32 text-center">
       <h2 className="type-h2 text-ink">The science, in the open</h2>
       <p className="type-lead mx-auto mt-4 max-w-2xl">
         We&apos;re running a pre-registered test: 72 short videos, each with one of four openings, run as ads with equal
@@ -158,9 +158,9 @@ export function Science() {
 /* ---------- Part 13: final call to action ---------- */
 export function FinalCta() {
   return (
-    <section className="relative mx-auto max-w-[1232px] overflow-hidden px-6 pt-40 pb-8 text-center">
+    <section className="relative mx-auto max-w-[1232px] overflow-hidden px-6 pt-24 pb-8 text-center md:pt-40">
       <h2 className="type-h2 text-ink">Score your first clip</h2>
-      <p className="type-lead mt-3">Drop in a short video and see the read in a few minutes. Free while it&apos;s a research preview.</p>
+      <p className="type-lead mx-auto mt-3 max-w-xl">Drop in a short video and see the read in a few minutes. Free while it&apos;s a research preview.</p>
       <div className="mt-8 flex justify-center gap-2">
         <Link href="/scorer" className="btn-primary btn-lg">
           Score a clip

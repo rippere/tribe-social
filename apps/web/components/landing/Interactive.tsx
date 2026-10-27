@@ -33,7 +33,7 @@ export function Faq() {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section id="faq" className="mx-auto grid max-w-[976px] gap-10 px-6 pt-32 md:grid-cols-[1fr_1.4fr]">
+    <section id="faq" className="mx-auto grid max-w-[976px] gap-10 px-6 pt-20 md:pt-32 md:grid-cols-[1fr_1.4fr]">
       <h2 className="type-h2 text-ink">FAQs</h2>
       <div>
         {FAQS.map((f, i) => {
@@ -94,10 +94,10 @@ export function DemoVideo({ src, poster, label }: { src: string; poster: string;
   }
 
   const iconBtn =
-    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-btn-2'
+    'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors after:absolute after:-inset-1.5 hover:bg-btn-2'
 
   return (
-    <figure className="mt-10">
+    <figure className="mx-auto mt-10 max-w-[calc((100svh-168px)*16/9)]">
       <div className="relative overflow-hidden rounded-[24px] bg-ink-2">
         <video
           ref={ref}
@@ -144,7 +144,7 @@ export function DemoVideo({ src, poster, label }: { src: string; poster: string;
             </svg>
           )}
         </button>
-        <span className="relative flex h-5 flex-1 items-center">
+        <span className="relative flex h-8 flex-1 items-center">
           <span className="relative h-px w-full overflow-hidden bg-line" aria-hidden>
             <span
               className="absolute inset-0 origin-left bg-accent"
