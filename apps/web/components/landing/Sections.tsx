@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { REGION_LABELS, type RegionKey } from '@/components/brain/contract'
+import { DemoVideo } from '@/components/landing/Interactive'
 
 export const REPO = 'https://github.com/rippere/tribe-social'
 export const PREREG_URL = `${REPO}/blob/main/research/PREREGISTRATION.md`
@@ -128,14 +129,10 @@ export function SeeItInAction() {
   return (
     <section className="mx-auto max-w-[1232px] px-6 pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
-      <video
-        className="mt-10 aspect-video w-full rounded-[24px] bg-ink-2 object-cover"
+      <DemoVideo
         src="/demo/fmright-demo.mp4"
         poster="/demo/fmright-demo-poster.jpg"
-        controls
-        playsInline
-        preload="metadata"
-        aria-label="fMRIght demo: a predicted brain response to a video, second by second"
+        label="fMRIght demo: a predicted brain response to a video, second by second"
       />
     </section>
   )
