@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CortexClock } from '@/components/brain/CortexBrain'
 import { HERO_SPIN, type HeroRig } from '@/components/brain/hero-rig'
-import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 // Build-time copy of the committed activity metadata, so the caption is in the
 // server HTML and always describes the asset that actually ships.
 import meta from '@/public/cortex/activity.json'
@@ -16,13 +15,13 @@ const CortexHeroScene = dynamic(() => import('@/components/brain/CortexHeroScene
   ssr: false,
 })
 
-/** Second shown in the static fallback image and under reduced motion. */
+/** Second shown in the static fallback image and in a `?still` capture. */
 const STILL_T = 12
 /** Show only the stronger predicted responses so the folds stay readable. */
 const THRESHOLD = 0.4
 const YAW0 = Math.PI * 0.7 // left hemisphere, three-quarter front
-// Still of the live scene at YAW0 / STILL_T, captured from this component under
-// reduced motion. Re-capture it whenever activity.* or the framing changes
+// Still of the live scene at YAW0 / STILL_T, captured from this component with
+// `?still` in the URL. Re-capture it whenever activity.* or the framing changes
 // (docs/CORTEX-VIEW.md, "Hero fallback still").
 const FALLBACK_SRC = '/cortex/cortex-hero.webp'
 
@@ -45,12 +44,15 @@ function canRender3d(): boolean {
 }
 
 export default function CortexHero() {
-  const reduced = usePrefersReducedMotion()
   const [want3d, setWant3d] = useState(false)
   const [no3d, setNo3d] = useState(false)
   const [ready, setReady] = useState(false)
   const [paused, setPaused] = useState(false)
   const [visible, setVisible] = useState(true)
+  // `/?still` freezes the hero at YAW0 / STILL_T for re-capturing the fallback image.
+  // The OS reduced-motion setting does not stop it (decided with Ben 2026-10-27):
+  // it plays for everyone and the pause button stops it.
+  const [capture, setCapture] = useState(false)
 
   const clock = useRef<CortexClock>({ t: STILL_T, playing: true, speed: 1 })
   const rig = useRef<HeroRig>({ yaw: YAW0, pitch: 0, vel: HERO_SPIN, dragging: false, spin: true })
@@ -59,7 +61,11 @@ export default function CortexHero() {
   const barRef = useRef<HTMLSpanElement>(null)
   const drag = useRef<{ id: number; x: number; y: number; t: number; touch: boolean } | null>(null)
 
-  const still = reduced || paused
+  const still = capture || paused
+
+  useEffect(() => {
+    setCapture(new URLSearchParams(window.location.search).has('still'))
+  }, [])
 
   // Load the 3D scene once the page is idle.
   useEffect(() => {
@@ -87,14 +93,14 @@ export default function CortexHero() {
     return () => io.disconnect()
   }, [])
 
-  // Reduced motion: no spin, no playback, one representative second.
+  // Capture: no spin, no playback, one representative second.
   useEffect(() => {
-    if (reduced) clock.current.t = STILL_T
+    if (capture) clock.current.t = STILL_T
     clock.current.playing = !still
     rig.current.spin = !still
     if (still) rig.current.vel = 0
     rig.current.invalidate?.()
-  }, [reduced, still])
+  }, [capture, still])
 
   // Mirror the render-loop clock into the readout without re-rendering React.
   useEffect(() => {
@@ -191,7 +197,7 @@ export default function CortexHero() {
             <button
               type="button"
               onClick={() => setPaused(p => !p)}
-              disabled={reduced}
+              disabled={capture}
               aria-label={still ? 'Play the cortex animation' : 'Pause the cortex animation'}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fill text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-btn-2 disabled:opacity-40"
             >
