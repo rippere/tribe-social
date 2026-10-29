@@ -89,12 +89,12 @@ responses" and "a model prediction for an average viewer, not a recorded scan".
 
 ## Hero fallback still
 
-`cortex-hero.webp` is what first paint, reduced-motion visitors without WebGL2,
-and Save-Data visitors see. It is a capture of the live hero at `YAW0`,
+`cortex-hero.webp` is what first paint, visitors without WebGL2 and Save-Data
+visitors see. (Reduced-motion visitors get the live hero too; decided 2026-10-27.) It is a capture of the live hero at `YAW0`,
 `STILL_T = 12 s`, at exactly the `FRAME_W:FRAME_H` (2.2 : 2.0) aspect the camera
 fits, with a transparent background, so `object-fit: contain` lines it up with
 the canvas at any width. **Re-capture it whenever `activity.*`, the threshold,
-the shader or the framing changes**: load `/` with reduced motion emulated, set
+the shader or the framing changes**: load `/?still` (freezes it at `YAW0` / `STILL_T`), set
 the stage `[role=img]` to 1320×1200 px, hide everything else, screenshot the
 element with `omitBackground`, and save as WebP (q≈84).
 
