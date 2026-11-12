@@ -17,7 +17,7 @@
   --ink: #F2F2F0;                /* text, primary button fill */
   --on-ink: #0B0B0B;             /* text on ink fills */
   --ink-2: #1C1C1B;              /* raised dark cards */
-  --muted: #8E929A;              /* lead paragraphs, labels */
+  --muted: #B4B8BF;              /* lead paragraphs, labels (lifted for contrast, peer feedback 2026-11-12) */
   --btn-2: #242423;              /* secondary pill button */
   --line: rgba(255, 255, 255, 0.1); /* hairlines */
   --accent: #5CE1F0;             /* selected chip text, activation cyan */

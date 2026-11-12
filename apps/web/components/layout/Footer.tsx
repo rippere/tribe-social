@@ -7,7 +7,7 @@ const COLUMNS = [
     title: 'Product',
     links: [
       { label: 'The app', href: '/product' },
-      { label: 'Score a clip', href: '/scorer' },
+      { label: 'Join the waitlist', href: '/#waitlist' },
       { label: 'Scored clips', href: '/clips' },
       { label: 'How it works', href: '/#how-it-works' },
       { label: 'FAQ', href: '/#faq' },
@@ -16,6 +16,7 @@ const COLUMNS = [
   {
     title: 'Science',
     links: [
+      { label: 'How we test it', href: '/science' },
       { label: 'Pre-registration', href: `${REPO}/blob/main/research/PREREGISTRATION.md` },
       { label: 'Validation protocol', href: `${REPO}/blob/main/docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` },
       { label: 'TRIBE v2 (Meta FAIR)', href: 'https://github.com/facebookresearch/tribev2' },

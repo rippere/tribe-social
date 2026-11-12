@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MascotGlyph, PREREG_URL } from '@/components/landing/Sections'
+import { MascotGlyph } from '@/components/landing/Sections'
 import { initials, TEAM, type TeamMember } from '@/lib/team'
 
 export const metadata: Metadata = {
@@ -64,13 +64,14 @@ export default function AboutPage() {
           <p className="mt-4 max-w-3xl text-[28px] leading-[36px] font-medium tracking-[-0.3px] text-ink md:text-[36px] md:leading-[44px]">
             Turn &ldquo;post and pray&rdquo; into &ldquo;look before you leap,&rdquo; and never claim more than we can show.
           </p>
-          <p className="mt-6 max-w-2xl text-[16px] leading-[26px] text-ink/70">
+          <p className="mt-6 max-w-2xl text-[16px] leading-[26px] text-ink/80">
             Short videos are won or lost in seconds, and feedback on a draft is usually gut feel. We give creators and
-            reviewers a second-by-second read they can point at. We also publish our own evidence, including a weak
-            first pilot (r = 0.25, p = 0.24, 24 videos), and we call fMRIght a diagnostic until a{' '}
-            <a href={PREREG_URL} target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-4">
+            reviewers a second-by-second read they can point at. We also publish our own evidence, including a first
+            pilot that didn&apos;t prove the link to engagement (r = 0.25, p = 0.24, 24 videos), and we call fMRIght a
+            diagnostic until a{' '}
+            <Link href="/science" className="text-ink underline underline-offset-4">
               pre-registered test
-            </a>{' '}
+            </Link>{' '}
             shows it predicts more.
           </p>
         </div>
@@ -79,7 +80,7 @@ export default function AboutPage() {
           {VALUES.map(v => (
             <div key={v.title} className="rounded-[24px] bg-panel p-8">
               <h2 className="type-h3 text-ink">{v.title}</h2>
-              <p className="mt-2 text-[15px] leading-[24px] text-ink/70">{v.body}</p>
+              <p className="mt-2 text-[15px] leading-[24px] text-ink/80">{v.body}</p>
             </div>
           ))}
         </div>
@@ -104,8 +105,8 @@ export default function AboutPage() {
           <Link href="/product" className="btn-primary btn-lg">
             Explore the app
           </Link>
-          <Link href="/scorer" className="btn-secondary btn-lg">
-            Score a clip
+          <Link href="/#waitlist" className="btn-secondary btn-lg">
+            Join the waitlist
           </Link>
         </div>
       </section>
@@ -135,7 +136,7 @@ function TeamCard({ member, photo }: { member: TeamMember; photo?: string }) {
       <div className="px-5 pt-4 pb-5">
         <h3 className="text-[18px] leading-6 font-medium text-ink">{member.name}</h3>
         {member.role && <p className="mt-1 font-mono text-[13px] text-accent">{member.role}</p>}
-        {member.bio && <p className="mt-3 text-[15px] leading-[24px] text-ink/70">{member.bio}</p>}
+        {member.bio && <p className="mt-3 text-[15px] leading-[24px] text-ink/80">{member.bio}</p>}
       </div>
     </li>
   )

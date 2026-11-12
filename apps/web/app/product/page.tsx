@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { REGION_LABELS } from '@/components/brain/contract'
-import { PREREG_URL, REGION_DOT, REGION_ORDER } from '@/components/landing/Sections'
+import { REGION_DOT, REGION_ORDER } from '@/components/landing/Sections'
 import { AppStoreBadge } from '@/components/product/AppStoreBadge'
 import { PhoneMockup } from '@/components/product/PhoneMockup'
 import { CLIPS } from '@/lib/clips'
@@ -36,7 +36,7 @@ const FEATURES: { title: string; body: string; extra?: 'regions' }[] = [
   },
   {
     title: 'Honest by design',
-    body: 'Every read is labeled a prediction for an average viewer, and our own pilot result is published, weak as it was.',
+    body: 'Every read is labeled a prediction for an average viewer. Our own pilot result is published too, including where it fell short.',
   },
 ]
 
@@ -76,12 +76,12 @@ export default function ProductPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <AppStoreBadge />
-            <Link href="/scorer" className="btn-primary btn-lg">
-              Try it free on the web
+            <Link href="/#waitlist" className="btn-primary btn-lg">
+              Join the waitlist
             </Link>
           </div>
           <p className="mt-4 text-[13px] text-muted">
-            The iPhone app is in development. Every feature on this page works in your browser today.
+            The iPhone app is in development. You can explore a full sample read in your browser today.
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export default function ProductPage() {
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(f => (
-            <li key={f.title} className="flex flex-col rounded-[24px] bg-panel p-8 text-[15px] leading-[24px] text-ink/70">
+            <li key={f.title} className="flex flex-col rounded-[24px] bg-panel p-8 text-[15px] leading-[24px] text-ink/80">
               <h3 className="type-h3 mb-2 text-ink">{f.title}</h3>
               <p>{f.body}</p>
               {f.extra === 'regions' && (
@@ -121,7 +121,7 @@ export default function ProductPage() {
             <div key={a.label} className="rounded-[24px] bg-panel p-8 md:p-10">
               <p className="font-mono text-[13px] text-accent">{a.label}</p>
               <h3 className="mt-3 text-[24px] leading-[32px] font-medium tracking-[-0.2px] text-ink">{a.title}</h3>
-              <p className="mt-3 text-[16px] leading-[26px] text-ink/70">{a.body}</p>
+              <p className="mt-3 text-[16px] leading-[26px] text-ink/80">{a.body}</p>
               <ul className="mt-6 space-y-3">
                 {a.points.map(p => (
                   <li key={p} className="flex gap-3 text-[15px] leading-[24px] text-ink/80">
@@ -142,27 +142,28 @@ export default function ProductPage() {
             <li key={s.n} className="rounded-[24px] bg-panel p-8">
               <span className="font-mono text-[13px] text-muted">{s.n}</span>
               <h3 className="type-h3 mt-3 text-ink">{s.title}</h3>
-              <p className="mt-2 text-[15px] leading-[24px] text-ink/70">{s.body}</p>
+              <p className="mt-2 text-[15px] leading-[24px] text-ink/80">{s.body}</p>
             </li>
           ))}
         </ol>
         <p className="mx-auto mt-8 max-w-2xl text-center text-[13px] leading-5 text-muted">
-          fMRIght predicts an average brain, not your audience, and it doesn&apos;t predict views. Our first pilot found a
-          weak link to engagement that didn&apos;t hold up (r = 0.25, p = 0.24, 24 videos). A{' '}
-          <a href={PREREG_URL} target="_blank" rel="noopener noreferrer" className="text-ink underline-offset-4 hover:underline">
-            pre-registered test
-          </a>{' '}
-          is running now.
+          fMRIght predicts an average brain, not your audience, and it doesn&apos;t predict views. Whether the read
+          tracks engagement isn&apos;t proven yet: in our first 24-video pilot the link was weak and could have been chance
+          (r = 0.25, p = 0.24). A{' '}
+          <Link href="/science" className="text-ink underline-offset-4 hover:underline">
+            larger pre-registered test
+          </Link>{' '}
+          is under way.
         </p>
       </section>
 
       <section className="mx-auto max-w-[1232px] px-6 pt-40 pb-8 text-center">
         <h2 className="type-h2 text-ink">See what lands before you post</h2>
-        <p className="type-lead mt-3">Free while fMRIght is a research preview.</p>
+        <p className="type-lead mt-3">Early access opens to agency and brand teams first.</p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <AppStoreBadge />
-          <Link href="/scorer" className="btn-primary btn-lg">
-            Score a clip
+          <Link href="/#waitlist" className="btn-primary btn-lg">
+            Join the waitlist
           </Link>
           <Link href={`/clips/${CLIPS[0].slug}`} className="btn-secondary btn-lg">
             See a sample read

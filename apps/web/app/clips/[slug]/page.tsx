@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClipWorkspace from '@/components/clips/ClipWorkspace'
+import { clipNotes } from '@/lib/clip-notes'
 import { CLIPS, clock, getClip } from '@/lib/clips'
 
 export const dynamicParams = false
@@ -47,6 +48,23 @@ export default async function ClipPage({ params }: { params: Promise<{ slug: str
           </div>
         </dl>
       </div>
+
+      <section aria-labelledby="summary" className="mb-4 rounded-[22px] bg-panel p-5 md:p-6">
+        <h2 id="summary" className="type-h3 text-ink">
+          The read in plain English
+        </h2>
+        <ol className="mt-4 grid gap-3 md:grid-cols-2">
+          {clipNotes(clip.context).map(n => (
+            <li key={n.title} className="rounded-[16px] bg-elevated p-4">
+              <p className="text-[15px] font-medium text-ink">{n.title}</p>
+              <p className="mt-1 text-[14px] leading-[22px] text-ink/80">{n.body}</p>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-3 text-[12px] leading-5 text-muted">
+          Computed from the model&apos;s per-second prediction for an average viewer. A diagnostic, not a forecast of views.
+        </p>
+      </section>
 
       <ClipWorkspace clip={clip} />
     </div>

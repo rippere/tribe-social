@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 
 const FAQS = [
   {
+    q: 'Who is fMRIght for?',
+    a: 'Teams that review creator video before it posts: influencer-agency campaign managers, brand creator-program leads and the creative strategists choosing which creator ads get budget. Creators get a phone app for checking their own drafts.',
+  },
+  {
     q: 'What is fMRI?',
     a: 'A brain scan that tracks blood flow to show which parts of the brain are working. fMRIght doesn’t scan anyone. It uses a model that learned from fMRI scans.',
   },
@@ -13,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'How accurate is it?',
-    a: 'For this use, we don’t know yet. Our pilot found a weak relationship that wasn’t statistically significant (r = 0.25, p = 0.24, 24 videos). The pre-registered hook test will give a clearer answer.',
+    a: 'For predicting engagement, it isn’t proven. In our first 24-video pilot the link was weak and could have been chance (r = 0.25, p = 0.24), and an outside study (arXiv:2607.01400) found the same model’s signal didn’t predict YouTube re-watching. That’s why we call it a diagnostic. Our pre-registered hook test, 72 clips run as budget-matched ads, will give a clearer answer.',
   },
   {
     q: 'Whose brain is it predicting?',
@@ -49,7 +53,7 @@ export function Faq() {
                 {f.q}
                 <span aria-hidden className="text-[20px] leading-none text-muted">{isOpen ? '×' : '+'}</span>
               </button>
-              {isOpen && <p className="pb-5 text-[15px] leading-6 text-ink/70">{f.a}</p>}
+              {isOpen && <p className="pb-5 text-[15px] leading-6 text-ink/80">{f.a}</p>}
             </div>
           )
         })}
