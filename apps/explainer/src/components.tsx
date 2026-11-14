@@ -6,7 +6,7 @@ export type Stage = 'upload' | 'encode' | 'extract' | 'read'
 export interface Word { w: string; s: number; e: number }
 
 /** On-screen spelling for words the narrator says phonetically. */
-const DISPLAY: Record<string, string> = { 'Eff-em-aright': 'fMRIght' }
+const DISPLAY: Record<string, string> = { 'Eff-em-aright': 'PrePost' }
 
 function display(word: string): string {
   const m = word.match(/^(.*?)([.,:;?!]?)$/)
@@ -46,7 +46,7 @@ export function AppWindow({ stage, width, height, children }: { stage: Stage; wi
     <div style={{ width, height, background: C.elevated, borderRadius: 22, border: `1px solid ${C.line}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 18px', borderBottom: `1px solid ${C.line}` }}>
         {[0, 1, 2].map(i => <span key={i} style={{ width: 11, height: 11, borderRadius: 6, background: '#242423' }} />)}
-        <span style={{ marginLeft: 12, color: C.muted, fontSize: 15 }}>fMRIght scorer</span>
+        <span style={{ marginLeft: 12, color: C.muted, fontSize: 15 }}>PrePost scorer</span>
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '14px 18px', flexShrink: 0 }}>
         {STAGES.map((s, i) => (

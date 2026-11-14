@@ -138,9 +138,9 @@ export function SeeItInAction() {
     <section className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
       <DemoVideo
-        src="/demo/fmright-demo.mp4"
-        poster="/demo/fmright-demo-poster.jpg"
-        label="fMRIght demo: a predicted brain response to a video, second by second"
+        src="/demo/prepost-demo.mp4"
+        poster="/demo/prepost-demo-poster.jpg"
+        label="PrePost demo: a predicted brain response to a video, second by second"
       />
     </section>
   )
@@ -188,7 +188,7 @@ export function ForReviewers() {
         <p className="font-mono text-[13px] text-accent">For agencies and brand creator teams</p>
         <h2 className="type-h2 mt-3 text-ink">Review creator drafts with a reason</h2>
         <p className="type-lead mt-4">
-          If you approve or send back 20 or more creator videos a month, fMRIght gives every draft a second-by-second
+          If you approve or send back 20 or more creator videos a month, PrePost gives every draft a second-by-second
           read before it posts, so feedback points at a moment, not a feeling.
         </p>
       </div>
@@ -241,7 +241,7 @@ export function FinalCta() {
         <WaitlistForm />
       </div>
       <p className="mx-auto mt-6 max-w-md text-[13px] leading-5 text-muted">
-        fMRIght is a research preview. TRIBE v2 is licensed CC BY-NC 4.0, so nothing is for sale yet.
+        PrePost is a research preview. TRIBE v2 is licensed CC BY-NC 4.0, so nothing is for sale yet.
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

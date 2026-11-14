@@ -27,13 +27,13 @@ export const TEAM: TeamMember[] = [
     slug: 'audrey-kreick',
     name: 'Audrey Kreick',
     role: 'Agency partnerships',
-    bio: 'Audrey connects fMRIght with the people who approve creator content at brands and agencies. Audrey has interned in social media and business development at a marketing agency.',
+    bio: 'Audrey connects PrePost with the people who approve creator content at brands and agencies. Audrey has interned in social media and business development at a marketing agency.',
   },
   {
     slug: 'ben-rippere',
     name: 'Ben Rippere',
     role: 'Founder and research lead',
-    bio: 'Ben started fMRIght and leads the team. Ben runs the scoring pipeline, the pre-registered study and the write-up.',
+    bio: 'Ben started PrePost and leads the team. Ben runs the scoring pipeline, the pre-registered study and the write-up.',
   },
   {
     slug: 'cole-watterson',
@@ -45,7 +45,7 @@ export const TEAM: TeamMember[] = [
     slug: 'julie-weninger',
     name: 'Julie Weninger',
     role: 'UI and mobile app',
-    bio: 'Julie works on how fMRIght looks and feels, from the interface to the mobile app. The goal is a brain read a creator can take in at a glance.',
+    bio: 'Julie works on how PrePost looks and feels, from the interface to the mobile app. The goal is a brain read a creator can take in at a glance.',
   },
 ]
 

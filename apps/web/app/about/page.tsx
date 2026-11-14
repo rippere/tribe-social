@@ -6,9 +6,9 @@ import { MascotGlyph } from '@/components/landing/Sections'
 import { initials, TEAM, type TeamMember } from '@/lib/team'
 
 export const metadata: Metadata = {
-  title: 'About us · fMRIght',
+  title: 'About us · PrePost',
   description:
-    'fMRIght is a six-person student startup building a brain read for short-form video. Our mission, what we believe and the team behind it.',
+    'PrePost is a six-person student startup building a brain read for short-form video. Our mission, what we believe and the team behind it.',
 }
 
 const VALUES = [
@@ -44,16 +44,15 @@ export default function AboutPage() {
       <section className="mx-auto max-w-[1232px] px-6 pt-12 md:pt-20">
         <div className="max-w-3xl">
           <h1 className="type-h1 text-ink">
-            About <MascotGlyph className="mx-1 h-[0.9em] w-[0.9em] -translate-y-[0.06em]" /> fMRIght
+            About <MascotGlyph className="mx-1 h-[0.9em] w-[0.9em] -translate-y-[0.06em]" /> PrePost
           </h1>
           <p className="type-lead mt-6 max-w-2xl">
-            fMRIght predicts how an average viewer&apos;s brain responds to a short video, second by second, and explains
+            PrePost predicts how an average viewer&apos;s brain responds to a short video, second by second, and explains
             it in plain English. It runs Meta&apos;s TRIBE v2 brain-encoding model on the video file alone, so a creator or
             the person approving their draft can see what lands before it posts.
           </p>
           <p className="type-lead mt-4 max-w-2xl">
-            We&apos;re a six-person team that started in WSU&apos;s ENTRP 490 in fall 2026. Our name joins fMRI, the brain
-            scan, with getting the video right.
+            We&apos;re a six-person team that started in WSU&apos;s ENTRP 490 in fall 2026.
           </p>
         </div>
       </section>
@@ -67,7 +66,7 @@ export default function AboutPage() {
           <p className="mt-6 max-w-2xl text-[16px] leading-[26px] text-ink/80">
             Short videos are won or lost in seconds, and feedback on a draft is usually gut feel. We give creators and
             reviewers a second-by-second read they can point at. We also publish our own evidence, including a first
-            pilot that didn&apos;t prove the link to engagement (r = 0.25, p = 0.24, 24 videos), and we call fMRIght a
+            pilot that didn&apos;t prove the link to engagement (r = 0.25, p = 0.24, 24 videos), and we call PrePost a
             diagnostic until a{' '}
             <Link href="/science" className="text-ink underline underline-offset-4">
               pre-registered test
@@ -89,7 +88,7 @@ export default function AboutPage() {
       <section id="team" className="mx-auto max-w-[1232px] px-6 pt-32">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="type-h2 text-ink">The team</h2>
-          <p className="type-lead mt-4">The six people building fMRIght.</p>
+          <p className="type-lead mt-4">The six people building PrePost.</p>
         </div>
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

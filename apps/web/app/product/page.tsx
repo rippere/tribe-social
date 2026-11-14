@@ -7,9 +7,9 @@ import { PhoneMockup } from '@/components/product/PhoneMockup'
 import { CLIPS } from '@/lib/clips'
 
 export const metadata: Metadata = {
-  title: 'The app · fMRIght',
+  title: 'The app · PrePost',
   description:
-    'Check a short video on your phone before you post it. fMRIght shows, second by second, where an average viewer’s brain is predicted to lock in or drift off.',
+    'Check a short video on your phone before you post it. PrePost shows, second by second, where an average viewer’s brain is predicted to lock in or drift off.',
 }
 
 const FEATURES: { title: string; body: string; extra?: 'regions' }[] = [
@@ -67,11 +67,11 @@ export default function ProductPage() {
       <section className="mx-auto grid max-w-[1232px] items-center gap-12 px-6 pt-12 md:pt-20 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <div className="text-center lg:text-left">
           <span className="inline-flex rounded-full bg-accent-bg px-3 py-1 text-[13px] font-medium text-accent">
-            The fMRIght app
+            The PrePost app
           </span>
           <h1 className="type-h1 mt-6 text-ink">A brain scan, without the scanner.</h1>
           <p className="type-lead mx-auto mt-5 max-w-xl lg:mx-0">
-            Check a short video before you post it. fMRIght predicts which second an average viewer&apos;s brain locks in
+            Check a short video before you post it. PrePost predicts which second an average viewer&apos;s brain locks in
             and which second it drifts off, and tells you why in plain English.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -147,7 +147,7 @@ export default function ProductPage() {
           ))}
         </ol>
         <p className="mx-auto mt-8 max-w-2xl text-center text-[13px] leading-5 text-muted">
-          fMRIght predicts an average brain, not your audience, and it doesn&apos;t predict views. Whether the read
+          PrePost predicts an average brain, not your audience, and it doesn&apos;t predict views. Whether the read
           tracks engagement isn&apos;t proven yet: in our first 24-video pilot the link was weak and could have been chance
           (r = 0.25, p = 0.24). A{' '}
           <Link href="/science" className="text-ink underline-offset-4 hover:underline">

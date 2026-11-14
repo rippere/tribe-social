@@ -1,4 +1,4 @@
-# fMRIght explainer
+# PrePost explainer
 
 Remotion source for the scoring explainer: a brain-mascot narrator walks through
 upload → encode → extract → read, then a real clip plays against its real TRIBE v2
@@ -27,8 +27,8 @@ uv run --no-project --with faster-whisper --with numpy python scripts/build_data
 
 # 5. preview / render
 npm run studio            # http://<host>:3200
-npm run render:landing    # out/fmright-explainer-16x9.mp4
-npm run render:vertical   # out/fmright-explainer-9x16.mp4
+npm run render:landing    # out/prepost-explainer-16x9.mp4
+npm run render:vertical   # out/prepost-explainer-9x16.mp4
 # no GPU GL (e.g. a driver/library mismatch)? append: -- --gl=swangle  (software, slower)
 ```
 

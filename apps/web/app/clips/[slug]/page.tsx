@@ -13,7 +13,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const clip = getClip((await params).slug)
-  return clip ? { title: `${clip.title} · fMRIght`, description: clip.blurb } : {}
+  return clip ? { title: `${clip.title} · PrePost`, description: clip.blurb } : {}
 }
 
 export default async function ClipPage({ params }: { params: Promise<{ slug: string }> }) {

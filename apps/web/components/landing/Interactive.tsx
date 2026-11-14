@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 
 const FAQS = [
   {
-    q: 'Who is fMRIght for?',
+    q: 'Who is PrePost for?',
     a: 'Teams that review creator video before it posts: influencer-agency campaign managers, brand creator-program leads and the creative strategists choosing which creator ads get budget. Creators get a phone app for checking their own drafts.',
   },
   {
     q: 'What is fMRI?',
-    a: 'A brain scan that tracks blood flow to show which parts of the brain are working. fMRIght doesn’t scan anyone. It uses a model that learned from fMRI scans.',
+    a: 'A brain scan that tracks blood flow to show which parts of the brain are working. PrePost doesn’t scan anyone. It uses a model that learned from fMRI scans.',
   },
   {
     q: 'Does this predict views or virality?',
@@ -25,11 +25,11 @@ const FAQS = [
   },
   {
     q: 'What happens to my video?',
-    a: 'It’s sent to a rented cloud GPU to be scored, and fMRIght doesn’t keep the video file. The resulting scores are saved to our research dataset. Only upload videos you have the rights to.',
+    a: 'It’s sent to a rented cloud GPU to be scored, and PrePost doesn’t keep the video file. The resulting scores are saved to our research dataset. Only upload videos you have the rights to.',
   },
   {
     q: 'Can I use it for commercial work?',
-    a: 'Not yet. TRIBE v2 is licensed for non-commercial use only, so fMRIght is a research preview.',
+    a: 'Not yet. TRIBE v2 is licensed for non-commercial use only, so PrePost is a research preview.',
   },
 ]
 

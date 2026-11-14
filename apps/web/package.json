@@ -8,7 +8,7 @@
     "start": "next start",
     "build:static": "STATIC_EXPORT=1 next build",
     "cf:preview": "npm run build:static && npx wrangler@4 pages dev out --ip 0.0.0.0 --port 8788",
-    "cf:deploy": "npm run build:static && npx wrangler@4 pages deploy out --project-name fmright --branch main"
+    "cf:deploy": "npm run build:static && npx wrangler@4 pages deploy out --project-name prepost --branch main"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

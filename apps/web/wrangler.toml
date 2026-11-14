@@ -1,6 +1,6 @@
-# Cloudflare Pages project for the static fMRIght site (npm run cf:deploy).
+# Cloudflare Pages project for the static PrePost site (npm run cf:deploy).
 # Server code: functions/api/clip-chat.ts (Workers AI) and functions/api/waitlist.ts (KV).
-name = "fmright"
+name = "prepost"
 pages_build_output_dir = "out"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]

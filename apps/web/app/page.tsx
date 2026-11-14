@@ -29,7 +29,7 @@ export default function HomePage() {
 
           <h1 className="type-h1 mt-6 text-ink md:mt-8">Know where a creator draft loses people, before it posts.</h1>
           <p className="type-lead mx-auto mt-5 max-w-xl lg:mx-0 lg:max-w-[460px]">
-            For agencies and brands reviewing creator video. fMRIght predicts how an average viewer&apos;s brain responds
+            For agencies and brands reviewing creator video. PrePost predicts how an average viewer&apos;s brain responds
             to each second of a draft, then tells your team in plain English which moment to fix.
           </p>
 

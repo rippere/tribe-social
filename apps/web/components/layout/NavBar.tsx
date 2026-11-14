@@ -19,7 +19,7 @@ export default function NavBar() {
       <div className="mx-auto flex h-16 max-w-[1232px] items-center justify-between px-6">
         <div className="flex items-center gap-10">
           <Link href="/" className="text-[19px] font-semibold tracking-[-0.3px] text-ink">
-            fMRIght
+            PrePost
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">

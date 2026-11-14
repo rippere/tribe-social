@@ -4,9 +4,9 @@ import { REGION_LABELS, type RegionKey } from '@/components/brain/contract'
 import { PREREG_URL, REGION_DOT, REPO } from '@/components/landing/Sections'
 
 export const metadata: Metadata = {
-  title: 'The science · fMRIght',
+  title: 'The science · PrePost',
   description:
-    'What fMRIght measures, what the evidence says so far (including the parts that went against us) and the pre-registered test that will decide whether the brain read adds anything.',
+    'What PrePost measures, what the evidence says so far (including the parts that went against us) and the pre-registered test that will decide whether the brain read adds anything.',
 }
 
 // Anatomy per area, as the sample clip's context file names it (lib/clip-context.json).
@@ -39,7 +39,7 @@ export default function SciencePage() {
 
       <Section title="In one paragraph">
         <p>
-          fMRIght runs Meta FAIR&apos;s TRIBE v2, a model trained on brain scans (fMRI) of people watching and listening
+          PrePost runs Meta FAIR&apos;s TRIBE v2, a model trained on brain scans (fMRI) of people watching and listening
           to media. Given a new video, it predicts the brain response an average viewer would likely have, once per
           second, across the cortex. We summarize that into seven brain areas and a timeline. It is a{' '}
           <strong className="font-medium text-ink">diagnostic</strong>: it shows which moments the model expects to land
@@ -175,7 +175,7 @@ export default function SciencePage() {
           <li>It predicts an average brain from the scan data the model learned on, not your audience.</li>
           <li>Nobody is scanned. These are model predictions, not measurements.</li>
           <li>
-            TRIBE v2 is licensed CC BY-NC 4.0, so fMRIght is non-commercial research for now. See the{' '}
+            TRIBE v2 is licensed CC BY-NC 4.0, so PrePost is non-commercial research for now. See the{' '}
             <a href={`${REPO}/blob/main/NOTICE`} target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-4">
               license notice
             </a>

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { CLIPS, clock } from '@/lib/clips'
 
 export const metadata: Metadata = {
-  title: 'Scored clips · fMRIght',
+  title: 'Scored clips · PrePost',
   description: 'Short videos with their real TRIBE v2 predicted brain response, second by second. Open one to scrub it and ask about it.',
 }
 
