@@ -7,8 +7,8 @@ const COLUMNS = [
     title: 'Product',
     links: [
       { label: 'Score a clip', href: '/scorer' },
+      { label: 'Scored clips', href: '/clips' },
       { label: 'How it works', href: '/#how-it-works' },
-      { label: 'Pricing', href: '/#pricing' },
       { label: 'FAQ', href: '/#faq' },
     ],
   },

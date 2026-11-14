@@ -1,0 +1,9 @@
+# Cloudflare Pages project for the static fMRIght site (npm run cf:deploy).
+# The only server code is functions/api/clip-chat.ts, which answers with Workers AI.
+name = "fmright"
+pages_build_output_dir = "out"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[ai]
+binding = "AI"

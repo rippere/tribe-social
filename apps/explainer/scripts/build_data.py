@@ -4,7 +4,8 @@
         [--preds ../../research/demo_mac_and_cheese_preds.npy]
 
 Writes
-  src/data/narration.json  per-line duration + word-timed captions (script text, Whisper timing)
+  src/data/narration.json  per talking shot (scripts/talk_shots.json): its audio slice's
+                           duration + word-timed captions (script text, Whisper timing)
   src/data/result.json     per-second whole-cortex response for the scored clip (only with --preds)
 
 The per-second line is global field power (RMS across all 20,484 fsaverage5
@@ -27,7 +28,7 @@ HERE = Path(__file__).resolve().parent.parent
 MEDIA = HERE / "public" / "media"
 DATA = HERE / "src" / "data"
 
-LINES = ["n1_intro", "n2_upload", "n3_encode", "n4_extract", "n5_read", "n6_limits"]
+SHOTS = json.loads((HERE / "scripts" / "talk_shots.json").read_text())["shots"]
 
 
 def _pcm(path: Path) -> np.ndarray:
@@ -77,20 +78,31 @@ def _align(script_words: list[str], timed: list[dict]) -> list[dict]:
 
 
 def build_narration(model) -> None:
-    lines = {}
-    for key in LINES:
-        mp3 = MEDIA / "narration" / f"{key}.mp3"
-        text = (MEDIA / "narration" / f"{key}.txt").read_text().strip()
-        segs, _ = model.transcribe(_pcm(mp3), word_timestamps=True)
-        timed = [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2)}
-                 for s in segs for w in s.words]
-        lines[key] = {
-            "text": text,
-            "duration": round(_duration(mp3), 3),
-            "words": _align(text.split(), timed),
+    """Align each narration line once, then give every talking shot the words in its
+    audio slice, re-timed from the slice start (the shot's first frame)."""
+    aligned: dict[str, list[dict]] = {}
+    shots = {}
+    for name, shot in SHOTS.items():
+        key, start, end = shot["audio"]
+        if key not in aligned:
+            mp3 = MEDIA / "narration" / f"{key}.mp3"
+            text = (MEDIA / "narration" / f"{key}.txt").read_text().strip()
+            segs, _ = model.transcribe(_pcm(mp3), word_timestamps=True)
+            timed = [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2)}
+                     for s in segs for w in s.words]
+            aligned[key] = _align(text.split(), timed)
+        words = [
+            {"w": w["w"], "s": round(w["s"] - start, 2), "e": round(w["e"] - start, 2)}
+            for w in aligned[key]
+            if start <= (w["s"] + w["e"]) / 2 and (end is None or (w["s"] + w["e"]) / 2 < end)
+        ]
+        shots[name] = {
+            "text": " ".join(w["w"] for w in words),
+            "duration": round(_duration(MEDIA / "narration" / f"{name}.mp3"), 3),
+            "words": words,
         }
-    (DATA / "narration.json").write_text(json.dumps(lines, indent=1) + "\n")
-    print(f"narration.json  {len(lines)} lines")
+    (DATA / "narration.json").write_text(json.dumps(shots, indent=1) + "\n")
+    print(f"narration.json  {len(shots)} shots")
 
 
 def build_result(model, preds_path: Path) -> None:
@@ -114,6 +126,14 @@ def build_result(model, preds_path: Path) -> None:
     peak = int(rel.argmax())
     falls = np.diff(rel)[warmup - 1:]          # falls[i] = rel[warmup+i] - rel[warmup+i-1]
     drop = int(falls.argmin()) + warmup
+    # The same curve slid back by the lag, so second s lines up with second s of the
+    # video (the explainer shows this slide). Not renormalised: same 0..1 scale as
+    # "relative". The clip's last `lag` seconds have no aligned reading yet.
+    lag = warmup
+    aligned = rel[lag:]
+    a_peak = int(aligned.argmax())
+    a_falls = np.diff(aligned)
+    a_drop = int(a_falls.argmin()) + 1
     result = {
         "source": "tribe",
         "model": "TRIBE v2 (CC-BY-NC-4.0)",
@@ -124,9 +144,15 @@ def build_result(model, preds_path: Path) -> None:
         "warmup_seconds": warmup,
         "peak": {"second": peak, "said": said_at(peak)},
         "drop": {"second": drop, "said": said_at(drop), "size": round(float(-falls.min()), 4)},
+        "lag_seconds": lag,
+        "aligned": {
+            "relative": [round(float(v), 4) for v in aligned],
+            "peak": {"second": a_peak, "said": said_at(a_peak)},
+            "drop": {"second": a_drop, "said": said_at(a_drop), "size": round(float(-a_falls.min()), 4)},
+        },
     }
     (DATA / "result.json").write_text(json.dumps(result, indent=1) + "\n")
-    print(f"result.json  {len(gfp)} s  peak@{peak}s  drop@{drop}s")
+    print(f"result.json  {len(gfp)} s  peak@{peak}s  drop@{drop}s  aligned: peak@{a_peak}s drop@{a_drop}s")
 
 
 def main() -> None:

@@ -1,6 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { Video } from '@remotion/media'
-import { interpolate, staticFile, useCurrentFrame, useVideoConfig } from 'remotion'
+import type { ReactNode } from 'react'
+import { interpolate } from 'remotion'
 import { C, FONT, MONO } from './theme'
 
 export type Stage = 'upload' | 'encode' | 'extract' | 'read'
@@ -15,32 +14,13 @@ function display(word: string): string {
   return (DISPLAY[core] ?? core) + punct
 }
 
-export function Mascot({ clip, size, style }: { clip: string; size: number; style?: CSSProperties }) {
-  // Kling clips are 5 s; loop them under longer lines. A radial mask feathers
-  // the square edge into the canvas.
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 58%, transparent 71%)',
-        maskImage: 'radial-gradient(circle at 50% 50%, black 58%, transparent 71%)',
-        ...style,
-      }}
-    >
-      <Video src={staticFile(`media/mascot/${clip}.mp4`)} muted loop style={{ width: '100%', height: '100%' }} />
-    </div>
-  )
+export interface PhraseWord extends Word {
+  display: string
 }
 
-/** Word-timed captions: one short phrase at a time, the spoken word in accent. */
-export function Captions({ words, size = 44, maxWidth }: { words: Word[]; size?: number; maxWidth: number }) {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const t = frame / fps
-  if (!words.length || t > words[words.length - 1].e + 0.6) return null
-
-  // Phrases break after punctuation or every 7 words.
+/** The phrase being spoken at `t`: breaks after punctuation or every 7 words; null outside the line. */
+export function phraseAt(words: Word[], t: number): PhraseWord[] | null {
+  if (!words.length || t < words[0].s - 0.25 || t > words[words.length - 1].e + 0.7) return null
   const phrases: Word[][] = [[]]
   for (const w of words) {
     const cur = phrases[phrases.length - 1]
@@ -49,17 +29,7 @@ export function Captions({ words, size = 44, maxWidth }: { words: Word[]; size?:
   }
   const live = phrases.filter(p => p.length)
   const idx = live.findIndex(p => t < p[p.length - 1].e + 0.15)
-  const phrase = live[idx === -1 ? live.length - 1 : idx]
-
-  return (
-    <div style={{ maxWidth, fontFamily: FONT, fontSize: size, fontWeight: 500, lineHeight: 1.25, letterSpacing: -0.4, textAlign: 'center' }}>
-      {phrase.map((w, i) => (
-        <span key={i} style={{ color: t >= w.s && t < w.e + 0.1 ? C.accent : t >= w.s ? C.ink : 'rgba(242,242,240,0.35)' }}>
-          {display(w.w)}{i < phrase.length - 1 ? ' ' : ''}
-        </span>
-      ))}
-    </div>
-  )
+  return live[idx === -1 ? live.length - 1 : idx].map(w => ({ ...w, display: display(w.w) }))
 }
 
 const STAGES: { key: Stage; label: string }[] = [
@@ -128,6 +98,8 @@ export function ResponseChart({
   height,
   markers = [],
   warmup = 0,
+  bands = [],
+  shift = 0,
 }: {
   values: number[]
   upTo: number
@@ -136,6 +108,10 @@ export function ResponseChart({
   markers?: { second: number; label: string }[]
   /** Leading seconds shaded as fMRI signal lag rather than read as response. */
   warmup?: number
+  /** Stretches of the curve the narrator is pointing at, faded in by `on` (0..1). */
+  bands?: { from: number; to: number; on: number; label: string }[]
+  /** Slide the curve left by this many seconds (the scan delay); the uncovered tail is shaded. */
+  shift?: number
 }) {
   const pad = { l: 16, r: 16, t: 24, b: 40 }
   const w = width - pad.l - pad.r
@@ -146,11 +122,12 @@ export function ResponseChart({
   const reveal = Math.max(0, Math.min(upTo, n - 1))
 
   const pts: [number, number][] = []
-  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s), y(values[s])])
+  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s - shift), y(values[s])])
   const f0 = Math.floor(reveal)
   if (f0 < n - 1 && reveal > f0) {
-    pts.push([x(reveal), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
+    pts.push([x(reveal - shift), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
   }
+  const clipId = `rc-${width}-${height}`
   const head = pts[pts.length - 1]
 
   return (
@@ -164,14 +141,33 @@ export function ResponseChart({
           <text x={pad.l + 10} y={pad.t + 22} fill={C.muted} fontSize={14}>warm-up · signal lags ~5 s</text>
         </g>
       )}
+      {bands.filter(b => b.on > 0).map(b => (
+        <g key={b.label} opacity={b.on}>
+          <rect x={x(b.from)} y={pad.t} width={x(b.to) - x(b.from)} height={h} fill="rgba(92,225,240,0.14)" rx={6} />
+          <text x={(x(b.from) + x(b.to)) / 2} y={pad.t - 8} fill={C.accent} fontSize={16} textAnchor="middle">{b.label}</text>
+        </g>
+      ))}
       <line x1={pad.l} x2={pad.l + w} y1={pad.t + h} y2={pad.t + h} stroke="rgba(255,255,255,0.18)" />
       {Array.from({ length: Math.floor((n - 1) / 5) + 1 }, (_, i) => i * 5).map(s => (
         <text key={s} x={x(s)} y={height - 12} fill={C.muted} fontSize={15} textAnchor="middle">0:{String(s).padStart(2, '0')}</text>
       ))}
-      {pts.length > 1 && (
-        <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={C.accent} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={pad.l - 6} y={0} width={w + 12} height={height} />
+        </clipPath>
+      </defs>
+      {shift > 0.05 && (
+        <g opacity={Math.min(1, shift)}>
+          <rect x={x(n - 1 - shift)} y={pad.t} width={x(n - 1) - x(n - 1 - shift)} height={h} fill="rgba(255,255,255,0.045)" />
+          <text x={x(n - 1) - 10} y={pad.t + 22} fill={C.muted} fontSize={14} textAnchor="end">still arriving</text>
+        </g>
       )}
-      {head && upTo > 0 && upTo < n - 1 && <circle cx={head[0]} cy={head[1]} r={8} fill={C.accent} />}
+      <g clipPath={`url(#${clipId})`}>
+        {pts.length > 1 && (
+          <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={C.accent} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />
+        )}
+        {head && upTo > 0 && upTo < n - 1 && <circle cx={head[0]} cy={head[1]} r={8} fill={C.accent} />}
+      </g>
       {markers.filter(m => m.second <= reveal).map(m => (
         <g key={m.label}>
           <line x1={x(m.second)} x2={x(m.second)} y1={pad.t} y2={pad.t + h} stroke="rgba(255,255,255,0.35)" strokeDasharray="4 6" />

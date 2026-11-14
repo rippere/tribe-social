@@ -1,22 +1,28 @@
 import type { JobResponse, InferenceMode } from './types'
 
-function resolveApiBase(): string {
+function resolveApiBase(): string | null {
   const url = process.env.NEXT_PUBLIC_API_URL
   if (url) return url
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'NEXT_PUBLIC_API_URL is not set. Refusing to fall back to http://localhost:8000 in production.',
-    )
-  }
-  return 'http://localhost:8000'
+  // Never fall back to localhost in production: a build without the variable (e.g.
+  // the static Cloudflare site) ships with scoring switched off instead.
+  return process.env.NODE_ENV === 'production' ? null : 'http://localhost:8000'
 }
+
+const RESOLVED = resolveApiBase()
+
+/** False when this build has no scoring API; the scorer then says so instead of failing. */
+export const API_CONFIGURED = RESOLVED !== null
 
 // Single source of truth for the API base URL. Import this everywhere instead
 // of re-reading process.env.NEXT_PUBLIC_API_URL.
-export const API_BASE = resolveApiBase()
+export const API_BASE = RESOLVED ?? ''
 
-export const fetchCorpus = () => fetch(`${API_BASE}/corpus`).then(r => r.json())
-export const fetchStats  = () => fetch(`${API_BASE}/corpus/stats`).then(r => r.json())
+function requireApi(): void {
+  if (!API_CONFIGURED) throw new Error('The scoring API is offline on this site.')
+}
+
+export const fetchCorpus = async () => (requireApi(), fetch(`${API_BASE}/corpus`).then(r => r.json()))
+export const fetchStats = async () => (requireApi(), fetch(`${API_BASE}/corpus/stats`).then(r => r.json()))
 export const fetchHealth = (): Promise<{ status: string; mode: InferenceMode; runpod_endpoint_configured: boolean }> =>
   fetch(`${API_BASE}/health`).then(r => r.json())
 

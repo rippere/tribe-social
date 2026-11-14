@@ -1,23 +1,14 @@
 import Link from 'next/link'
 import CortexHero from '@/components/landing/CortexHero'
-import HeroDemo from '@/components/landing/HeroDemo'
-import { Faq, UseCases } from '@/components/landing/Interactive'
-import {
-  BrainScanPanel,
-  FinalCta,
-  HowItWorks,
-  MascotGlyph,
-  PREREG_URL,
-  Pricing,
-  Science,
-  SeeItInAction,
-} from '@/components/landing/Sections'
+import { Faq } from '@/components/landing/Interactive'
+import { FinalCta, HowItWorks, MascotGlyph, PREREG_URL, Science, SeeItInAction } from '@/components/landing/Sections'
+import { CLIPS } from '@/lib/clips'
 
 // Landing page, laid out part by part on the x.ai/bot format
 // (business/lanes/design-ref/DESIGN-SPEC.md), dark variant per docs/CORTEX-VIEW.md.
 // Hero: the real cortex playing TRIBE v2's per-second prediction for the sample clip
-// (decided with Ben 2026-10-01; supersedes "scorer is the hero"). The scorer replay
-// follows directly below.
+// (decided with Ben 2026-10-01; supersedes "scorer is the hero"). The clip itself, its
+// timeline and the chat about it live on /clips/<slug>; the home page only points there.
 export default function HomePage() {
   return (
     <>
@@ -48,8 +39,8 @@ export default function HomePage() {
             <Link href="/scorer" className="btn-primary btn-lg">
               Score a clip
             </Link>
-            <Link href="#how-it-works" className="btn-secondary btn-lg">
-              How it works
+            <Link href={`/clips/${CLIPS[0].slug}`} className="btn-secondary btn-lg">
+              Explore this clip
             </Link>
           </div>
         </div>
@@ -57,16 +48,8 @@ export default function HomePage() {
         <CortexHero />
       </section>
 
-      {/* The scorer, replayed on sample data, right under the hero */}
-      <section className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-28">
-        <HeroDemo />
-      </section>
-
-      <BrainScanPanel />
-      <HowItWorks />
-      <UseCases />
       <SeeItInAction />
-      <Pricing />
+      <HowItWorks />
       <Science />
       <Faq />
       <FinalCta />
