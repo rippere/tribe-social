@@ -3,7 +3,13 @@
 import { useState } from 'react'
 import { ROLES, VOLUMES } from '@/lib/waitlist'
 
-type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'done' } | { kind: 'error'; message: string }
+type Status =
+  | { kind: 'idle' }
+  | { kind: 'sending' }
+  | { kind: 'done' }
+  | { kind: 'error'; message: string; field?: 'email' | 'role' }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const field =
   'h-11 w-full rounded-[12px] bg-elevated px-3.5 text-[15px] text-ink shadow-[var(--shadow-hairline)] placeholder:text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent'
@@ -13,7 +19,20 @@ export function WaitlistForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const data = Object.fromEntries(new FormData(e.currentTarget))
+    const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
+    // Our own checks (the form is noValidate), so the error shows in the page in our
+    // words, not as a browser tooltip that screen readers and screenshots miss.
+    const email = (data.email ?? '').trim()
+    if (!EMAIL_RE.test(email)) {
+      setStatus({ kind: 'error', field: 'email', message: email ? 'That email address doesn’t look right.' : 'Add your work email.' })
+      e.currentTarget.querySelector<HTMLInputElement>('input[name=email]')?.focus()
+      return
+    }
+    if (!data.role) {
+      setStatus({ kind: 'error', field: 'role', message: 'Choose what you do.' })
+      e.currentTarget.querySelector<HTMLSelectElement>('select[name=role]')?.focus()
+      return
+    }
     setStatus({ kind: 'sending' })
     try {
       const res = await fetch('/api/waitlist', {
@@ -29,6 +48,8 @@ export function WaitlistForm() {
     }
   }
 
+  const fieldError = status.kind === 'error' ? status.field : undefined
+
   if (status.kind === 'done') {
     return (
       <div role="status" className="mx-auto max-w-md rounded-[24px] bg-panel p-8 text-center">
@@ -41,14 +62,32 @@ export function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto grid max-w-xl gap-3 text-left sm:grid-cols-2">
+    <form onSubmit={onSubmit} noValidate className="mx-auto grid max-w-xl gap-3 text-left sm:grid-cols-2">
       <label className="sm:col-span-2">
         <span className="mb-1.5 block text-[13px] text-ink/80">Work email</span>
-        <input name="email" type="email" required autoComplete="email" placeholder="you@agency.com" className={field} />
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@agency.com"
+          aria-invalid={fieldError === 'email' || undefined}
+          aria-describedby={fieldError === 'email' ? 'waitlist-error' : undefined}
+          onChange={() => fieldError === 'email' && setStatus({ kind: 'idle' })}
+          className={field}
+        />
       </label>
       <label>
         <span className="mb-1.5 block text-[13px] text-ink/80">What do you do?</span>
-        <select name="role" required defaultValue="" className={field}>
+        <select
+          name="role"
+          required
+          defaultValue=""
+          aria-invalid={fieldError === 'role' || undefined}
+          aria-describedby={fieldError === 'role' ? 'waitlist-error' : undefined}
+          onChange={() => fieldError === 'role' && setStatus({ kind: 'idle' })}
+          className={field}
+        >
           <option value="" disabled>
             Choose one
           </option>
@@ -77,7 +116,7 @@ export function WaitlistForm() {
           {status.kind === 'sending' ? 'Joining…' : 'Join the waitlist'}
         </button>
         {status.kind === 'error' && (
-          <p role="alert" className="text-[14px] text-roi-valuation">
+          <p id="waitlist-error" role="alert" className="text-[14px] text-roi-valuation">
             {status.message}
           </p>
         )}

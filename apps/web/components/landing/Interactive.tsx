@@ -78,6 +78,15 @@ export function DemoVideo({ src, poster, label }: { src: string; poster: string;
   const [duration, setDuration] = useState(0)
   const [fullscreen, setFullscreen] = useState(false)
 
+  // With preload="metadata" the video often has its duration before React hydrates, so
+  // onLoadedMetadata never fires for us. Read it once on mount; without it the seek
+  // slider has max=0, which clamps it to 0 and makes it dead.
+  useEffect(() => {
+    const v = ref.current
+    if (v && Number.isFinite(v.duration) && v.duration > 0) setDuration(v.duration)
+    if (v && v.currentTime > 0) setT(v.currentTime)
+  }, [])
+
   useEffect(() => {
     const onChange = () => setFullscreen(document.fullscreenElement === ref.current)
     document.addEventListener('fullscreenchange', onChange)
@@ -120,6 +129,7 @@ export function DemoVideo({ src, poster, label }: { src: string; poster: string;
           onPause={() => setPlaying(false)}
           onTimeUpdate={e => setT(e.currentTarget.currentTime)}
           onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+          onDurationChange={e => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
           onVolumeChange={e => setMuted(e.currentTarget.muted)}
         />
         {!playing && (
@@ -163,7 +173,9 @@ export function DemoVideo({ src, poster, label }: { src: string; poster: string;
             value={t}
             onChange={e => {
               const v = ref.current
-              if (v) v.currentTime = Number(e.target.value)
+              if (!v) return
+              v.currentTime = Number(e.target.value)
+              setT(v.currentTime)
             }}
             aria-label="Seek"
             aria-valuetext={`${mmss(t)} of ${mmss(duration)}`}
