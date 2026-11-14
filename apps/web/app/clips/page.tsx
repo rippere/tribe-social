@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/site'
 import Link from 'next/link'
 import { CLIPS, clock } from '@/lib/clips'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Scored clips · PrePost',
-  description: 'Short videos with their real TRIBE v2 predicted brain response, second by second. Open one to scrub it and ask about it.',
-}
+  description:
+    'Short videos with their real TRIBE v2 predicted brain response, second by second. Open one to scrub it and ask about it.',
+  path: '/clips',
+})
 
 export default function ClipsPage() {
   return (

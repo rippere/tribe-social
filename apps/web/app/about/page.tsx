@@ -1,15 +1,17 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/site'
 import Link from 'next/link'
 import { MascotGlyph } from '@/components/landing/Sections'
 import { initials, TEAM, type TeamMember } from '@/lib/team'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'About us · PrePost',
   description:
     'PrePost is a six-person student startup building a brain read for short-form video. Our mission, what we believe and the team behind it.',
-}
+  path: '/about',
+})
 
 const VALUES = [
   {

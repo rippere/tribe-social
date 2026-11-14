@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/site'
 import Link from 'next/link'
 import { REGION_LABELS } from '@/components/brain/contract'
 import { REGION_DOT, REGION_ORDER } from '@/components/landing/Sections'
@@ -6,11 +7,12 @@ import { AppStoreBadge } from '@/components/product/AppStoreBadge'
 import { PhoneMockup } from '@/components/product/PhoneMockup'
 import { CLIPS } from '@/lib/clips'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'The app · PrePost',
   description:
     'Check a short video on your phone before you post it. PrePost shows, second by second, where an average viewer’s brain is predicted to lock in or drift off.',
-}
+  path: '/product',
+})
 
 const FEATURES: { title: string; body: string; extra?: 'regions' }[] = [
   {

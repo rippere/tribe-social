@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/site'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClipWorkspace from '@/components/clips/ClipWorkspace'
@@ -13,7 +14,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const clip = getClip((await params).slug)
-  return clip ? { title: `${clip.title} · PrePost`, description: clip.blurb } : {}
+  return clip
+    ? pageMeta({ title: `${clip.title} · PrePost`, description: clip.blurb, path: `/clips/${clip.slug}`, image: clip.poster })
+    : {}
 }
 
 export default async function ClipPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -1,8 +1,16 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import CortexHero from '@/components/landing/CortexHero'
 import { Faq } from '@/components/landing/Interactive'
 import { FinalCta, ForReviewers, HowItWorks, PREREG_URL, Science, SeeItInAction } from '@/components/landing/Sections'
 import { CLIPS } from '@/lib/clips'
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, pageMeta } from '@/lib/site'
+
+export const metadata: Metadata = pageMeta({
+  title: `${SITE_NAME}: ${SITE_TAGLINE.toLowerCase()}`,
+  description: SITE_DESCRIPTION,
+  path: '/',
+})
 
 // Landing page, laid out part by part on the x.ai/bot format
 // (business/lanes/design-ref/DESIGN-SPEC.md), dark variant per docs/CORTEX-VIEW.md.

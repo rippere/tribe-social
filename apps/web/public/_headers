@@ -1,0 +1,24 @@
+# Cloudflare Pages response headers (copied to out/ by the static build).
+#
+# Next's static export writes an RSC payload next to every page (about.txt,
+# about/__next._full.txt, ...). The client router fetches them on navigation, so they
+# must stay reachable, but they are not pages: keep them out of search results.
+/*.txt
+  X-Robots-Tag: noindex
+
+# The two text files that ARE meant for crawlers.
+/robots.txt
+  ! X-Robots-Tag
+/llms.txt
+  ! X-Robots-Tag
+
+# Dev pages that need the local scoring API (also noindex in their <head>).
+/scorer*
+  X-Robots-Tag: noindex
+/dashboard*
+  X-Robots-Tag: noindex
+/cortex*
+  X-Robots-Tag: noindex
+
+/opengraph-image
+  Content-Type: image/png

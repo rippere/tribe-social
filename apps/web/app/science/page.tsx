@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/site'
 import Link from 'next/link'
 import { REGION_LABELS, type RegionKey } from '@/components/brain/contract'
 import { PREREG_URL, REGION_DOT, REPO } from '@/components/landing/Sections'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'The science · PrePost',
   description:
     'What PrePost measures, what the evidence says so far (including the parts that went against us) and the pre-registered test that will decide whether the brain read adds anything.',
-}
+  path: '/science',
+})
 
 // Anatomy per area, as the sample clip's context file names it (lib/clip-context.json).
 const AREAS: { key: RegionKey; anatomy: string; plain: string }[] = [
