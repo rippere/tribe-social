@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { REGION_LABELS, type RegionKey } from '@/components/brain/contract'
+import { DemoVideo } from '@/components/landing/Interactive'
 
 export const REPO = 'https://github.com/rippere/tribe-social'
 export const PREREG_URL = `${REPO}/blob/main/research/PREREGISTRATION.md`
@@ -18,11 +19,22 @@ export function MascotGlyph({ className = '' }: { className?: string }) {
 }
 
 /* ---------- Part 6: How it works (the non-obvious parts) ---------- */
-const REGION_ORDER: RegionKey[] = ['attention', 'social', 'language', 'valuation', 'auditory', 'motion', 'narrative']
+export const REGION_ORDER: RegionKey[] = ['attention', 'social', 'language', 'valuation', 'auditory', 'motion', 'narrative']
+
+/** Literal class names, so Tailwind emits every region color (it drops theme vars no class uses). */
+export const REGION_DOT: Record<RegionKey, string> = {
+  attention: 'bg-roi-attention',
+  social: 'bg-roi-social',
+  language: 'bg-roi-language',
+  valuation: 'bg-roi-valuation',
+  auditory: 'bg-roi-auditory',
+  motion: 'bg-roi-motion',
+  narrative: 'bg-roi-narrative',
+}
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="mx-auto max-w-[1232px] px-6 pt-32">
+    <section id="how-it-works" className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="type-h2 text-ink">How it works, and why</h2>
         <p className="type-lead mt-4">
@@ -48,7 +60,7 @@ export function HowItWorks() {
           <div className="mt-5 flex flex-wrap gap-2">
             {REGION_ORDER.map(key => (
               <span key={key} className="inline-flex items-center gap-2 rounded-full bg-elevated px-3 py-1.5 text-[13px] text-ink">
-                <span className="h-2 w-2 rounded-full" style={{ background: `var(--color-roi-${key})` }} />
+                <span className={`h-2 w-2 rounded-full ${REGION_DOT[key]}`} />
                 {REGION_LABELS[key]}
               </span>
             ))}
@@ -80,7 +92,7 @@ export function HowItWorks() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col rounded-[24px] bg-panel p-8 text-[15px] leading-[24px] text-ink/70">
+    <div className="flex flex-col rounded-[24px] bg-panel p-6 text-[15px] md:p-8 leading-[24px] text-ink/70">
       <h3 className="type-h3 mb-2 text-ink">{title}</h3>
       {children}
     </div>
@@ -115,16 +127,12 @@ function MiniBars() {
 /* ---------- Part 8: demo video ---------- */
 export function SeeItInAction() {
   return (
-    <section className="mx-auto max-w-[1232px] px-6 pt-32">
+    <section className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32">
       <h2 className="type-h2 text-center text-ink">See it in action</h2>
-      <video
-        className="mt-10 aspect-video w-full rounded-[24px] bg-ink-2 object-cover"
+      <DemoVideo
         src="/demo/fmright-demo.mp4"
         poster="/demo/fmright-demo-poster.jpg"
-        controls
-        playsInline
-        preload="metadata"
-        aria-label="fMRIght demo: a predicted brain response to a video, second by second"
+        label="fMRIght demo: a predicted brain response to a video, second by second"
       />
     </section>
   )
@@ -133,7 +141,7 @@ export function SeeItInAction() {
 /* ---------- Part 11: the science ---------- */
 export function Science() {
   return (
-    <section id="science" className="mx-auto max-w-[1232px] px-6 pt-32 text-center">
+    <section id="science" className="mx-auto max-w-[1232px] px-6 pt-20 md:pt-32 text-center">
       <h2 className="type-h2 text-ink">The science, in the open</h2>
       <p className="type-lead mx-auto mt-4 max-w-2xl">
         We&apos;re running a pre-registered test: 72 short videos, each with one of four openings, run as ads with equal
@@ -150,9 +158,9 @@ export function Science() {
 /* ---------- Part 13: final call to action ---------- */
 export function FinalCta() {
   return (
-    <section className="relative mx-auto max-w-[1232px] overflow-hidden px-6 pt-40 pb-8 text-center">
+    <section className="relative mx-auto max-w-[1232px] overflow-hidden px-6 pt-24 pb-8 text-center md:pt-40">
       <h2 className="type-h2 text-ink">Score your first clip</h2>
-      <p className="type-lead mt-3">Drop in a short video and see the read in a few minutes. Free while it&apos;s a research preview.</p>
+      <p className="type-lead mx-auto mt-3 max-w-xl">Drop in a short video and see the read in a few minutes. Free while it&apos;s a research preview.</p>
       <div className="mt-8 flex justify-center gap-2">
         <Link href="/scorer" className="btn-primary btn-lg">
           Score a clip
