@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import CortexHero from '@/components/landing/CortexHero'
 import { Faq } from '@/components/landing/Interactive'
-import { FinalCta, HowItWorks, MascotGlyph, PREREG_URL, Science, SeeItInAction } from '@/components/landing/Sections'
+import { FinalCta, ForReviewers, HowItWorks, PREREG_URL, Science, SeeItInAction } from '@/components/landing/Sections'
 import { CLIPS } from '@/lib/clips'
 
 // Landing page, laid out part by part on the x.ai/bot format
@@ -21,26 +21,24 @@ export default function HomePage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full py-1.5 pr-1.5 pl-3 text-[14px] text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-fill"
           >
-            The hook test is pre-registered · Read the plan
+            Validation study under way · Read the plan
             <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full bg-fill text-[11px]">
               ↗
             </span>
           </a>
 
-          <h1 className="type-h1 mt-6 text-ink md:mt-8">
-            Meet <MascotGlyph className="mx-1 h-[0.9em] w-[0.9em] -translate-y-[0.06em]" /> fMRIght
-          </h1>
-          <p className="type-lead mx-auto mt-5 max-w-xl lg:mx-0 lg:max-w-[440px]">
-            See what a video does to a brain before you post it. fMRIght predicts how an average viewer&apos;s brain
-            responds, second by second, and explains it in plain English.
+          <h1 className="type-h1 mt-6 text-ink md:mt-8">Know where a creator draft loses people, before it posts.</h1>
+          <p className="type-lead mx-auto mt-5 max-w-xl lg:mx-0 lg:max-w-[460px]">
+            For agencies and brands reviewing creator video. PrePost predicts how an average viewer&apos;s brain responds
+            to each second of a draft, then tells your team in plain English which moment to fix.
           </p>
 
           <div className="mt-7 flex justify-center gap-2 md:mt-8 lg:justify-start">
-            <Link href="/scorer" className="btn-primary btn-lg">
-              Score a clip
+            <Link href="/#waitlist" className="btn-primary btn-lg">
+              Join the waitlist
             </Link>
             <Link href={`/clips/${CLIPS[0].slug}`} className="btn-secondary btn-lg">
-              Explore this clip
+              See a sample read
             </Link>
           </div>
         </div>
@@ -48,6 +46,7 @@ export default function HomePage() {
         <CortexHero />
       </section>
 
+      <ForReviewers />
       <SeeItInAction />
       <HowItWorks />
       <Science />

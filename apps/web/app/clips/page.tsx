@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { CLIPS, clock } from '@/lib/clips'
 
 export const metadata: Metadata = {
-  title: 'Scored clips · fMRIght',
+  title: 'Scored clips · PrePost',
   description: 'Short videos with their real TRIBE v2 predicted brain response, second by second. Open one to scrub it and ask about it.',
 }
 
@@ -50,14 +50,14 @@ export default function ClipsPage() {
         ))}
         <li>
           <Link
-            href="/scorer"
+            href="/#waitlist"
             className="flex h-full min-h-[240px] cursor-pointer flex-col justify-center rounded-[22px] border border-dashed border-line p-6 transition-colors hover:bg-fill"
           >
-            <h2 className="text-[18px] font-medium text-ink">Score your own</h2>
+            <h2 className="text-[18px] font-medium text-ink">Want reads on your own drafts?</h2>
             <p className="mt-2 text-[13px] leading-5 text-muted">
-              Upload a short clip and get the same read. Your video isn&apos;t kept, and it isn&apos;t added here.
+              We&apos;re opening early access to agency and brand teams first. More sample clips are on the way.
             </p>
-            <span className="mt-4 text-[14px] text-ink">Score a clip →</span>
+            <span className="mt-4 text-[14px] text-ink">Join the waitlist →</span>
           </Link>
         </li>
       </ul>

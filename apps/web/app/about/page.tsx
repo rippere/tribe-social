@@ -2,13 +2,13 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MascotGlyph, PREREG_URL } from '@/components/landing/Sections'
+import { MascotGlyph } from '@/components/landing/Sections'
 import { initials, TEAM, type TeamMember } from '@/lib/team'
 
 export const metadata: Metadata = {
-  title: 'About us · fMRIght',
+  title: 'About us · PrePost',
   description:
-    'fMRIght is a six-person student startup building a brain read for short-form video. Our mission, what we believe and the team behind it.',
+    'PrePost is a six-person student startup building a brain read for short-form video. Our mission, what we believe and the team behind it.',
 }
 
 const VALUES = [
@@ -44,16 +44,15 @@ export default function AboutPage() {
       <section className="mx-auto max-w-[1232px] px-6 pt-12 md:pt-20">
         <div className="max-w-3xl">
           <h1 className="type-h1 text-ink">
-            About <MascotGlyph className="mx-1 h-[0.9em] w-[0.9em] -translate-y-[0.06em]" /> fMRIght
+            About <MascotGlyph className="mx-1 h-[0.9em] w-[0.9em] -translate-y-[0.06em]" /> PrePost
           </h1>
           <p className="type-lead mt-6 max-w-2xl">
-            fMRIght predicts how an average viewer&apos;s brain responds to a short video, second by second, and explains
+            PrePost predicts how an average viewer&apos;s brain responds to a short video, second by second, and explains
             it in plain English. It runs Meta&apos;s TRIBE v2 brain-encoding model on the video file alone, so a creator or
             the person approving their draft can see what lands before it posts.
           </p>
           <p className="type-lead mt-4 max-w-2xl">
-            We&apos;re a six-person team that started in WSU&apos;s ENTRP 490 in fall 2026. Our name joins fMRI, the brain
-            scan, with getting the video right.
+            We&apos;re a six-person team that started in WSU&apos;s ENTRP 490 in fall 2026.
           </p>
         </div>
       </section>
@@ -64,13 +63,14 @@ export default function AboutPage() {
           <p className="mt-4 max-w-3xl text-[28px] leading-[36px] font-medium tracking-[-0.3px] text-ink md:text-[36px] md:leading-[44px]">
             Turn &ldquo;post and pray&rdquo; into &ldquo;look before you leap,&rdquo; and never claim more than we can show.
           </p>
-          <p className="mt-6 max-w-2xl text-[16px] leading-[26px] text-ink/70">
+          <p className="mt-6 max-w-2xl text-[16px] leading-[26px] text-ink/80">
             Short videos are won or lost in seconds, and feedback on a draft is usually gut feel. We give creators and
-            reviewers a second-by-second read they can point at. We also publish our own evidence, including a weak
-            first pilot (r = 0.25, p = 0.24, 24 videos), and we call fMRIght a diagnostic until a{' '}
-            <a href={PREREG_URL} target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-4">
+            reviewers a second-by-second read they can point at. We also publish our own evidence, including a first
+            pilot that didn&apos;t prove the link to engagement (r = 0.25, p = 0.24, 24 videos), and we call PrePost a
+            diagnostic until a{' '}
+            <Link href="/science" className="text-ink underline underline-offset-4">
               pre-registered test
-            </a>{' '}
+            </Link>{' '}
             shows it predicts more.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function AboutPage() {
           {VALUES.map(v => (
             <div key={v.title} className="rounded-[24px] bg-panel p-8">
               <h2 className="type-h3 text-ink">{v.title}</h2>
-              <p className="mt-2 text-[15px] leading-[24px] text-ink/70">{v.body}</p>
+              <p className="mt-2 text-[15px] leading-[24px] text-ink/80">{v.body}</p>
             </div>
           ))}
         </div>
@@ -88,7 +88,7 @@ export default function AboutPage() {
       <section id="team" className="mx-auto max-w-[1232px] px-6 pt-32">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="type-h2 text-ink">The team</h2>
-          <p className="type-lead mt-4">The six people building fMRIght.</p>
+          <p className="type-lead mt-4">The six people building PrePost.</p>
         </div>
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -104,8 +104,8 @@ export default function AboutPage() {
           <Link href="/product" className="btn-primary btn-lg">
             Explore the app
           </Link>
-          <Link href="/scorer" className="btn-secondary btn-lg">
-            Score a clip
+          <Link href="/#waitlist" className="btn-secondary btn-lg">
+            Join the waitlist
           </Link>
         </div>
       </section>
@@ -135,7 +135,7 @@ function TeamCard({ member, photo }: { member: TeamMember; photo?: string }) {
       <div className="px-5 pt-4 pb-5">
         <h3 className="text-[18px] leading-6 font-medium text-ink">{member.name}</h3>
         {member.role && <p className="mt-1 font-mono text-[13px] text-accent">{member.role}</p>}
-        {member.bio && <p className="mt-3 text-[15px] leading-[24px] text-ink/70">{member.bio}</p>}
+        {member.bio && <p className="mt-3 text-[15px] leading-[24px] text-ink/80">{member.bio}</p>}
       </div>
     </li>
   )

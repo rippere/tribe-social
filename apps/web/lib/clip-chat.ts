@@ -62,7 +62,7 @@ function keyFacts(clip: ClipContext): string {
 }
 
 function systemPrompt(clip: ClipContext): string {
-  return `You are fMRIght's clip analyst. You answer questions about ONE video using ONLY the data below: Meta TRIBE v2's predicted cortical response to it. Be concrete: cite seconds and values from the table.
+  return `You are PrePost's clip analyst. You answer questions about ONE video using ONLY the data below: Meta TRIBE v2's predicted cortical response to it. Be concrete: cite seconds and values from the table.
 
 CLIP: ${clip.clip}
 SHOTS:

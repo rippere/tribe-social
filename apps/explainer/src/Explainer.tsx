@@ -231,7 +231,7 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
     <AbsoluteFill>
       <div style={{ position: 'absolute', top: L.portrait ? 150 : 60, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: show(0) }}>
         <Spot on={pulse(t, name, 2.2)} radius={28} style={{ padding: '10px 40px' }}>
-          <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
+          <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>PrePost</div>
         </Spot>
         <div style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
       </div>
@@ -397,7 +397,7 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
           <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: lit(t, alone) > 0.5 ? C.muted : C.ink, textDecoration: lit(t, alone) > 0.5 ? 'line-through' : 'none' }}>
             Someone lies in an MRI machine while they watch.
           </div>
-          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: C.accent, opacity: lit(t, alone, 0.4) }}>fMRIght predicts it from the video file.</div>
+          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: C.accent, opacity: lit(t, alone, 0.4) }}>PrePost predicts it from the video file.</div>
         </div>
       </Spot>
     </>
@@ -583,7 +583,7 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   return (
     <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 420 : 150, opacity: fadeIn(frame, 0, 15) }}>
       <Spot on={pulse(t, light, 1.6)} radius={28} style={{ padding: '10px 40px' }}>
-        <div style={{ fontSize: L.portrait ? 120 : 140, fontWeight: 500, letterSpacing: -3 }}>fMRIght</div>
+        <div style={{ fontSize: L.portrait ? 120 : 140, fontWeight: 500, letterSpacing: -3 }}>PrePost</div>
       </Spot>
       <Spot on={pulse(t, upload, 2.4)} radius={999} style={{ marginTop: 30 }}>
         <div style={{ padding: '20px 40px', borderRadius: 999, background: C.ink, color: C.bg, fontSize: 34, fontWeight: 500 }}>Score a clip</div>

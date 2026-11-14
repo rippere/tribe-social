@@ -61,7 +61,7 @@ export default function ScorerPage() {
             <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
             <span className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
             <span className="h-3 w-3 rounded-full bg-[#28C840]" />
-            <span className="ml-3 text-[13px] text-muted">fMRIght scorer</span>
+            <span className="ml-3 text-[13px] text-muted">PrePost scorer</span>
           </div>
           {result && (
             <button type="button" onClick={handleReset} className="rounded-full px-3 py-1 text-[13px] text-ink hover:bg-fill">

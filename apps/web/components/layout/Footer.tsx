@@ -7,7 +7,7 @@ const COLUMNS = [
     title: 'Product',
     links: [
       { label: 'The app', href: '/product' },
-      { label: 'Score a clip', href: '/scorer' },
+      { label: 'Join the waitlist', href: '/#waitlist' },
       { label: 'Scored clips', href: '/clips' },
       { label: 'How it works', href: '/#how-it-works' },
       { label: 'FAQ', href: '/#faq' },
@@ -16,6 +16,7 @@ const COLUMNS = [
   {
     title: 'Science',
     links: [
+      { label: 'How we test it', href: '/science' },
       { label: 'Pre-registration', href: `${REPO}/blob/main/research/PREREGISTRATION.md` },
       { label: 'Validation protocol', href: `${REPO}/blob/main/docs/VALIDATION-PROTOCOL-AND-ROADMAP.md` },
       { label: 'TRIBE v2 (Meta FAIR)', href: 'https://github.com/facebookresearch/tribev2' },
@@ -37,7 +38,7 @@ export default function Footer() {
     <footer className="mt-24 border-t border-line bg-background">
       <div className="mx-auto grid max-w-[1232px] grid-cols-2 gap-x-6 gap-y-10 px-6 py-12 md:grid-cols-[1fr_auto_auto_auto] md:gap-20 md:py-16">
         <div className="col-span-2 md:col-span-1">
-          <p className="text-[17px] font-semibold tracking-[-0.3px] text-ink">fMRIght</p>
+          <p className="text-[17px] font-semibold tracking-[-0.3px] text-ink">PrePost</p>
           <p className="mt-2 max-w-xs text-[13px] leading-5 text-muted">
             Non-commercial research: TRIBE v2 is licensed CC BY-NC 4.0.
           </p>

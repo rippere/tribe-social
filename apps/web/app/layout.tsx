@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "fMRIght: see what a video does to a brain",
+  title: "PrePost: see what a video does to a brain",
   description:
-    "fMRIght runs Meta's TRIBE v2 brain-encoding model on a short video and shows, second by second, the predicted brain response. A research diagnostic, not a view forecast.",
+    "PrePost runs Meta's TRIBE v2 brain-encoding model on a short video and shows, second by second, the predicted brain response. A research diagnostic, not a view forecast.",
 };
 
 export default function RootLayout({
