@@ -10,6 +10,10 @@ Covers three findings fixed together:
       (SSRF + option injection). The pattern is now an anchored https allow-list
       matched with fullmatch(), and yt-dlp gets "--" before the URL.
   F5  CORS allow_origins=["*"] combined with allow_credentials=True.
+
+Follow-up (stacked PR): NUL / over-long / unencodable filenames on the GPU side,
+and the RunPod handler returning {"error": ...} instead of raising. The
+URL/yt-dlp follow-up tests live in test_ytdlp_hardening.py.
 """
 import importlib.util
 import sys
@@ -87,24 +91,24 @@ def test_upload_non_mp4_still_rejected(api):
     "url",
     [
         # yt-dlp option injection: leading dash, pattern text further on.
-        "--opt=https://youtube.com/shorts/abcdefg",
-        "--exec=touch /tmp/pwned;youtube.com/shorts/abcdefg",
-        "-o/tmp/x youtube.com/shorts/abcdefg",
+        "--opt=https://youtube.com/shorts/abcdefghijk",
+        "--exec=touch /tmp/pwned;youtube.com/shorts/abcdefghijk",
+        "-o/tmp/x youtube.com/shorts/abcdefghijk",
         # SSRF: loopback / internal hosts with the pattern in path or query.
-        "http://127.0.0.1/youtube.com/shorts/abcdefg",
-        "https://127.0.0.1/?youtube.com/shorts/abcdefg",
-        "http://localhost:8000/youtube.com/shorts/abcdefg",
-        "https://169.254.169.254/latest/meta-data/?x=youtube.com/shorts/abc",
-        "https://[::1]/youtube.com/shorts/abcdefg",
+        "http://127.0.0.1/youtube.com/shorts/abcdefghijk",
+        "https://127.0.0.1/?youtube.com/shorts/abcdefghijk",
+        "http://localhost:8000/youtube.com/shorts/abcdefghijk",
+        "https://169.254.169.254/latest/meta-data/?x=youtube.com/shorts/abcdefghijk",
+        "https://[::1]/youtube.com/shorts/abcdefghijk",
         # Host confusion.
-        "https://youtube.com.evil.example/shorts/abcdefg",
-        "https://youtube.com@127.0.0.1/shorts/abcdefg",
-        "https://evil.example/#youtube.com/shorts/abcdefg",
+        "https://youtube.com.evil.example/shorts/abcdefghijk",
+        "https://youtube.com@127.0.0.1/shorts/abcdefghijk",
+        "https://evil.example/#youtube.com/shorts/abcdefghijk",
         # Non-https schemes.
-        "http://youtube.com/shorts/abcdefg",
-        "file:///etc/passwd#youtube.com/shorts/abcdefg",
+        "http://youtube.com/shorts/abcdefghijk",
+        "file:///etc/passwd#youtube.com/shorts/abcdefghijk",
         # Trailing junk after a valid URL.
-        "https://youtube.com/shorts/abcdefg --exec=id",
+        "https://youtube.com/shorts/abcdefghijk --exec=id",
     ],
 )
 def test_bad_urls_rejected_with_no_outbound_hit(api, monkeypatch, url):
@@ -119,8 +123,8 @@ def test_bad_urls_rejected_with_no_outbound_hit(api, monkeypatch, url):
 @pytest.mark.parametrize(
     "url",
     [
-        "https://youtube.com/shorts/abcdefg",
-        "https://www.youtube.com/shorts/abcdefg",
+        "https://youtube.com/shorts/abcdefghijk",
+        "https://www.youtube.com/shorts/abcdefghijk",
         "https://m.youtube.com/watch?v=abcdefghijk",
         "https://www.youtube.com/watch?v=abcdefghijk&t=10",
         "https://youtu.be/abcdefghijk",
@@ -140,7 +144,7 @@ def test_valid_urls_still_accepted(api, url):
 def test_valid_url_reaches_downloader_when_inference_enabled(api, monkeypatch, tmp_path):
     monkeypatch.setattr(jobs_router, "_INFER_ENABLED", True)
     seen = []
-    out = tmp_path / "dl" / "abcdefg.mp4"
+    out = tmp_path / "tribe_dl_test" / "abcdefghijk.mp4"
     out.parent.mkdir()
     out.write_bytes(MP4_BYTES)
 
@@ -149,9 +153,11 @@ def test_valid_url_reaches_downloader_when_inference_enabled(api, monkeypatch, t
         return out
 
     monkeypatch.setattr(downloader, "fetch_video", ok_fetch)
-    r = api.post("/jobs", data={"video_url": "https://youtube.com/shorts/abcdefg"})
+    r = api.post("/jobs", data={"video_url": "https://youtube.com/shorts/abcdefghijk"})
     assert r.status_code == 202, r.text
-    assert seen == ["https://youtube.com/shorts/abcdefg"]
+    assert seen == ["https://youtube.com/shorts/abcdefghijk"]
+    # The whole per-job download dir is removed, not just the file.
+    assert not out.parent.exists()
 
 
 def test_downloader_puts_double_dash_before_url(monkeypatch, tmp_path):
@@ -245,11 +251,38 @@ def sandbox(tmp_path, monkeypatch):
     return job_dir
 
 
-TRAVERSAL_NAMES = ["../x.mp4", "../../x.mp4", "/tmp/x.mp4", "..", ""]
+# "<ABS>" is replaced with an absolute path inside the test's tmp_path, so a
+# regression writes into the sandbox's parent (and fails the assertions below)
+# instead of the real /tmp.
+TRAVERSAL_NAMES = ["../x.mp4", "../../x.mp4", "<ABS>/x.mp4", "..", ""]
+# Names that used to survive the basename clamp and make write/unlink raise:
+# embedded NULs (ValueError), > NAME_MAX bytes (OSError), lone surrogates
+# (UnicodeEncodeError).
+HOSTILE_NAMES = [
+    "a\x00b.mp4",
+    "x.mp4\x00../../evil",
+    "\x00",
+    "A" * 300 + ".mp4",
+    "\u00e9" * 200 + ".mp4",  # 400 bytes of UTF-8
+    "B" * 300,
+    "x." + "C" * 300,
+    "\ud800.mp4",
+]
 
 
-@pytest.mark.parametrize("raw", TRAVERSAL_NAMES)
+def _resolve(raw: str, sandbox: Path) -> str:
+    return raw.replace("<ABS>", str(sandbox.parent.parent))
+
+
+def _assert_safe_name(name: str):
+    assert "\x00" not in name
+    assert "/" not in name
+    assert 0 < len(name.encode("utf-8")) <= 255
+
+
+@pytest.mark.parametrize("raw", TRAVERSAL_NAMES + HOSTILE_NAMES)
 def test_pod_server_write_stays_in_tmp_dir(monkeypatch, sandbox, raw):
+    raw = _resolve(raw, sandbox)
     server = _load(monkeypatch, "apps/pod_server/server.py", "_pod_server_under_test")
     model = _FakeModel()
     monkeypatch.setattr(server, "_model", model)
@@ -261,14 +294,16 @@ def test_pod_server_write_stays_in_tmp_dir(monkeypatch, sandbox, raw):
     (written,) = model.video_paths
     assert written.parent == sandbox
     assert job["output"]["filename"] == written.name
+    _assert_safe_name(written.name)
     # Nothing landed outside the job dir, and the job dir was cleaned up.
     assert not (sandbox.parent / "x.mp4").exists()
     assert not (sandbox.parent.parent / "x.mp4").exists()
     assert not sandbox.exists()
 
 
-@pytest.mark.parametrize("raw", TRAVERSAL_NAMES)
+@pytest.mark.parametrize("raw", TRAVERSAL_NAMES + HOSTILE_NAMES)
 def test_runpod_handler_write_stays_in_tmp_dir(monkeypatch, sandbox, raw):
+    raw = _resolve(raw, sandbox)
     import base64
 
     handler = _load(monkeypatch, "apps/runpod_handler/handler.py", "_rp_handler_under_test")
@@ -283,6 +318,33 @@ def test_runpod_handler_write_stays_in_tmp_dir(monkeypatch, sandbox, raw):
     (written,) = model.video_paths
     assert written.parent == sandbox
     assert out["filename"] == written.name
+    _assert_safe_name(written.name)
     assert not (sandbox.parent / "x.mp4").exists()
     assert not (sandbox.parent.parent / "x.mp4").exists()
     assert not sandbox.exists()
+
+
+def test_long_name_keeps_extension(monkeypatch):
+    server = _load(monkeypatch, "apps/pod_server/server.py", "_pod_server_under_test")
+    handler = _load(monkeypatch, "apps/runpod_handler/handler.py", "_rp_handler_under_test")
+    for mod in (server, handler):
+        name = mod._safe_filename("A" * 300 + ".mp4")
+        assert name.endswith(".mp4")
+        assert len(name.encode("utf-8")) == mod._MAX_NAME_BYTES
+        # Multi-byte chars are never split mid-sequence.
+        name = mod._safe_filename("\u00e9" * 200 + ".mp4")
+        assert name.endswith(".mp4")
+        assert len(name.encode("utf-8")) <= mod._MAX_NAME_BYTES
+
+
+@pytest.mark.parametrize(
+    "video_b64, needle",
+    [
+        ("AAAA", "too small"),
+        ("!!!not-base64!!!=", "not valid base64"),
+    ],
+)
+def test_runpod_handler_bad_payload_returns_error_not_raise(monkeypatch, video_b64, needle):
+    handler = _load(monkeypatch, "apps/runpod_handler/handler.py", "_rp_handler_under_test")
+    out = handler.handler({"input": {"video_b64": video_b64, "filename": "x.mp4"}})
+    assert "error" in out and needle in out["error"], out

@@ -10,6 +10,7 @@ score takes a couple of minutes.
 import base64
 import hmac
 import os
+import shutil
 import tempfile
 import threading
 import time
@@ -71,9 +72,30 @@ def health():
     return {"status": "ok", "model_loaded": _model is not None}
 
 
+# Linux NAME_MAX is 255 bytes; stay well under it so a long client filename
+# can't make write_bytes()/unlink() raise.
+_MAX_NAME_BYTES = 200
+
+
 def _safe_filename(raw) -> str:
-    """Basename of a client-supplied filename so writes/unlinks stay in tmp_dir."""
-    name = Path(str(raw or "")).name
+    """Client-supplied filename reduced to something safe to create in tmp_dir.
+
+    Basename only (writes/unlinks stay in tmp_dir), NULs stripped, lone
+    surrogates replaced, and truncated to _MAX_NAME_BYTES of UTF-8 while keeping
+    a short extension -- otherwise open()/unlink() raise ValueError/OSError.
+    """
+    text = str(raw or "").replace("\x00", "")
+    # Lone surrogates (valid in JSON "\ud800") can't be encoded to a path.
+    text = text.encode("utf-8", "replace").decode("utf-8")
+    name = Path(text).name
+    if len(name.encode("utf-8")) > _MAX_NAME_BYTES:
+        suffix = Path(name).suffix
+        if len(suffix.encode("utf-8")) > 16:
+            suffix = ""
+        stem = name[: len(name) - len(suffix)] if suffix else name
+        budget = _MAX_NAME_BYTES - len(suffix.encode("utf-8"))
+        stem = stem.encode("utf-8")[:budget].decode("utf-8", "ignore")
+        name = stem + suffix
     if name in ("", ".", ".."):
         return "video.mp4"
     return name
@@ -110,11 +132,9 @@ def _run_inference(job_id: str, video_bytes: bytes, filename: str):
         with _jobs_lock:
             _jobs[job_id] = {"status": "failed", "error": str(exc)}
     finally:
-        video_path.unlink(missing_ok=True)
-        try:
-            Path(tmp_dir).rmdir()
-        except OSError:
-            pass
+        # rmtree never raises here, so a cleanup failure can't mask the
+        # job result recorded above.
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @app.post("/score", dependencies=[Depends(require_pod_key)])
