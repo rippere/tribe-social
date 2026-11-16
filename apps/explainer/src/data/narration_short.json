@@ -1,0 +1,344 @@
+{
+ "s1_intro": {
+  "text": "Hey, I'm Ben. It predicts how an average viewer's brain responds to a short video, second by second.",
+  "duration": 6.26,
+  "standin": false,
+  "src": "media/narration_short/s1_intro.wav",
+  "words": [
+   {
+    "w": "Hey,",
+    "s": 0.0,
+    "e": 0.34
+   },
+   {
+    "w": "I'm",
+    "s": 0.64,
+    "e": 1.02
+   },
+   {
+    "w": "Ben.",
+    "s": 1.02,
+    "e": 1.24
+   },
+   {
+    "w": "It",
+    "s": 1.62,
+    "e": 1.72
+   },
+   {
+    "w": "predicts",
+    "s": 1.72,
+    "e": 1.96
+   },
+   {
+    "w": "how",
+    "s": 1.96,
+    "e": 2.24
+   },
+   {
+    "w": "an",
+    "s": 2.24,
+    "e": 2.34
+   },
+   {
+    "w": "average",
+    "s": 2.34,
+    "e": 2.78
+   },
+   {
+    "w": "viewer's",
+    "s": 2.78,
+    "e": 3.18
+   },
+   {
+    "w": "brain",
+    "s": 3.18,
+    "e": 3.38
+   },
+   {
+    "w": "responds",
+    "s": 3.38,
+    "e": 3.82
+   },
+   {
+    "w": "to",
+    "s": 3.82,
+    "e": 4.08
+   },
+   {
+    "w": "a",
+    "s": 4.08,
+    "e": 4.2
+   },
+   {
+    "w": "short",
+    "s": 4.2,
+    "e": 4.44
+   },
+   {
+    "w": "video,",
+    "s": 4.44,
+    "e": 4.82
+   },
+   {
+    "w": "second",
+    "s": 5.22,
+    "e": 5.52
+   },
+   {
+    "w": "by",
+    "s": 5.52,
+    "e": 5.76
+   },
+   {
+    "w": "second.",
+    "s": 5.76,
+    "e": 6.04
+   }
+  ]
+ },
+ "s2_upload": {
+  "text": "First, you upload a clip.",
+  "duration": 1.72,
+  "standin": false,
+  "src": "media/narration_short/s2_upload.wav",
+  "words": [
+   {
+    "w": "First,",
+    "s": 0.2,
+    "e": 0.38
+   },
+   {
+    "w": "you",
+    "s": 0.4,
+    "e": 0.52
+   },
+   {
+    "w": "upload",
+    "s": 0.52,
+    "e": 0.78
+   },
+   {
+    "w": "a",
+    "s": 0.78,
+    "e": 0.96
+   },
+   {
+    "w": "clip.",
+    "s": 0.96,
+    "e": 1.2
+   }
+  ]
+ },
+ "b6_read": {
+  "text": "Here's a real clip I scored. This line is the predicted response across the whole brain, second by second.",
+  "duration": 8.04,
+  "standin": false,
+  "words": [
+   {
+    "w": "Here's",
+    "s": 1.0,
+    "e": 1.5
+   },
+   {
+    "w": "a",
+    "s": 1.5,
+    "e": 1.58
+   },
+   {
+    "w": "real",
+    "s": 1.58,
+    "e": 1.74
+   },
+   {
+    "w": "clip",
+    "s": 1.74,
+    "e": 1.98
+   },
+   {
+    "w": "I",
+    "s": 1.98,
+    "e": 2.14
+   },
+   {
+    "w": "scored.",
+    "s": 2.14,
+    "e": 2.44
+   },
+   {
+    "w": "This",
+    "s": 3.5,
+    "e": 3.72
+   },
+   {
+    "w": "line",
+    "s": 3.72,
+    "e": 3.98
+   },
+   {
+    "w": "is",
+    "s": 3.98,
+    "e": 4.24
+   },
+   {
+    "w": "the",
+    "s": 4.24,
+    "e": 4.38
+   },
+   {
+    "w": "predicted",
+    "s": 4.38,
+    "e": 4.64
+   },
+   {
+    "w": "response",
+    "s": 4.64,
+    "e": 5.16
+   },
+   {
+    "w": "across",
+    "s": 5.16,
+    "e": 5.74
+   },
+   {
+    "w": "the",
+    "s": 5.74,
+    "e": 5.98
+   },
+   {
+    "w": "whole",
+    "s": 5.98,
+    "e": 6.2
+   },
+   {
+    "w": "brain,",
+    "s": 6.2,
+    "e": 6.54
+   },
+   {
+    "w": "second",
+    "s": 7.24,
+    "e": 7.38
+   },
+   {
+    "w": "by",
+    "s": 7.38,
+    "e": 7.6
+   },
+   {
+    "w": "second.",
+    "s": 7.6,
+    "e": 7.88
+   }
+  ],
+  "src": "media/narration_v6/b6_read.mp3"
+ },
+ "b8_read2": {
+  "text": "When the line climbs, the model predicts an average viewer pays attention. When it dips, it predicts they drift off.",
+  "duration": 8.6,
+  "standin": false,
+  "words": [
+   {
+    "w": "When",
+    "s": 0.0,
+    "e": 0.84
+   },
+   {
+    "w": "the",
+    "s": 0.84,
+    "e": 0.94
+   },
+   {
+    "w": "line",
+    "s": 0.94,
+    "e": 1.16
+   },
+   {
+    "w": "climbs,",
+    "s": 1.16,
+    "e": 1.56
+   },
+   {
+    "w": "the",
+    "s": 2.26,
+    "e": 2.26
+   },
+   {
+    "w": "model",
+    "s": 2.26,
+    "e": 2.44
+   },
+   {
+    "w": "predicts",
+    "s": 2.44,
+    "e": 2.72
+   },
+   {
+    "w": "an",
+    "s": 2.72,
+    "e": 2.94
+   },
+   {
+    "w": "average",
+    "s": 2.94,
+    "e": 3.22
+   },
+   {
+    "w": "viewer",
+    "s": 3.22,
+    "e": 3.62
+   },
+   {
+    "w": "pays",
+    "s": 3.62,
+    "e": 4.26
+   },
+   {
+    "w": "attention.",
+    "s": 4.26,
+    "e": 4.78
+   },
+   {
+    "w": "When",
+    "s": 5.74,
+    "e": 5.92
+   },
+   {
+    "w": "it",
+    "s": 5.92,
+    "e": 6.04
+   },
+   {
+    "w": "dips,",
+    "s": 6.04,
+    "e": 6.36
+   },
+   {
+    "w": "it",
+    "s": 7.0,
+    "e": 7.34
+   },
+   {
+    "w": "predicts",
+    "s": 7.34,
+    "e": 7.58
+   },
+   {
+    "w": "they",
+    "s": 7.58,
+    "e": 7.82
+   },
+   {
+    "w": "drift",
+    "s": 7.82,
+    "e": 8.04
+   },
+   {
+    "w": "off.",
+    "s": 8.04,
+    "e": 8.32
+   }
+  ],
+  "src": "media/narration_v6/b8_read2.mp3"
+ }
+}

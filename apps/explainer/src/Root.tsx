@@ -1,5 +1,6 @@
 import { Composition } from 'remotion'
 import { Explainer, explainerDuration } from './Explainer'
+import { Short, shortDuration } from './Short'
 import { FPS } from './theme'
 
 export function Root() {
@@ -23,6 +24,24 @@ export function Root() {
         fps={FPS}
         durationInFrames={durationInFrames}
         defaultProps={{ orientation: 'portrait' as const }}
+      />
+      <Composition
+        id="Short-9x16"
+        component={Short}
+        width={1080}
+        height={1920}
+        fps={FPS}
+        durationInFrames={shortDuration()}
+        defaultProps={{ orientation: 'portrait' as const }}
+      />
+      <Composition
+        id="Short-16x9"
+        component={Short}
+        width={1920}
+        height={1080}
+        fps={FPS}
+        durationInFrames={shortDuration()}
+        defaultProps={{ orientation: 'landscape' as const }}
       />
     </>
   )

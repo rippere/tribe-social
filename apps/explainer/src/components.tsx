@@ -1,6 +1,9 @@
-import type { ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
 import { interpolate } from 'remotion'
 import { C, FONT, MONO } from './theme'
+
+/** The product name on screen; v6 keeps the old one, the short says PrePost. */
+export const BrandContext = createContext('fMRIght')
 
 export type Stage = 'upload' | 'encode' | 'extract' | 'read'
 export interface Word { w: string; s: number; e: number }
@@ -42,11 +45,12 @@ const STAGES: { key: Stage; label: string }[] = [
 /** The scorer's app window from the site: chrome, stage rail, main pane. */
 export function AppWindow({ stage, width, height, children }: { stage: Stage; width: number; height: number; children: ReactNode }) {
   const active = STAGES.findIndex(s => s.key === stage)
+  const brand = useContext(BrandContext)
   return (
     <div style={{ width, height, background: C.elevated, borderRadius: 22, border: `1px solid ${C.line}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 18px', borderBottom: `1px solid ${C.line}` }}>
         {[0, 1, 2].map(i => <span key={i} style={{ width: 11, height: 11, borderRadius: 6, background: '#242423' }} />)}
-        <span style={{ marginLeft: 12, color: C.muted, fontSize: 15 }}>fMRIght scorer</span>
+        <span style={{ marginLeft: 12, color: C.muted, fontSize: 15 }}>{brand} scorer</span>
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '14px 18px', flexShrink: 0 }}>
         {STAGES.map((s, i) => (

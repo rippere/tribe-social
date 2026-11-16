@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Audio, Video } from '@remotion/media'
+import { useContext } from 'react'
 import { AbsoluteFill, Easing, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
-import { AppWindow, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
+import { AppWindow, BrandContext, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
 import { Cortex, useCortexAssets, type CortexAssets } from './cortex'
 import { Captions, IdleMascot, MascotLayer, Spot, WALK_IN, WalkInMascot, cue, cutsFor, cutsLength, lit, pulse, type Beat, type Cut, type Plate } from './mascot'
 import { C, FONT, FPS, MONO } from './theme'
@@ -10,7 +11,14 @@ import result from './data/result.json'
 
 export type Orientation = 'landscape' | 'portrait'
 
-type Line = keyof typeof narration
+/** A narration line: duration, word timings, and where its audio sits under public/ (v6 default). */
+export interface NarrationLine {
+  duration: number
+  words: Word[]
+  standin?: boolean
+  src?: string
+}
+export type Narration = Record<string, NarrationLine>
 // TRIBE predicts a brain scan, and scans trail the video by ~5 s (blood flow). The read
 // scene shows the line sliding back by that lag; from then on the video plays against
 // the aligned curve, which covers its first `ALIGNED.relative.length` seconds.
@@ -19,7 +27,7 @@ const ALIGNED = result.aligned
 const PLAY_SECONDS = ALIGNED.relative.length
 const PLAY_FRAMES = PLAY_SECONDS * FPS
 
-type SceneKey = 'intro' | 'upload' | 'encode' | 'extract' | 'read' | 'play' | 'cta'
+type SceneKey = 'intro' | 'upload' | 'encode' | 'extract' | 'read' | 'play' | 'cta' | 'end'
 
 /*
  * v6: Ben narrates off-screen, one recorded line at a time (scripts/vo.py), and the
@@ -32,11 +40,13 @@ const GAP = 0.35
 const TAIL = 0.6
 
 type Mascot = 'walk-in' | 'idle' | 'shots'
-interface SceneSpec {
+export interface SceneSpec {
   key: SceneKey
-  lines?: Line[]
+  lines?: string[]
   shots?: { clip: string; at?: number }[]
   mascot: Mascot
+  /** A silent scene of fixed length (no lines, no shots). */
+  seconds?: number
 }
 
 // The watching scene (silent Kling shots, mouth closed) pins its reactions to the
@@ -65,45 +75,51 @@ const SPECS: SceneSpec[] = [
   { key: 'cta', lines: ['b9_outro'], mascot: 'idle' },
 ]
 
-interface Scene extends SceneSpec {
+export interface Scene extends SceneSpec {
   start: number
   frames: number
   words: Word[]
   cuts: Cut[]
-  talks: { line: Line; from: number }[]
+  talks: { line: string; from: number }[]
 }
 
-const SCENES: Scene[] = (() => {
+export function buildScenes(specs: SceneSpec[], narr: Narration): Scene[] {
   let start = 0
-  return SPECS.map(s => {
+  return specs.map(s => {
     let cuts: Cut[] = []
     let talks: Scene['talks'] = []
     let frames: number
     if (s.shots) {
       cuts = cutsFor(s.shots)
       frames = cutsLength(cuts)
+    } else if (s.seconds !== undefined) {
+      frames = Math.round(s.seconds * FPS)
     } else {
       let t = LEAD
       for (const line of s.lines ?? []) {
-        if (!(line in narration)) throw new Error(`No narration for "${line}": run scripts/vo.py and scripts/build_data.py`)
+        if (!(line in narr)) throw new Error(`No narration for "${line}": run scripts/vo.py and scripts/build_data.py`)
         talks.push({ line, from: Math.round(t * FPS) })
-        t += narration[line].duration + GAP
+        t += narr[line].duration + GAP
       }
       frames = Math.round((t - GAP + TAIL) * FPS)
       if (s.mascot === 'walk-in') frames = Math.max(frames, Math.round(WALK_IN.cutAt * FPS) + FPS)
     }
-    const words = talks.flatMap(k => (narration[k.line].words as Word[]).map(w => ({ ...w, s: w.s + k.from / FPS, e: w.e + k.from / FPS })))
+    const words = talks.flatMap(k => narr[k.line].words.map(w => ({ ...w, s: w.s + k.from / FPS, e: w.e + k.from / FPS })))
     const scene = { ...s, start, cuts, talks, words, frames }
     start += frames
     return scene
   })
-})()
+}
 
-/** True while any line is still a stand-in voice (scripts/vo.py standin): the render says so on screen. */
-const STANDIN = Object.values(narration).some(l => l.standin)
+const NARRATION = narration as Narration
+const SCENES = buildScenes(SPECS, NARRATION)
+
+export function scenesDuration(scenes: Scene[]): number {
+  return scenes.reduce((n, s) => n + s.frames, 0)
+}
 
 export function explainerDuration(): number {
-  return SCENES.reduce((n, s) => n + s.frames, 0)
+  return scenesDuration(SCENES)
 }
 
 const HAS_RESULT = result.source === 'tribe' && result.relative.length > 1 && ALIGNED.relative.length > 1
@@ -144,26 +160,37 @@ function at(L: Layout, land: R, port: R, extra?: CSSProperties): CSSProperties {
 /* ---------- composition ---------- */
 
 export function Explainer({ orientation }: { orientation: Orientation }) {
+  return <ExplainerCut orientation={orientation} scenes={SCENES} narr={NARRATION} />
+}
+
+/**
+ * Any cut of the explainer: scenes from buildScenes over a narration set. `brand` is
+ * the product name shown on screen; `volume` scales every narration line.
+ */
+export function ExplainerCut({ orientation, scenes, narr, brand = 'fMRIght', volume = 1 }: { orientation: Orientation; scenes: Scene[]; narr: Narration; brand?: string; volume?: number }) {
   const L = layout(orientation)
   const cortex = useCortexAssets()
+  const standin = scenes.some(s => s.talks.some(k => narr[k.line].standin))
   return (
+    <BrandContext.Provider value={brand}>
     <AbsoluteFill style={{ background: C.bg, fontFamily: FONT, color: C.ink }}>
-      {SCENES.map(s => (
+      {scenes.map(s => (
         <Sequence key={s.key} from={s.start} durationInFrames={s.frames} name={s.key}>
           {s.talks.map(k => (
             <Sequence key={k.line} from={k.from} layout="none" name={k.line}>
-              <Audio src={staticFile(`media/narration_v6/${k.line}.mp3`)} />
+              <Audio src={staticFile(narr[k.line].src ?? `media/narration_v6/${k.line}.mp3`)} volume={volume} />
             </Sequence>
           ))}
           <SceneFrame scene={s} L={L} cortex={cortex} first={s.key === 'upload'} />
         </Sequence>
       ))}
-      {STANDIN && (
+      {standin && (
         <div style={{ position: 'absolute', top: L.portrait ? 30 : 30, right: L.portrait ? 36 : 44 }}>
           <Tag tone="amber">Stand-in voice · placeholder for Ben's recording</Tag>
         </div>
       )}
     </AbsoluteFill>
+    </BrandContext.Provider>
   )
 }
 
@@ -243,6 +270,8 @@ function SceneBody({ scene, L, cortex, t }: { scene: Scene; L: Layout; cortex: C
       return <PlayPane L={L} t={t} cortex={cortex} />
     case 'cta':
       return <Cta L={L} w={w} t={t} />
+    case 'end':
+      return <EndCard L={L} />
   }
 }
 
@@ -279,7 +308,8 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
   const give = cue(w, /^video/)
   const brain = cue(w, /^brain/)
   const sbs = cue(w, /^second$/)
-  const name = cue(w, /^fMRIght/)
+  const brand = useContext(BrandContext)
+  const name = cue(w, new RegExp(`^${brand}`))
   const show = (d: number) => interpolate(t, [0.2 + d, 1.1 + d], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
   const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
@@ -288,7 +318,7 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
     <AbsoluteFill>
       <div style={{ position: 'absolute', top: L.portrait ? 150 : 60, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: show(0) }}>
         <Spot on={pulse(t, name, 2.2)} radius={28} style={{ padding: '10px 40px' }}>
-          <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>fMRIght</div>
+          <div style={{ fontSize: L.portrait ? 120 : 132, fontWeight: 500, letterSpacing: -4, lineHeight: 1 }}>{brand}</div>
         </Spot>
         <div style={{ marginTop: 14, fontSize: L.portrait ? 34 : 34, color: C.muted, textAlign: 'center' }}>A predicted brain response to your video, second by second.</div>
         {/* The voice is Ben's, not the brain's: say so the moment he gives his name. */}
@@ -318,7 +348,8 @@ function UploadPane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   const gpu = cue(w, /^graphics/)
   const del = cue(w, /^delete/)
   const scores = cue(w, /^numbers/)
-  const p = interpolate(t, [up + 0.3, gpu + 1.4], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  // A cut that keeps only the first sentence has no GPU cue: the send still completes.
+  const p = interpolate(t, [up + 0.3, Number.isFinite(gpu) ? gpu + 1.4 : up + 1.6], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const gone = lit(t, del + 0.3)
   const status = p <= 0 ? 'Ready to send' : p < 1 ? `Sending to the GPU… ${Math.round(p * 100)}%` : 'Delivered'
   return (
@@ -531,12 +562,15 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
   const dips = cue(w, /^dips/)
   const upTo = interpolate(t, [line, done + 0.4], [0, result.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   // The scan trails the video by LAG seconds; on "slide" the line moves back into sync.
-  const shift = interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) })
+  // A cut without the lag line (b7) never slides the line: its bands then sit LAG later, on the unshifted curve.
+  const slides = Number.isFinite(slide)
+  const shift = slides ? interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) }) : 0
+  const off = slides ? 0 : LAG
   const bands = HAS_RESULT
     ? [
         { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind` },
-        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
-        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
+        { from: Math.max(0, ALIGNED.peak.second - 4) + off, to: ALIGNED.peak.second + off, on: lit(t, climbs, 0.35), label: '▲ climbs' },
+        { from: ALIGNED.drop.second - 1 + off, to: ALIGNED.drop.second + off, on: lit(t, dips, 0.35), label: '▼ dips' },
       ]
     : []
   const [chartW, chartH] = L.portrait ? [980, 440] : [1535, 440]
@@ -657,6 +691,23 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
       <div style={{ marginTop: 10, fontSize: 24, color: lit(t, testing, 0.4) > 0.5 ? C.ink : C.muted, textAlign: 'center', maxWidth: 900, lineHeight: 1.4 }}>
         Unproven: in our 24-clip pilot the score's link to engagement was weak and not significant (r = 0.25, p = 0.24). A pre-registered test is next.
       </div>
+    </AbsoluteFill>
+  )
+}
+
+/* ---------- end card (no voice): the name, the line, the old name small ---------- */
+
+export const END_CARD = { tagline: 'Know where a creator draft loses people, before it posts.', formerly: 'formerly fMRIght' }
+
+function EndCard({ L }: { L: Layout }) {
+  const frame = useCurrentFrame()
+  const brand = useContext(BrandContext)
+  const rise = (d: number) => ({ opacity: fadeIn(frame, d, 15), transform: `translateY(${(1 - fadeIn(frame, d, 15)) * 16}px)` })
+  return (
+    <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 420 : 170, opacity: fadeIn(frame, 0, 12) }}>
+      <div style={{ fontSize: L.portrait ? 150 : 160, fontWeight: 500, letterSpacing: -4, lineHeight: 1, ...rise(0) }}>{brand}</div>
+      <div style={{ marginTop: 30, fontSize: L.portrait ? 46 : 42, lineHeight: 1.3, textAlign: 'center', maxWidth: L.portrait ? 900 : 1300, ...rise(8) }}>{END_CARD.tagline}</div>
+      <div style={{ marginTop: 26, fontFamily: MONO, fontSize: L.portrait ? 24 : 22, color: C.muted, letterSpacing: 0.4, ...rise(16) }}>{END_CARD.formerly}</div>
     </AbsoluteFill>
   )
 }
