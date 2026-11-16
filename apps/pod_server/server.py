@@ -71,7 +71,16 @@ def health():
     return {"status": "ok", "model_loaded": _model is not None}
 
 
+def _safe_filename(raw) -> str:
+    """Basename of a client-supplied filename so writes/unlinks stay in tmp_dir."""
+    name = Path(str(raw or "")).name
+    if name in ("", ".", ".."):
+        return "video.mp4"
+    return name
+
+
 def _run_inference(job_id: str, video_bytes: bytes, filename: str):
+    filename = _safe_filename(filename)
     tmp_dir = tempfile.mkdtemp()
     video_path = Path(tmp_dir) / filename
     try:
