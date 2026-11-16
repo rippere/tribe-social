@@ -309,7 +309,10 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
   const brain = cue(w, /^brain/)
   const sbs = cue(w, /^second$/)
   const brand = useContext(BrandContext)
-  const name = cue(w, new RegExp(`^${brand}`))
+  // The name lights up when Ben says it; a cut that drops it ("Hey, I'm Ben. It predicts…")
+  // lights it on "It" instead, so the title is what "It" points at.
+  const spoken = cue(w, new RegExp(`^${brand}`))
+  const name = Number.isFinite(spoken) ? spoken : cue(w, /^It$/)
   const show = (d: number) => interpolate(t, [0.2 + d, 1.1 + d], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
   const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
@@ -562,15 +565,14 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
   const dips = cue(w, /^dips/)
   const upTo = interpolate(t, [line, done + 0.4], [0, result.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   // The scan trails the video by LAG seconds; on "slide" the line moves back into sync.
-  // A cut without the lag line (b7) never slides the line: its bands then sit LAG later, on the unshifted curve.
-  const slides = Number.isFinite(slide)
-  const shift = slides ? interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) }) : 0
-  const off = slides ? 0 : LAG
+  // A cut without the lag line (b7) shows the line already slid back LAG seconds, in sync
+  // with the video from the start, as v6 ends up after its slide (no animation, no narration).
+  const shift = Number.isFinite(slide) ? interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) }) : LAG
   const bands = HAS_RESULT
     ? [
         { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind` },
-        { from: Math.max(0, ALIGNED.peak.second - 4) + off, to: ALIGNED.peak.second + off, on: lit(t, climbs, 0.35), label: '▲ climbs' },
-        { from: ALIGNED.drop.second - 1 + off, to: ALIGNED.drop.second + off, on: lit(t, dips, 0.35), label: '▼ dips' },
+        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
+        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
       ]
     : []
   const [chartW, chartH] = L.portrait ? [980, 440] : [1535, 440]
