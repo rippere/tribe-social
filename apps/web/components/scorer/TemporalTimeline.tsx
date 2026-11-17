@@ -16,6 +16,8 @@ import type { TemporalPoint } from '@/lib/types'
 
 interface Props {
   temporal: TemporalPoint[]
+  /** 'model': real per-second TRIBE output, so the axis fits the data. */
+  source?: 'model' | 'illustrative'
 }
 
 const SERIES = [
@@ -24,7 +26,7 @@ const SERIES = [
   { key: 'Value', color: 'var(--color-roi-valuation)' },
 ] as const
 
-export default function TemporalTimeline({ temporal }: Props) {
+export default function TemporalTimeline({ temporal, source = 'illustrative' }: Props) {
   const data = temporal.map((p) => ({
     second: p.second,
     Attention: parseFloat(p.attention.toFixed(3)),
@@ -46,7 +48,7 @@ export default function TemporalTimeline({ temporal }: Props) {
         <LineChart data={data} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
           <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
           <XAxis dataKey="second" tick={{ fill: 'var(--muted)', fontSize: 11 }} />
-          <YAxis domain={[0, 1]} tick={{ fill: 'var(--muted)', fontSize: 11 }} width={30} />
+          <YAxis domain={source === 'model' ? ['auto', 'auto'] : [0, 1]} tick={{ fill: 'var(--muted)', fontSize: 11 }} width={30} />
           <Tooltip
             contentStyle={{ background: 'var(--ink-2)', border: '1px solid var(--line)', borderRadius: 12 }}
             labelStyle={{ color: 'var(--ink)' }}
@@ -67,8 +69,10 @@ export default function TemporalTimeline({ temporal }: Props) {
       </ResponsiveContainer>
 
       <p className="mt-2 text-[12px] leading-5 text-muted">
-        Shaded: the first 3 seconds, the hook window. This curve is an illustrative shape built from the clip&apos;s
-        region averages, not yet a second-by-second readout from the model.
+        Shaded: the first 3 seconds, the hook window.{' '}
+        {source === 'model'
+          ? 'Each point is TRIBE v2’s predicted response for that second, averaged over the region (same 0–1 scale as the region chart).'
+          : 'This curve is an illustrative shape built from the clip’s region averages, not yet a second-by-second readout from the model.'}
       </p>
     </div>
   )

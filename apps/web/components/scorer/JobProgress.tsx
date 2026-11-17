@@ -10,9 +10,9 @@ import { DEMO_STAGES } from '@/components/landing/demo-data'
 // the four stages the UI shows (Upload, Encode, Extract, Read).
 const DISPLAY_STAGE_PCT = [0, 30, 85, 95]
 
-// Hard polling ceiling — matches the backend job TIMEOUT (~30 min). Past this we
-// stop polling and surface a timeout state rather than hammering the API forever.
-const MAX_POLL_MS = 30 * 60 * 1000
+// No client-side time cap: a queued clip can wait for a GPU cold start plus the clips
+// ahead of it, which can exceed 30 minutes. Polling backs off instead (2 s → 15 s).
+const pollInterval = (elapsedMs: number) => (elapsedMs < 2 * 60_000 ? 2000 : elapsedMs < 10 * 60_000 ? 5000 : 15000)
 
 class FetchError extends Error {
   status: number
@@ -83,8 +83,7 @@ export default function JobProgress({ jobId, onComplete, onStageChange }: Props)
     {
       refreshInterval: (d) => {
         if (errorRef.current || notFoundRef.current) return 0
-        if (Date.now() - startRef.current > MAX_POLL_MS) return 0
-        return isDone(d) ? 0 : 2000
+        return isDone(d) ? 0 : pollInterval(Date.now() - startRef.current)
       },
       shouldRetryOnError: false,
       onError: (err) => {
@@ -141,19 +140,6 @@ export default function JobProgress({ jobId, onComplete, onStageChange }: Props)
         title="Processing failed"
         detail={data.error ?? 'Unknown error'}
         actionLabel="Try Again"
-        onAction={() => window.location.reload()}
-      />
-    )
-  }
-
-  // Exceeded the hard ceiling without completing.
-  const timedOut = Date.now() - startRef.current > MAX_POLL_MS
-  if (timedOut && !isDone(data)) {
-    return (
-      <ErrorCard
-        title="Scoring timed out"
-        detail="This job ran longer than the 30-minute limit without completing. Start over to try again."
-        actionLabel="Start over"
         onAction={() => window.location.reload()}
       />
     )
