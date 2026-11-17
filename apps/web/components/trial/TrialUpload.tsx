@@ -63,6 +63,13 @@ export default function TrialUpload() {
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
 
+  // A different link pasted into the same tab only changes the fragment: start over.
+  useEffect(() => {
+    const onHash = () => window.location.reload()
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
   useEffect(() => {
     const c = window.location.hash.slice(1)
     if (!c) {

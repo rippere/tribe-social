@@ -53,6 +53,13 @@ export default function TrialResult() {
     return body
   }, [])
 
+  // A different link pasted into the same tab only changes the fragment: start over.
+  useEffect(() => {
+    const onHash = () => window.location.reload()
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
   useEffect(() => {
     const tok = window.location.hash.slice(1)
     if (!/^[A-Za-z0-9_-]{43}$/.test(tok)) {

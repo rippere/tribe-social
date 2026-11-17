@@ -20,7 +20,7 @@ RUNPOD_IDLE_TIMEOUT_S = "120"
 # tribe-v2-weights-mtl, 40 GB, CA-MTL-3: the only volume-capable datacenter with A100 80GB
 # serverless capacity on 2026-11-17 (dataCenters.gpuAvailability.available).
 # EU-RO-1 lists A100s but had none available; US-KS-2 has no volume support.
-RUNPOD_NETWORK_VOLUME_ID = ""  # detached for now: see note above (av1xl2eif8 = the CA-MTL-3 volume)
+RUNPOD_NETWORK_VOLUME_ID = "av1xl2eif8"
 
 [[d1_databases]]
 binding = "TRIAL_DB"
