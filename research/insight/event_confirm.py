@@ -322,6 +322,7 @@ def confirm(a):
 def _load_module(name: str):
     spec = importlib.util.spec_from_file_location(name, HERE / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod          # Pool pickles worker functions by module name
     spec.loader.exec_module(mod)
     return mod
 
