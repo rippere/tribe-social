@@ -31,6 +31,8 @@ import shutil
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -82,11 +84,31 @@ def _get_model():
     return _model
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Signed URLs never redirect; following one could leave the signed origin."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        raise urllib.error.HTTPError(req.full_url, code, "redirect refused", headers, fp)
+
+
+_opener = urllib.request.build_opener(_NoRedirect)
+DOWNLOAD_DEADLINE_S = 180
+
+
+def _require_https(url: str) -> None:
+    if urllib.parse.urlsplit(url).scheme != "https":
+        raise ValueError("[fatal] only https URLs are accepted")
+
+
 def _download(url: str, dest: Path) -> None:
+    _require_https(url)
     req = urllib.request.Request(url, headers={"User-Agent": "tribe-runpod-handler"})
-    with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as out:
+    deadline = time.monotonic() + DOWNLOAD_DEADLINE_S
+    with _opener.open(req, timeout=60) as resp, open(dest, "wb") as out:
         total = 0
         while True:
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"video download exceeded {DOWNLOAD_DEADLINE_S} s")
             chunk = resp.read(1 << 20)
             if not chunk:
                 break
@@ -97,11 +119,12 @@ def _download(url: str, dest: Path) -> None:
 
 
 def _put(url: str, data: bytes) -> None:
+    _require_https(url)
     req = urllib.request.Request(
         url, data=data, method="PUT",
         headers={"Content-Type": "application/octet-stream", "User-Agent": "tribe-runpod-handler"},
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with _opener.open(req, timeout=120) as resp:
         if resp.status >= 300:
             raise RuntimeError(f"activity upload failed: HTTP {resp.status}")
 
