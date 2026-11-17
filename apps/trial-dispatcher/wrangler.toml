@@ -1,0 +1,32 @@
+# PrePost trial dispatcher (Cron Worker). Deploy from this directory:
+#   npx wrangler@4 deploy
+# Secrets (never committed): RUNPOD_API_KEY, TRIAL_SIGNING_KEY, RESEND_API_KEY
+#   printf %s "$VALUE" | npx wrangler@4 secret put NAME
+name = "prepost-trial-dispatcher"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+RUNPOD_ENDPOINT_ID = "tk1a3vuytw9gyw"
+RUNPOD_ENDPOINT_NAME = "tribe-v2-inference"
+RUNPOD_TEMPLATE_ID = "nwjhgluqsm"
+# A100 80 GB only. TRIBE v2 does not fit smaller cards; runpod.ts refuses anything else.
+RUNPOD_GPU_IDS = "AMPERE_80"
+RUNPOD_IDLE_TIMEOUT_S = "120"
+RUNPOD_NETWORK_VOLUME_ID = ""
+
+[[d1_databases]]
+binding = "TRIAL_DB"
+database_name = "prepost-trial"
+database_id = "d4ab5f3c-e9db-4c3b-8a95-a38022eb4a98"
+
+[[r2_buckets]]
+binding = "TRIAL_BUCKET"
+bucket_name = "prepost-trial"
+
+[observability]
+enabled = true
