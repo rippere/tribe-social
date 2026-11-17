@@ -5,7 +5,7 @@ TRIBE v2 predicts BOLD, which lags the stimulus by about 5 s, so `*_hook` and
 kept as `*_hook_0_3` / `gfp_hook_0_3`.
 
 The scorer imports the GPU-only `tribev2` package at import time, so it is
-stubbed here. The package is loaded from this checkout under a private name,
+stubbed (see conftest.py). The package is loaded from this checkout under a private name,
 so an installed copy of `tribe_scoring` elsewhere cannot shadow it.
 
 Run: uv run --with numpy --with pytest pytest packages/tribe_scoring/tests
@@ -13,48 +13,14 @@ Run: uv run --with numpy --with pytest pytest packages/tribe_scoring/tests
 from __future__ import annotations
 
 import csv
-import importlib
-import importlib.util
 import io
 import json
 import math
-import sys
-import types
-from pathlib import Path
 
 import numpy as np
 import pytest
 
-PKG_DIR = Path(__file__).resolve().parents[1]
-PKG_NAME = "_tribe_scoring_under_test"
 N_VERTS = 20484
-
-
-@pytest.fixture(scope="module")
-def ras():
-    saved = {k: sys.modules.get(k) for k in ("tribev2", "tribev2.demo_utils")}
-    tribev2 = types.ModuleType("tribev2")
-    demo_utils = types.ModuleType("tribev2.demo_utils")
-    demo_utils.TribeModel = object
-    tribev2.demo_utils = demo_utils
-    sys.modules["tribev2"] = tribev2
-    sys.modules["tribev2.demo_utils"] = demo_utils
-    try:
-        spec = importlib.util.spec_from_file_location(
-            PKG_NAME, PKG_DIR / "__init__.py", submodule_search_locations=[str(PKG_DIR)]
-        )
-        pkg = importlib.util.module_from_spec(spec)
-        sys.modules[PKG_NAME] = pkg
-        spec.loader.exec_module(pkg)
-        yield importlib.import_module(f"{PKG_NAME}.run_and_save")
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                sys.modules.pop(k, None)
-            else:
-                sys.modules[k] = v
-        for k in [k for k in sys.modules if k == PKG_NAME or k.startswith(PKG_NAME + ".")]:
-            sys.modules.pop(k)
 
 
 def preds_with_spike(n: int, seconds, value: float = 1.0) -> np.ndarray:
