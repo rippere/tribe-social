@@ -3,12 +3,17 @@
 // The extra fields (role, monthly draft volume, company) are the demand signal we
 // want before any letter of intent: who is asking, and at what volume.
 
-export type WaitlistEnv = {
+import { sendThankYou, type EmailEnv } from './waitlist-email'
+
+export type WaitlistEnv = EmailEnv & {
   WAITLIST?: {
     get(key: string): Promise<string | null>
     put(key: string, value: string): Promise<void>
   }
 }
+
+/** Lets the email finish after the response is sent (Pages `context.waitUntil`). */
+export type WaitUntil = (p: Promise<unknown>) => void
 
 export const ROLES = [
   'Influencer agency',
@@ -28,7 +33,11 @@ const json = (body: unknown, status = 200) =>
 const pick = <T extends readonly string[]>(list: T, v: unknown): T[number] | null =>
   typeof v === 'string' && (list as readonly string[]).includes(v) ? (v as T[number]) : null
 
-export async function handleWaitlist(request: Request, env: WaitlistEnv): Promise<Response> {
+export async function handleWaitlist(
+  request: Request,
+  env: WaitlistEnv,
+  waitUntil?: WaitUntil,
+): Promise<Response> {
   let body: Record<string, unknown>
   try {
     body = (await request.json()) as Record<string, unknown>
@@ -61,6 +70,14 @@ export async function handleWaitlist(request: Request, env: WaitlistEnv): Promis
   }
   const now = new Date().toISOString()
   await env.WAITLIST.put(key, JSON.stringify({ email, role, volume, company, joined: joined ?? now, updated: now }))
+
+  // Thank only first-time signups; a resubmit just updates the record. The send runs
+  // after the response so a slow or failed email never holds up or fails the signup.
+  if (!joined) {
+    const send = sendThankYou(env, email, new URL(request.url).origin)
+    if (waitUntil) waitUntil(send)
+    else await send
+  }
 
   return json({ ok: true })
 }
