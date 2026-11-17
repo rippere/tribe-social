@@ -1,11 +1,14 @@
 FROM runpod/pytorch:1.0.0-cu1290-torch260-ubuntu2204
 
-RUN pip install runpod numpy
+# Every dependency is pinned to the versions that served the pilot (constraints.txt);
+# unpinned transitive upgrades (e.g. exca) have broken tribev2's import before.
+COPY apps/runpod_handler/constraints.txt /tmp/constraints.txt
+RUN pip install -c /tmp/constraints.txt runpod numpy
 # Pinned for reproducible scores: `main` floats and would silently change model and
 # scoring behaviour between builds. 34f5234 is the commit in the image that served
 # the pilot (rippere/tribe-v2-inference:latest, built 2026-05-27).
 ARG TRIBEV2_REF=34f52344e5ba96660fac877393e1954e399d3ef3
-RUN pip install git+https://github.com/facebookresearch/tribev2@${TRIBEV2_REF}
+RUN pip install -c /tmp/constraints.txt git+https://github.com/facebookresearch/tribev2@${TRIBEV2_REF}
 
 # HF_TOKEN is NOT baked into the image — the RunPod template injects it as a
 # runtime env var (see deploy.sh saveTemplate env), so the token never lands in
