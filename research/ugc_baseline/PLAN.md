@@ -99,3 +99,9 @@ Batch finished 2026-11-17 03:43 UTC: 64/64 scored, 0 quarantined, 1 supervisor r
 - **Mask artifact:** with the old masks composite showed a category effect (eta² 0.17, p = 0.014) and no format
   effect. Both flipped with correct masks.
 - Caveats unchanged: arm/category are unverified visual labels, thin cells, YouTube-search sample, no outcome data.
+
+### Spark run-to-run determinism (2026-11-17)
+ali_001 re-scored from a fresh copy (transcription redone, no cached TSV) vs its first Spark run:
+predictions bit-identical (max abs diff 0.0), transcript identical, every score 0.0% apart, 0 peak seconds moved.
+The Spark-vs-RunPod gap (up to 24%) is a stack difference (whisperx CPU int8 vs CUDA fp16, torch build), not
+run-to-run noise. Same-machine comparisons are exact; cross-machine scores still must not be mixed.
