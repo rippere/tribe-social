@@ -13,6 +13,8 @@ dependencies = [
 "__init__.py" = "tribe_scoring/__init__.py"
 "run_and_save.py" = "tribe_scoring/run_and_save.py"
 "composite.py" = "tribe_scoring/composite.py"
+"roi_masks_fsaverage5.json" = "tribe_scoring/roi_masks_fsaverage5.json"
+"build_roi_masks.py" = "tribe_scoring/build_roi_masks.py"
 
 [build-system]
 requires = ["hatchling"]

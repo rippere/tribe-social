@@ -15,6 +15,7 @@ Batch output:
 """
 
 import csv
+import json
 import os
 import argparse
 import tempfile
@@ -28,33 +29,48 @@ from tribev2.demo_utils import TribeModel
 
 
 # ---------------------------------------------------------------------------
-# Approximate ROI masks for RunPod (numpy-only, no neuromaps dependency).
-# These match the Phase 0 baseline; analyze.py uses full HCP MMP1.0 masks locally.
+# Anatomical ROI masks (numpy-only at runtime).
+# Each signal is the set of fsaverage5 vertices in a few Destrieux 2009 atlas
+# labels, the same region -> label mapping the live clip page uses
+# (research/clip_chat_context.py REGIONS). The atlas lookup needs nilearn, so
+# it is done once by build_roi_masks.py and the vertex indices are committed in
+# roi_masks_fsaverage5.json; this module only reads that file.
+#
+# Before this, the masks were contiguous vertex-index ranges ("approximate ROI
+# masks"). fsaverage5 vertex order is not spatially contiguous, so those
+# ranges were scatters of points across the cortex, not regions. Scores made
+# with them are not comparable with scores made with these masks; rescore saved
+# *_preds.npy files with --rescore-dir.
+#
+# research/analyze.py still uses HCP MMP1.0 masks (research/roi_masks.py);
+# Destrieux is a coarser, anatomical approximation of those areas.
 # ---------------------------------------------------------------------------
+from .composite import ROI_WEIGHTS, compute_composite_raw  # single source of truth
+
 _R = 10242          # right hemisphere vertex offset (fsaverage5)
 _N_VERTS = 20484    # total vertices in TRIBE v2 output
+ROI_MASKS_PATH = Path(__file__).resolve().parent / "roi_masks_fsaverage5.json"
 
 
-def _bilateral(*ranges: tuple[int, int]) -> np.ndarray:
-    lh = np.concatenate([np.arange(a, b) for a, b in ranges])
-    lh = lh[lh < _R]   # guard: LH indices must be < 10242
-    rh = lh + _R
-    return np.concatenate([lh, rh])
+def _load_masks(path: Path = ROI_MASKS_PATH) -> tuple[dict[str, np.ndarray], dict]:
+    with open(path) as f:
+        meta = json.load(f)
+    if meta.get("n_vertices") != _N_VERTS:
+        raise ValueError(f"{path.name}: expected {_N_VERTS} vertices, got {meta.get('n_vertices')}")
+    if set(meta["regions"]) != set(ROI_WEIGHTS):
+        raise ValueError(f"{path.name}: signals {sorted(meta['regions'])} != {sorted(ROI_WEIGHTS)}")
+    masks = {}
+    for dim, region in meta["regions"].items():
+        idx = np.asarray(region["vertices"], dtype=np.intp)
+        if idx.size == 0 or idx.min() < 0 or idx.max() >= _N_VERTS:
+            raise ValueError(f"{path.name}: mask {dim!r} is empty or out of range")
+        if np.unique(idx).size != idx.size:
+            raise ValueError(f"{path.name}: mask {dim!r} has duplicate vertices")
+        masks[dim] = idx
+    return masks, meta
 
 
-# fsaverage5 LH vertex approximations (all < 10242).
-# social/auditory were previously out-of-bounds (indices 12000+ / 10200+).
-_BATCH_MASKS = {
-    "attention": _bilateral((8200, 8350), (8350, 8500)),
-    "social":    _bilateral((6500, 6900),),    # TPJ: posterior parietal-temporal
-    "language":  _bilateral((7800, 8000),),
-    "valuation": _bilateral((400, 700),),
-    "auditory":  _bilateral((8800, 9200),),    # STS: lateral superior temporal
-    "motion":    _bilateral((9800, 10000),),
-    "narrative": _bilateral((1200, 1600),),
-}
-
-from .composite import compute_composite_raw  # single source of truth
+_BATCH_MASKS, ROI_MASKS_META = _load_masks()
 
 # ---------------------------------------------------------------------------
 # Hook window.
@@ -109,7 +125,8 @@ def quick_scores(preds: np.ndarray) -> dict:
     """
     Compute per-ROI summary stats from a raw TRIBE v2 prediction array.
     Returns a flat dict suitable for the batch CSV row.
-    Uses approximate vertex masks (numpy-only, no nilearn needed on RunPod).
+    Uses Destrieux-atlas vertex masks from roi_masks_fsaverage5.json
+    (numpy-only, no nilearn needed on RunPod).
 
     Metrics:
       mean/hook/offset/peak_s — Berns 2020 (onset + offset outperform clip average)
@@ -168,7 +185,8 @@ def quick_scores(preds: np.ndarray) -> dict:
         row["vmPFC_TPJ_coupling"] = 0.0
 
     # Pleasantness Index: left-hemisphere vertices (0–10241) vs right (10242–20483)
-    # Using attention ROI (IFJa/IFJp) as frontal proxy — Frontiers Psych 2017
+    # Using the attention ROI (IFJ: inferior frontal + inferior precentral
+    # sulci) as frontal proxy — Frontiers Psych 2017
     att_idx = _BATCH_MASKS["attention"]
     lh_att  = att_idx[att_idx < 10242]
     rh_att  = att_idx[att_idx >= 10242]

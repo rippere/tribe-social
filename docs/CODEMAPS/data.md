@@ -19,10 +19,10 @@ No relational DB. Data is **CSV + on-GPU model artifacts** flowing through the r
 `filename` is the key. `apps/api/scripts/build_corpus_json.py` joins `scores.csv` ⨝ `engagement.csv` on `filename` → dashboard corpus JSON. `phase1b_correlation.py` correlates ROI columns ↔ engagement columns on the same key.
 
 ## The scoring model (packages/tribe_scoring, `_BATCH_MASKS`)
-7 ROIs, hardcoded fsaverage5 vertex ranges, composite weights:
+7 ROIs, Destrieux-atlas masks on fsaverage5 (vertex indices precomputed by `build_roi_masks.py` into `roi_masks_fsaverage5.json`; same region → label mapping as the clip page's `research/clip_chat_context.py`), composite weights:
 `attention .25 · social/TPJ .30 · language .15 · valuation/vmPFC .20 · auditory .05 · motion .03 · narrative .02`
 Derived signals: `composite_raw`, `gfp_{mean,hook,offset}`, `vmPFC_TPJ_coupling` (Scholz 2017), `pleasantness_index`.
-Atlas: `roi_masks.py` — HCP MMP1.0 / Glasser 2016 → resampled to **fsaverage5 (20,484 vertices)** via neuromaps; `_approximate_masks()` is the Phase-0 fallback.
+Research atlas (pre-registered analyses, `analyze.py`): `roi_masks.py` — HCP MMP1.0 / Glasser 2016 → resampled to **fsaverage5 (20,484 vertices)** via neuromaps; `_approximate_masks()` is the Phase-0 fallback.
 
 ## Pipeline data flow
 ```
@@ -33,7 +33,7 @@ urls_demo.txt ──make fetch (yt-dlp)──▶ research/reels/*.mp4
   RunPod A100 provision ────┤ (tribe_score/runpod.py + remote.py: ssh upload run_and_save.py + mp4)
        ▼                    │
   TRIBE v2 (facebook/tribev2 via HF) → preds (69 timepoints × 20,484 vertices)
-       │  quick_scores() → per-ROI extraction (HCP MMP1.0)
+       │  quick_scores() → per-ROI extraction (Destrieux masks)
        ▼                    │
   research/scores.csv ◀── download ── terminate pod ─┘
        │
