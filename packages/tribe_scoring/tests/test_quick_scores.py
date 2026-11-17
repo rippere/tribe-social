@@ -1,8 +1,9 @@
 """Unit tests for quick_scores() hook windows, run on synthetic prediction arrays.
 
-TRIBE v2 predicts BOLD, which lags the stimulus by about 5 s, so `*_hook` and
-`gfp_hook` read predicted seconds 4-8 (indices 4..7). The old 0-3 s value is
-kept as `*_hook_0_3` / `gfp_hook_0_3`.
+TRIBE v2 output is already stimulus-aligned (tribev2 trains with
+FmriExtractor offset=5), so `*_hook` and `gfp_hook` read predicted seconds 0-3
+(indices 0..2), the video's opening. `*_hook_0_3` / `gfp_hook_0_3` read the same
+window and are kept for CSV/API compatibility.
 
 The scorer imports the GPU-only `tribev2` package at import time, so it is
 stubbed (see conftest.py). The package is loaded from this checkout under a private name,
@@ -32,66 +33,61 @@ def preds_with_spike(n: int, seconds, value: float = 1.0) -> np.ndarray:
 
 
 def test_hook_window_constant(ras):
-    assert ras.HOOK_WINDOW == slice(4, 8)
+    assert ras.HOOK_WINDOW == slice(0, 3)
+    assert ras.HOOK_WINDOW == ras.LEGACY_HOOK_WINDOW
 
 
-def test_spike_in_seconds_4_to_7_moves_new_hook_not_old(ras):
-    row = ras.quick_scores(preds_with_spike(20, range(4, 8)))
-    for d in ras._CSV_DIMS:
-        assert row[f"{d}_hook"] == pytest.approx(1.0)
-        assert row[f"{d}_hook_0_3"] == pytest.approx(0.0)
-    assert row["gfp_hook"] == pytest.approx(1.0)
-    assert row["gfp_hook_0_3"] == pytest.approx(0.0)
-    assert row["hook_window_n"] == 4
-
-
-def test_spike_in_seconds_0_to_2_moves_old_hook_not_new(ras):
+def test_spike_in_seconds_0_to_2_moves_hook(ras):
     row = ras.quick_scores(preds_with_spike(20, range(0, 3)))
     for d in ras._CSV_DIMS:
-        assert row[f"{d}_hook"] == pytest.approx(0.0)
+        assert row[f"{d}_hook"] == pytest.approx(1.0)
         assert row[f"{d}_hook_0_3"] == pytest.approx(1.0)
-    assert row["gfp_hook"] == pytest.approx(0.0)
+    assert row["gfp_hook"] == pytest.approx(1.0)
     assert row["gfp_hook_0_3"] == pytest.approx(1.0)
+    assert row["hook_window_n"] == 3
 
 
-@pytest.mark.parametrize("second", [3, 8])
+def test_spike_in_seconds_4_to_7_does_not_move_hook(ras):
+    # The window PR #16 used. Predictions are stimulus-aligned, so seconds
+    # 4..7 are the body of the video, not the response to the hook.
+    row = ras.quick_scores(preds_with_spike(20, range(4, 8)))
+    for d in ras._CSV_DIMS:
+        assert row[f"{d}_hook"] == pytest.approx(0.0)
+        assert row[f"{d}_hook_0_3"] == pytest.approx(0.0)
+    assert row["gfp_hook"] == pytest.approx(0.0)
+    assert row["gfp_hook_0_3"] == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("second", [3, 4])
 def test_window_edges_are_excluded(ras, second):
     row = ras.quick_scores(preds_with_spike(20, [second]))
     assert row["attention_hook"] == pytest.approx(0.0)
     assert row["gfp_hook"] == pytest.approx(0.0)
 
 
-@pytest.mark.parametrize("second", [4, 7])
+@pytest.mark.parametrize("second", [0, 2])
 def test_window_edges_are_included(ras, second):
-    row = ras.quick_scores(preds_with_spike(20, [second]))
-    assert row["attention_hook"] == pytest.approx(0.25)
-    assert row["gfp_hook"] == pytest.approx(0.25)
-    assert row["attention_hook_0_3"] == pytest.approx(0.0)
-
-
-def test_single_spike_inside_window_averages_over_four_seconds(ras):
-    row = ras.quick_scores(preds_with_spike(20, [6], value=2.0))
-    assert row["attention_hook"] == pytest.approx(0.5)
-    assert row["gfp_hook"] == pytest.approx(0.5)
-
-
-@pytest.mark.parametrize("n,expected_n", [(5, 1), (6, 2), (7, 3), (8, 4)])
-def test_partial_window_for_clips_shorter_than_8s(ras, n, expected_n):
-    # Spike only at the last available second inside the window.
-    row = ras.quick_scores(preds_with_spike(n, [n - 1 if n < 8 else 7], value=float(expected_n)))
-    assert row["hook_window_n"] == expected_n
-    assert row["attention_hook"] == pytest.approx(1.0)  # value / samples in window
+    row = ras.quick_scores(preds_with_spike(20, [second], value=3.0))
+    assert row["attention_hook"] == pytest.approx(1.0)
     assert row["gfp_hook"] == pytest.approx(1.0)
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4])
-def test_clips_of_4s_or_less_fall_back_to_last_second(ras, n):
-    preds = np.zeros((n, N_VERTS), dtype=np.float32)
-    preds[n - 1, :] = 3.0
-    row = ras.quick_scores(preds)
-    assert row["hook_window_n"] == 0
-    assert row["attention_hook"] == pytest.approx(3.0)
-    assert row["gfp_hook"] == pytest.approx(3.0)
+def test_hook_equals_hook_0_3_on_random_input(ras):
+    rng = np.random.default_rng(7)
+    row = ras.quick_scores(rng.normal(size=(15, N_VERTS)).astype(np.float32))
+    for d in ras._CSV_DIMS:
+        assert row[f"{d}_hook"] == row[f"{d}_hook_0_3"]
+    assert row["gfp_hook"] == row["gfp_hook_0_3"]
+
+
+@pytest.mark.parametrize("n,expected_n", [(1, 1), (2, 2), (3, 3), (4, 3), (8, 3)])
+def test_short_clips_use_the_seconds_that_exist(ras, n, expected_n):
+    # Spike at the last second inside the window; its value / samples = 1.
+    last = min(n, 3) - 1
+    row = ras.quick_scores(preds_with_spike(n, [last], value=float(expected_n)))
+    assert row["hook_window_n"] == expected_n
+    assert row["attention_hook"] == pytest.approx(1.0)
+    assert row["gfp_hook"] == pytest.approx(1.0)
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 7, 8, 30])
@@ -115,7 +111,7 @@ def test_every_length_gives_finite_json_safe_values(ras, n):
 
 
 def test_row_keys_match_csv_fields_and_write(ras):
-    row = ras.quick_scores(preds_with_spike(12, range(4, 8)))
+    row = ras.quick_scores(preds_with_spike(12, range(0, 3)))
     row.update(filename="a.mp4", label="a", n_seconds=12)
     assert set(row) == set(ras._CSV_FIELDS)
     buf = io.StringIO()

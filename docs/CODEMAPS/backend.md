@@ -42,7 +42,7 @@ Dockerfile: `runpod/pytorch…torch260`, installs `tribev2@${TRIBEV2_REF}`, buil
 
 ## packages/tribe_scoring — canonical scoring (single home)
 `__init__` exports `load_model(cache_folder)`, `quick_scores(preds)->dict`, `_BATCH_MASKS`.
-`run_and_save.py` (278 ln): `_bilateral(*ranges)`, `quick_scores` (per-ROI mean/hook/hook_0_3/offset/peak_s/ts_ratio ×7 + `composite_raw`, `gfp_*`, `hook_window_n`; `HOOK_WINDOW = slice(4, 8)` reads the hook from predicted s 4–8 because BOLD lags the stimulus ~5 s; `vmPFC_TPJ_coupling` [Scholz 2017], `pleasantness_index`), `run_single(model,path,text,label)->np.ndarray`, `main()` (CLI `--batch-dir --results-csv`, runs on the pod).
+`run_and_save.py` (278 ln): `_bilateral(*ranges)`, `quick_scores` (per-ROI mean/hook/hook_0_3/offset/peak_s/ts_ratio ×7 + `composite_raw`, `gfp_*`, `hook_window_n`; `HOOK_WINDOW = slice(0, 3)` reads the hook from predicted s 0–3, the video's opening, because TRIBE v2 output is already stimulus-aligned (tribev2 trains with `FmriExtractor` offset=5; `hook_0_3` is now equal and kept for compatibility); `vmPFC_TPJ_coupling` [Scholz 2017], `pleasantness_index`), `run_single(model,path,text,label)->np.ndarray`, `main()` (CLI `--batch-dir --results-csv`, runs on the pod).
 Imported by `research/visualize.py`, `apps/pod_server/server.py`, `apps/runpod_handler/handler.py`.
 
 > **Single-home rule:** the ROI composite weights and verdict thresholds live only in `packages/tribe_scoring/composite.py`. The pod computes `composite_raw`, the API scales it to the corpus range and serves the verdict, the web renders what the API returns. This was previously defined in three places and silently drifted — do not reintroduce a second copy.

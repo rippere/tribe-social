@@ -74,37 +74,39 @@ _BATCH_MASKS, ROI_MASKS_META = _load_masks()
 
 # ---------------------------------------------------------------------------
 # Hook window.
-# TRIBE v2 predicts fMRI (BOLD) responses, and BOLD lags the stimulus by about
-# 5 s (the haemodynamic delay). Predicted seconds 0-3 are the haemodynamic
-# warm-up, not the brain's response to the video's opening seconds. The
-# response to the hook shows up in predicted seconds 4-8 (indices 4..7), so
-# `*_hook` and `gfp_hook` average that window.
+# The hook is the video's opening: predicted seconds 0-3 (indices 0..2). TRIBE
+# v2 output is already stimulus-aligned, so predicted second t reflects video
+# second t and no BOLD-lag correction is applied here.
+#
+# Why no lag: tribev2 shifts the fMRI target during training. Its training
+# config (tribev2 `grids/defaults.py`) sets
+#     neuro_extractor = {"name": "FmriExtractor", "offset": 5, ...}
+# so the model learns to predict the response 5 s after each stimulus second
+# and emits it at that stimulus second. A check on 64 clips agrees: the
+# cross-correlation between speech presence and predicted auditory cortex
+# peaks at lag 0 (r ~ 0.5) and falls to about 0 by lag 4.
+#
+# PR #16 moved this window to predicted seconds 4-8 on the premise that the
+# predictions still carried the ~5 s haemodynamic delay. That premise was
+# wrong (the delay is already absorbed by the offset above), so the window is
+# back to 0-3. HOOK_WINDOW now equals LEGACY_HOOK_WINDOW, and `*_hook` equals
+# `*_hook_0_3`; both columns, and `hook_window_n`, stay for CSV/API
+# compatibility.
 #
 # Short clips (n = number of predicted seconds):
-#   n >= 8     the full window, indices 4..7 (hook_window_n = 4)
-#   4 < n < 8  the part of the window that exists, indices 4..n-1
-#              (hook_window_n = n - 4)
-#   n <= 4     no lagged sample exists; fall back to the last predicted second
-#              (index n-1), the sample closest to the lagged window
-#              (hook_window_n = 0, so callers can filter these rows out)
+#   n >= 3     the full window, indices 0..2 (hook_window_n = 3)
+#   0 < n < 3  the seconds that exist, indices 0..n-1 (hook_window_n = n)
 # The values are always finite: no NaN reaches the CSV or the JSON responses.
-#
-# The old 0-3 s value is kept as `*_hook_0_3` / `gfp_hook_0_3` so old and new
-# can be compared. Pre-registered research analyses that used the old window
-# are not changed here.
 # ---------------------------------------------------------------------------
-HOOK_WINDOW = slice(4, 8)
+HOOK_WINDOW = slice(0, 3)
 LEGACY_HOOK_WINDOW = slice(0, 3)
 
 
 def _hook_window(n: int) -> tuple[slice, int]:
     """Return the slice of predicted seconds used for the hook, and how many
-    of them fall inside HOOK_WINDOW (0 means the short-clip fallback)."""
-    start, stop = HOOK_WINDOW.start, HOOK_WINDOW.stop
-    if n > start:
-        end = min(stop, n)
-        return slice(start, end), end - start
-    return slice(max(n - 1, 0), n), 0
+    samples it holds (3 for a full window, n for a clip shorter than 3 s)."""
+    stop = min(HOOK_WINDOW.stop, n)
+    return slice(HOOK_WINDOW.start, stop), max(stop - HOOK_WINDOW.start, 0)
 
 
 _CSV_DIMS = list(_BATCH_MASKS.keys())
@@ -130,9 +132,10 @@ def quick_scores(preds: np.ndarray) -> dict:
 
     Metrics:
       mean/hook/offset/peak_s — Berns 2020 (onset + offset outperform clip average)
-                                hook = predicted s 4-8 (BOLD-lagged, see HOOK_WINDOW);
-                                hook_0_3 = the old, unlagged 0-3 s window
-      hook_window_n           — samples inside HOOK_WINDOW (4 full, <4 short, 0 fallback)
+                                hook = predicted s 0-3, the video's opening
+                                (output is stimulus-aligned, see HOOK_WINDOW);
+                                hook_0_3 = same window, kept for compatibility
+      hook_window_n           — samples inside HOOK_WINDOW (3 full, n for clips < 3 s)
       ts_ratio                — transient/sustained ratio (BOLD transient lit)
       gfp_*                   — Global Field Power (Frontiers Psych 2017)
       vmPFC_TPJ_coupling      — viral circuit Pearson r (Scholz 2017)

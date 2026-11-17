@@ -149,8 +149,7 @@ def interpret_signals(row: pd.Series, df: pd.DataFrame) -> list[str]:
     hook_ratio = row["attention_hook"] / (abs(row["attention_mean"]) + 1e-9)
     if hook_ratio > 1.15:
         signals.append(
-            f"Strong hook — attention +{(hook_ratio - 1) * 100:.0f}% above average in the hook window "
-            f"(predicted s 4–8, the BOLD-lagged response to the first seconds)"
+            f"Strong hook — attention +{(hook_ratio - 1) * 100:.0f}% above average in first 3s"
         )
     elif hook_ratio < 0.85 and row["attention_mean"] > 0:
         signals.append("Weak hook — opens cold, consider front-loading visual or verbal hook")
@@ -277,7 +276,7 @@ def make_scorecard(label: str, df: pd.DataFrame, eng_df: pd.DataFrame | None = N
         color  = ROI_COLORS[roi]
 
         ax_b.barh(y[i] + h,  hook_v, h * 0.88, color=color, alpha=0.95,
-                  label="Hook (pred. 4–8s, BOLD-lagged)" if i == 0 else "")
+                  label="Hook (0–3s)" if i == 0 else "")
         ax_b.barh(y[i],      mean_v, h * 0.88, color=color, alpha=0.50,
                   label="Mean" if i == 0 else "")
         ax_b.barh(y[i] - h,  off_v,  h * 0.88, color=color, alpha=0.28,
@@ -303,7 +302,7 @@ def make_scorecard(label: str, df: pd.DataFrame, eng_df: pd.DataFrame | None = N
     ax_b.set_title("Hook  ·  Mean  ·  Offset", color="#888888", fontsize=9, pad=8)
 
     legend_patches = [
-        mpatches.Patch(color="#AAAAAA", alpha=0.95, label="Hook (pred. 4–8s, BOLD-lagged)"),
+        mpatches.Patch(color="#AAAAAA", alpha=0.95, label="Hook (0–3s)"),
         mpatches.Patch(color="#AAAAAA", alpha=0.50, label="Mean"),
         mpatches.Patch(color="#AAAAAA", alpha=0.28, label="Offset (last 5s)"),
     ]
@@ -531,7 +530,7 @@ def make_hook_cta_figure(df: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(9, 5), facecolor=C_BG)
     ax.set_facecolor(C_BG)
     ax.bar(x - w, [hook_vals[r]   for r in KEY_ROIS], w,
-           label="Hook (pred. 4–8s, BOLD-lagged)",   color=[ROI_COLORS[r] for r in KEY_ROIS], alpha=0.95)
+           label="Hook (0–3s)",   color=[ROI_COLORS[r] for r in KEY_ROIS], alpha=0.95)
     ax.bar(x,     [mean_vals[r]   for r in KEY_ROIS], w,
            label="Mean",          color=[ROI_COLORS[r] for r in KEY_ROIS], alpha=0.5)
     ax.bar(x + w, [offset_vals[r] for r in KEY_ROIS], w,
@@ -653,13 +652,13 @@ try:
             x_unit.next_to(axes.x_axis.get_right(), RIGHT, buff=0.12)
             self.play(Create(axes), FadeIn(x_unit), run_time=0.7)
 
-            # Same window as quick_scores' *_hook: predicted s 4-8, because the
-            # predicted BOLD response lags the stimulus by ~5 s (see HOOK_WINDOW
-            # in packages/tribe_scoring/run_and_save.py). Clamped for short clips.
-            # Clips of 4 s or less have no lagged sample, so quick_scores falls
-            # back to the last predicted second; the band marks that second.
-            hook_start   = 4 if n_secs > 4 else max(n_secs - 1, 0)
-            hook_end     = min(8, n_secs)
+            # Same window as quick_scores' *_hook: predicted s 0-3, the video's
+            # opening. TRIBE v2 output is already stimulus-aligned (tribev2
+            # trains with FmriExtractor offset=5), so no lag shift; see
+            # HOOK_WINDOW in packages/tribe_scoring/run_and_save.py. Clamped
+            # for clips shorter than 3 s.
+            hook_start   = 0
+            hook_end     = min(3, n_secs)
             offset_start = min(max(n_secs - 5, hook_end), max(n_secs - 1, 0))
 
             hook_rect = axes.get_area(
