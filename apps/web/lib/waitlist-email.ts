@@ -34,7 +34,7 @@ export function thankYouText(siteUrl: string): string {
   ].join('\n')
 }
 
-const escapeHtml = (s: string) =>
+export const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export function thankYouHtml(siteUrl: string): string {
@@ -50,11 +50,22 @@ export function thankYouHtml(siteUrl: string): string {
 </div></body></html>`
 }
 
+export interface EmailMessage {
+  to: string
+  subject: string
+  text: string
+  html: string
+  /** Resend drops a repeat send with the same key, so a retried request can't double-mail. */
+  idempotencyKey: string
+  /** Short label for logs. Never the address. */
+  tag: string
+}
+
 /**
- * Send the thank-you email. Never throws: a failed send must not fail the signup,
- * so errors are logged and reported as false.
+ * Send one email through Resend. Never throws: a failed send must not fail the
+ * request that triggered it, so errors are logged and reported as false.
  */
-export async function sendThankYou(env: EmailEnv, to: string, siteUrl: string): Promise<boolean> {
+export async function sendEmail(env: EmailEnv, msg: EmailMessage): Promise<boolean> {
   if (!env.RESEND_API_KEY) return false
   try {
     const res = await fetch(RESEND_URL, {
@@ -62,24 +73,35 @@ export async function sendThankYou(env: EmailEnv, to: string, siteUrl: string): 
       headers: {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
-        // Resend drops a repeat send with the same key, so a retried request can't double-mail.
-        'Idempotency-Key': `waitlist-thanks:${to}`.slice(0, 256),
+        'Idempotency-Key': msg.idempotencyKey.slice(0, 256),
       },
       body: JSON.stringify({
         from: env.WAITLIST_FROM || DEFAULT_FROM,
-        to: [to],
-        subject: SUBJECT,
-        text: thankYouText(siteUrl),
-        html: thankYouHtml(siteUrl),
+        to: [msg.to],
+        subject: msg.subject,
+        text: msg.text,
+        html: msg.html,
       }),
     })
     if (!res.ok) {
-      console.error('waitlist email failed', res.status, (await res.text()).slice(0, 300))
+      console.error(`${msg.tag} email failed`, res.status, (await res.text()).slice(0, 300))
       return false
     }
     return true
   } catch (err) {
-    console.error('waitlist email error', err instanceof Error ? err.message : String(err))
+    console.error(`${msg.tag} email error`, err instanceof Error ? err.message : String(err))
     return false
   }
+}
+
+/** Send the thank-you email (never throws; see sendEmail). */
+export function sendThankYou(env: EmailEnv, to: string, siteUrl: string): Promise<boolean> {
+  return sendEmail(env, {
+    to,
+    subject: SUBJECT,
+    text: thankYouText(siteUrl),
+    html: thankYouHtml(siteUrl),
+    idempotencyKey: `waitlist-thanks:${to}`,
+    tag: 'waitlist',
+  })
 }
