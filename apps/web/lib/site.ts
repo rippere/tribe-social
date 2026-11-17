@@ -22,7 +22,7 @@ export const PUBLIC_PAGES: { path: string; title: string; summary: string; prior
 ]
 
 /** Pages that only work against the local scoring API. Kept out of search. */
-export const PRIVATE_PATHS = ['/scorer', '/dashboard', '/cortex']
+export const PRIVATE_PATHS = ['/scorer', '/dashboard', '/cortex', '/trial']
 
 /**
  * Full metadata for one page: title, description, canonical URL, Open Graph and Twitter
