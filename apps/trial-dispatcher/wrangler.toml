@@ -17,7 +17,8 @@ RUNPOD_TEMPLATE_ID = "nwjhgluqsm"
 # A100 80 GB only. TRIBE v2 does not fit smaller cards; runpod.ts refuses anything else.
 RUNPOD_GPU_IDS = "AMPERE_80"
 RUNPOD_IDLE_TIMEOUT_S = "120"
-RUNPOD_NETWORK_VOLUME_ID = ""
+# tribe-v2-weights, 40 GB, EU-RO-1 (A100 80GB PCIe + SXM; US-KS-2 has no volume support).
+RUNPOD_NETWORK_VOLUME_ID = "90d5u4mg35"
 
 [[d1_databases]]
 binding = "TRIAL_DB"

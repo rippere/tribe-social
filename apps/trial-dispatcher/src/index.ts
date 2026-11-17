@@ -62,7 +62,8 @@ async function releaseLock(env: DispatcherEnv, owner: string): Promise<void> {
 async function scale(env: DispatcherEnv, want: 0 | 1, log: string[]): Promise<void> {
   const cur = await getState(env, 'workers_max')
   const stale = !cur || Date.now() - cur.updated_at > REASSERT_OFF_MS
-  if (cur?.value === String(want) && !(want === 0 && stale)) return
+  // Turning on always calls RunPod (once per batch); turning off is re-asserted every 10 min.
+  if (want === 0 && cur?.value === '0' && !stale) return
   await setWorkersMax(env, want)
   await setState(env, 'workers_max', String(want))
   log.push(`workersMax=${want}`)
