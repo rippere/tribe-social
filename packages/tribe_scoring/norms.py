@@ -51,6 +51,8 @@ def build_band(clips: Iterable[Mapping[str, np.ndarray]], *, name: str, min_n: i
     signals = list(clips[0])
     if any(list(c) != signals for c in clips):
         raise ValueError("all reference clips must have the same signals")
+    for c in clips:
+        _check_clip(c)
     lengths = np.array([len(c[signals[0]]) for c in clips])
     n_per_s = [int((lengths > t).sum()) for t in range(int(lengths.max()))]
     covered = sum(1 for n in n_per_s if n >= min_n)   # n_per_s is non-increasing
@@ -68,6 +70,17 @@ def build_band(clips: Iterable[Mapping[str, np.ndarray]], *, name: str, min_n: i
             "sorted": [[round(float(x), 6) for x in v] for v in per_s],
         }
     return band
+
+
+def _check_clip(tc: Mapping[str, np.ndarray]) -> int:
+    """All signals the same length and finite (NaN would rank as P100 or skew a band)."""
+    lengths = {len(v) for v in tc.values()}
+    if len(lengths) != 1:
+        raise ValueError(f"signals have different lengths: {sorted(lengths)}")
+    for sig, v in tc.items():
+        if not np.all(np.isfinite(v)):
+            raise ValueError(f"signal {sig!r} has non-finite values")
+    return lengths.pop()
 
 
 def percentile_rank(value: float, sorted_vals) -> float:
@@ -100,16 +113,18 @@ def diagnose(tc: Mapping[str, np.ndarray], band: Mapping, *, low: float = 25.0, 
     Flags are sorted by size: distance from the median times run length, largest first.
     """
     lag = int(band["lag_s"])
-    n_clip = len(next(iter(tc.values())))
+    n_clip = _check_clip(tc)
     stop = min(n_clip, int(band["n_seconds"]))
     ranks: dict[str, list[float | None]] = {}
     flags = []
+    missing = sorted(set(band["signals"]) ^ set(tc))
     for sig, b in band["signals"].items():
         if sig not in tc:
             continue
         r: list[float | None] = [None] * n_clip
         for t in range(lag, stop):
-            r[t] = round(percentile_rank(float(tc[sig][t]), b["sorted"][t]), 1)
+            # band values are stored rounded to 6 dp; round the query the same way so ties stay ties
+            r[t] = round(percentile_rank(round(float(tc[sig][t]), 6), b["sorted"][t]), 1)
         ranks[sig] = r
         arr = np.array([np.nan if x is None else x for x in r], dtype=np.float64)
         with np.errstate(invalid="ignore"):
@@ -130,7 +145,7 @@ def diagnose(tc: Mapping[str, np.ndarray], band: Mapping, *, low: float = 25.0, 
                reverse=True)
     return {"band": band["name"], "n_seconds": n_clip,
             "ranked_seconds": [lag, stop - 1] if stop > lag else None,
-            "low": low, "high": high, "ranks": ranks, "flags": flags}
+            "low": low, "high": high, "missing_signals": missing, "ranks": ranks, "flags": flags}
 
 
 def save_band(band: Mapping, path: Path) -> None:

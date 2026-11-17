@@ -90,3 +90,30 @@ def test_band_roundtrip(tmp_path):
     p = tmp_path / "b.json"
     norms.save_band(band, p)
     assert norms.load_band(p)["signals"]["gfp"]["pct"]["50"] == band["signals"]["gfp"]["pct"]["50"]
+
+
+def test_nan_in_query_raises_instead_of_ranking_p100():
+    band = norms.build_band(ref_clips(), name="t")
+    clip = {"gfp": np.full(30, 1.0), "attention": np.zeros(30)}
+    clip["gfp"][6:9] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        norms.diagnose(clip, band)
+
+
+def test_nan_in_reference_rejected():
+    clips = ref_clips()
+    clips[3]["gfp"][5] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        norms.build_band(clips, name="t")
+
+
+def test_unequal_signal_lengths_rejected():
+    band = norms.build_band(ref_clips(), name="t")
+    with pytest.raises(ValueError, match="different lengths"):
+        norms.diagnose({"gfp": np.ones(30), "attention": np.zeros(20)}, band)
+
+
+def test_missing_signals_reported():
+    band = norms.build_band(ref_clips(), name="t")
+    out = norms.diagnose({"gfp": np.ones(30), "other": np.zeros(30)}, band)
+    assert out["missing_signals"] == ["attention", "other"]
