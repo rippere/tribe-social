@@ -7,13 +7,17 @@
 // global caps atomically) runs before the R2 write.
 import { randomToken, sha256Hex } from '../../../lib/trial/crypto'
 import type { PagesEnv } from '../../../lib/trial/env'
-import { checkInvite, json } from '../../../lib/trial/http'
+import { checkInvite, json, trialSite } from '../../../lib/trial/http'
 import { LIMITS, uploadKey } from '../../../lib/trial/jobs'
 import { sniffVideo, videoDurationSeconds } from '../../../lib/trial/video'
 
 export const CONSENT_VERSION = 'v1'
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: PagesEnv }) => {
+  // Result links and the GPU worker's signed URLs are built from this origin, so it
+  // must be one we configured, not whatever host the request arrived on.
+  const site = trialSite(env, request)
+  if (!site) return json({ error: 'Use the link from your invite email.' }, 403)
   const check = await checkInvite(env.WAITLIST, request.headers.get('x-invite'))
   if (!check.ok) return json({ error: check.error }, check.status)
   if (request.headers.get('x-consent') !== CONSENT_VERSION) {
@@ -36,7 +40,6 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: P
   const token = randomToken(32)
   const inviteHash = await sha256Hex(check.code)
   const now = Date.now()
-  const site = new URL(request.url).origin
   const maxUses = Math.min(check.invite.max_uses, LIMITS.usesPerInvite)
 
   // One statement, so the three caps hold under concurrent uploads.
@@ -77,13 +80,10 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: P
   }
   await env.TRIAL_DB.prepare(`UPDATE jobs SET status = 'queued' WHERE id = ? AND status = 'uploading'`).bind(id).run()
 
-  // Mirror the use count onto the KV invite record for the operator script.
+  // D1 is the only use counter. (No KV write-back: it could overwrite a concurrent revoke.)
   const usedNow = await env.TRIAL_DB.prepare('SELECT COUNT(*) AS n FROM jobs WHERE invite_hash = ?')
     .bind(inviteHash)
     .first<{ n: number }>()
-  await env.WAITLIST.put(`invite:${check.code}`, JSON.stringify({ ...check.invite, used: usedNow?.n ?? 0 }), {
-    expiration: Math.floor(Date.parse(check.invite.expires) / 1000) + 86400,
-  })
 
   return json({ ok: true, token, remaining: Math.max(0, maxUses - (usedNow?.n ?? 0)) }, 201)
 }

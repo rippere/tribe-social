@@ -3,7 +3,8 @@
 // An unknown token, a deleted result or an expired one is a plain 404.
 import type { PagesEnv } from '../../../lib/trial/env'
 import { bearer, jobByToken, json, notFound } from '../../../lib/trial/http'
-import { activityKey, ACTIVE, queueInfo, uploadKey } from '../../../lib/trial/jobs'
+import { ACTIVE, queueInfo, settleTerminal, type JobRow } from '../../../lib/trial/jobs'
+import { cancelJob } from '../../../lib/trial/runpod'
 import { CLAIM } from '../../../lib/trial/claim'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -48,15 +49,21 @@ export const onRequestDelete = async ({ request, env }: { request: Request; env:
   if (!token) return notFound()
   const job = await jobByToken(env, token)
   if (!job || job.status === 'deleted') return notFound()
-  // The row stays (scrubbed) so the upload still counts against the invite; an
-  // in-flight RunPod job finishing later is ignored by finalizeJob, which also
-  // removes anything it wrote.
+  // The row stays (scrubbed) so the upload still counts against the invite. An
+  // in-flight RunPod job is cancelled; if it still finishes, finalizeJob ignores it
+  // and deletes anything it wrote, and blob.ts refuses its activity PUT.
+  if (job.runpod_job_id && (job.status === 'submitted' || job.status === 'running') && env.RUNPOD_API_KEY) {
+    await cancelJob(env, job.runpod_job_id)
+  }
   await env.TRIAL_DB.prepare(
-    `UPDATE jobs SET status = 'deleted', result_json = NULL, token = NULL, has_activity = 0, lease_until = NULL
+    `UPDATE jobs SET status = 'deleted', result_json = NULL, token = NULL, has_activity = 0, lease_until = NULL,
+       cleaned = 0, completed_at = COALESCE(completed_at, ?)
      WHERE id = ?`,
   )
-    .bind(job.id)
+    .bind(Date.now(), job.id)
     .run()
-  await env.TRIAL_BUCKET.delete([uploadKey(job), activityKey(job.id)])
+  // R2 deletes now; if they fail, the dispatcher's sweeper retries (cleaned = 0).
+  const row = await env.TRIAL_DB.prepare('SELECT * FROM jobs WHERE id = ?').bind(job.id).first<JobRow>()
+  if (row) await settleTerminal(env, row).catch(() => {})
   return json({ ok: true, deleted: true })
 }

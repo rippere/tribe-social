@@ -48,7 +48,9 @@ export const INVITE_RE = /^[A-Za-z0-9_-]{22}$/
 // PUTs the cortex activity to) functions/api/trial/blob.ts with an HMAC-signed,
 // expiring, method- and key-bound URL instead. Same effect as an R2 presigned URL.
 
-export const blobMessage = (method: 'GET' | 'PUT', key: string, exp: number) => `blob\n${method}\n${key}\n${exp}`
+/** `attempt` binds a PUT URL to one RunPod submission, so a superseded attempt can't write. */
+export const blobMessage = (method: 'GET' | 'PUT', key: string, exp: number, attempt = 0) =>
+  `blob\n${method}\n${key}\n${exp}\n${attempt}`
 
 export async function signedBlobUrl(
   site: string,
@@ -56,10 +58,11 @@ export async function signedBlobUrl(
   method: 'GET' | 'PUT',
   key: string,
   ttlSeconds: number,
+  attempt = 0,
 ): Promise<string> {
   const exp = Math.floor(Date.now() / 1000) + ttlSeconds
-  const sig = await hmac(secret, blobMessage(method, key, exp))
-  const q = new URLSearchParams({ key, m: method, exp: String(exp), sig })
+  const sig = await hmac(secret, blobMessage(method, key, exp, attempt))
+  const q = new URLSearchParams({ key, m: method, exp: String(exp), a: String(attempt), sig })
   return `${site}/api/trial/blob?${q}`
 }
 

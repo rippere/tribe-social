@@ -27,3 +27,10 @@ migrations_dir = "migrations"
 [[r2_buckets]]
 binding = "TRIAL_BUCKET"
 bucket_name = "prepost-trial"
+
+[vars]
+# Origins the trial runs on. Result links and the GPU worker's signed URLs are built
+# only from these (functions/api/trial/upload.ts refuses any other host).
+TRIAL_SITES = "https://prepost-clw.pages.dev,https://trial.prepost-clw.pages.dev"
+# RunPod job API (webhook confirms results via /status; DELETE cancels). Secret: RUNPOD_API_KEY.
+RUNPOD_ENDPOINT_ID = "tk1a3vuytw9gyw"

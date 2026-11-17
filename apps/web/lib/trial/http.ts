@@ -10,6 +10,13 @@ export const json = (body: unknown, status = 200, extra: Record<string, string> 
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...extra },
   })
 
+/** The request's origin if it is one of TRIAL_SITES, else null. */
+export function trialSite(env: { TRIAL_SITES?: string }, request: Request): string | null {
+  const origin = new URL(request.url).origin
+  const allowed = (env.TRIAL_SITES ?? '').split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean)
+  return allowed.includes(origin) ? origin : null
+}
+
 export const notFound = () => json({ error: 'Not found.' }, 404)
 
 /** `Authorization: Bearer <result token>`: the token travels in a header, never a URL. */

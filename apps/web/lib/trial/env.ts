@@ -61,6 +61,11 @@ export interface TrialEnv {
 export interface PagesEnv extends TrialEnv {
   /** Waitlist + invites: signup:<email>, invite:<code>. */
   WAITLIST: KVNamespace
+  /** Comma-separated origins the trial may run on; links and signed URLs use these only. */
+  TRIAL_SITES?: string
+  /** Job API only (status for the webhook, cancel on delete). Secret. */
+  RUNPOD_API_KEY?: string
+  RUNPOD_ENDPOINT_ID?: string
 }
 
 export interface DispatcherEnv extends TrialEnv {

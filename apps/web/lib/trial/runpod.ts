@@ -7,7 +7,18 @@ import type { RunpodJob } from './jobs'
 const GQL = 'https://api.runpod.io/graphql'
 const JOBS = 'https://api.runpod.ai/v2'
 
-function auth(env: DispatcherEnv): Record<string, string> {
+/** What the job API needs; the Pages webhook and DELETE use this subset too. */
+export interface RunpodCreds {
+  RUNPOD_API_KEY?: string
+  RUNPOD_ENDPOINT_ID?: string
+}
+
+function endpoint(env: RunpodCreds): string {
+  if (!env.RUNPOD_ENDPOINT_ID) throw new Error('RUNPOD_ENDPOINT_ID is not set')
+  return env.RUNPOD_ENDPOINT_ID
+}
+
+function auth(env: RunpodCreds): Record<string, string> {
   if (!env.RUNPOD_API_KEY) throw new Error('RUNPOD_API_KEY is not set')
   return { Authorization: `Bearer ${env.RUNPOD_API_KEY}`, 'Content-Type': 'application/json' }
 }
@@ -75,13 +86,13 @@ export async function submitJob(env: DispatcherEnv, input: SubmitInput, webhook:
 }
 
 /** Job status, or null when RunPod no longer knows the job (404 after TTL). */
-export async function jobStatus(env: DispatcherEnv, runpodId: string): Promise<RunpodJob | null> {
-  const res = await fetch(`${JOBS}/${env.RUNPOD_ENDPOINT_ID}/status/${runpodId}`, { headers: auth(env) })
+export async function jobStatus(env: RunpodCreds, runpodId: string): Promise<RunpodJob | null> {
+  const res = await fetch(`${JOBS}/${endpoint(env)}/status/${encodeURIComponent(runpodId)}`, { headers: auth(env) })
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`RunPod /status failed (${res.status})`)
   return (await res.json()) as RunpodJob
 }
 
-export async function cancelJob(env: DispatcherEnv, runpodId: string): Promise<void> {
-  await fetch(`${JOBS}/${env.RUNPOD_ENDPOINT_ID}/cancel/${runpodId}`, { method: 'POST', headers: auth(env) }).catch(() => {})
+export async function cancelJob(env: RunpodCreds, runpodId: string): Promise<void> {
+  await fetch(`${JOBS}/${endpoint(env)}/cancel/${encodeURIComponent(runpodId)}`, { method: 'POST', headers: auth(env) }).catch(() => {})
 }
