@@ -39,13 +39,11 @@ status:   model reading | validated                                             
   (`grids/defaults.py`, `FmriExtractor` `"offset": 5`), and over the 64 clips the speech → auditory
   cross-correlation peaks at lag 0 (r ≈ 0.5). An earlier draft of this band assumed a 4 s BOLD lag and
   skipped predicted s 0–3 as warm-up; that was wrong.
-- Calibration (leave-one-out over the 64): 25.2% of ranked seconds below P25 and 25.2% above P75
-  (expected 25/25). Measured under the old 4 s lag, i.e. with predicted s 0–3 left out; the stored
-  per-second values don't depend on the lag, but these figures (and the flag counts below) need a
-  rerun of `build_norm_band.py` to cover s 0–3.
+- Calibration (leave-one-out over the 64, lag 0, predicted s 0–39 ranked): 25.2% of ranked seconds
+  below P25 and 25.2% above P75 (expected 25/25). Re-measured 2026-11-17 after the lag fix.
 - **Same-stack only.** Spark scores are bit-reproducible run to run but differ from RunPod scores by up to
   24% on some fields. Rank only Spark-scored clips against this band.
-- Known gap: median 12 flags per clip, which is too many to act on. Stage 3/4 evidence decides which ones
+- Known gap: median 14 flags per clip (range 6–30), which is too many to act on. Stage 3/4 evidence decides which ones
   are worth surfacing; until then, show the top 3 by size.
 
 Rebuild: `research/ugc_baseline/build_norm_band.py` (runs where the `*_preds.npy` live).
