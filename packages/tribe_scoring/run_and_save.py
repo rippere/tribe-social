@@ -15,6 +15,7 @@ Batch output:
 """
 
 import csv
+import json
 import os
 import argparse
 import tempfile
@@ -28,44 +29,95 @@ from tribev2.demo_utils import TribeModel
 
 
 # ---------------------------------------------------------------------------
-# Approximate ROI masks for RunPod (numpy-only, no neuromaps dependency).
-# These match the Phase 0 baseline; analyze.py uses full HCP MMP1.0 masks locally.
+# Anatomical ROI masks (numpy-only at runtime).
+# Each signal is the set of fsaverage5 vertices in a few Destrieux 2009 atlas
+# labels, the same region -> label mapping the live clip page uses
+# (research/clip_chat_context.py REGIONS). The atlas lookup needs nilearn, so
+# it is done once by build_roi_masks.py and the vertex indices are committed in
+# roi_masks_fsaverage5.json; this module only reads that file.
+#
+# Before this, the masks were contiguous vertex-index ranges ("approximate ROI
+# masks"). fsaverage5 vertex order is not spatially contiguous, so those
+# ranges were scatters of points across the cortex, not regions. Scores made
+# with them are not comparable with scores made with these masks; rescore saved
+# *_preds.npy files with --rescore-dir.
+#
+# research/analyze.py still uses HCP MMP1.0 masks (research/roi_masks.py);
+# Destrieux is a coarser, anatomical approximation of those areas.
 # ---------------------------------------------------------------------------
+from .composite import ROI_WEIGHTS, compute_composite_raw  # single source of truth
+
 _R = 10242          # right hemisphere vertex offset (fsaverage5)
 _N_VERTS = 20484    # total vertices in TRIBE v2 output
+ROI_MASKS_PATH = Path(__file__).resolve().parent / "roi_masks_fsaverage5.json"
 
 
-def _bilateral(*ranges: tuple[int, int]) -> np.ndarray:
-    lh = np.concatenate([np.arange(a, b) for a, b in ranges])
-    lh = lh[lh < _R]   # guard: LH indices must be < 10242
-    rh = lh + _R
-    return np.concatenate([lh, rh])
+def _load_masks(path: Path = ROI_MASKS_PATH) -> tuple[dict[str, np.ndarray], dict]:
+    with open(path) as f:
+        meta = json.load(f)
+    if meta.get("n_vertices") != _N_VERTS:
+        raise ValueError(f"{path.name}: expected {_N_VERTS} vertices, got {meta.get('n_vertices')}")
+    if set(meta["regions"]) != set(ROI_WEIGHTS):
+        raise ValueError(f"{path.name}: signals {sorted(meta['regions'])} != {sorted(ROI_WEIGHTS)}")
+    masks = {}
+    for dim, region in meta["regions"].items():
+        idx = np.asarray(region["vertices"], dtype=np.intp)
+        if idx.size == 0 or idx.min() < 0 or idx.max() >= _N_VERTS:
+            raise ValueError(f"{path.name}: mask {dim!r} is empty or out of range")
+        if np.unique(idx).size != idx.size:
+            raise ValueError(f"{path.name}: mask {dim!r} has duplicate vertices")
+        masks[dim] = idx
+    return masks, meta
 
 
-# fsaverage5 LH vertex approximations (all < 10242).
-# social/auditory were previously out-of-bounds (indices 12000+ / 10200+).
-_BATCH_MASKS = {
-    "attention": _bilateral((8200, 8350), (8350, 8500)),
-    "social":    _bilateral((6500, 6900),),    # TPJ: posterior parietal-temporal
-    "language":  _bilateral((7800, 8000),),
-    "valuation": _bilateral((400, 700),),
-    "auditory":  _bilateral((8800, 9200),),    # STS: lateral superior temporal
-    "motion":    _bilateral((9800, 10000),),
-    "narrative": _bilateral((1200, 1600),),
-}
+_BATCH_MASKS, ROI_MASKS_META = _load_masks()
 
-from .composite import compute_composite_raw  # single source of truth
+# ---------------------------------------------------------------------------
+# Hook window.
+# TRIBE v2 predicts fMRI (BOLD) responses, and BOLD lags the stimulus by about
+# 5 s (the haemodynamic delay). Predicted seconds 0-3 are the haemodynamic
+# warm-up, not the brain's response to the video's opening seconds. The
+# response to the hook shows up in predicted seconds 4-8 (indices 4..7), so
+# `*_hook` and `gfp_hook` average that window.
+#
+# Short clips (n = number of predicted seconds):
+#   n >= 8     the full window, indices 4..7 (hook_window_n = 4)
+#   4 < n < 8  the part of the window that exists, indices 4..n-1
+#              (hook_window_n = n - 4)
+#   n <= 4     no lagged sample exists; fall back to the last predicted second
+#              (index n-1), the sample closest to the lagged window
+#              (hook_window_n = 0, so callers can filter these rows out)
+# The values are always finite: no NaN reaches the CSV or the JSON responses.
+#
+# The old 0-3 s value is kept as `*_hook_0_3` / `gfp_hook_0_3` so old and new
+# can be compared. Pre-registered research analyses that used the old window
+# are not changed here.
+# ---------------------------------------------------------------------------
+HOOK_WINDOW = slice(4, 8)
+LEGACY_HOOK_WINDOW = slice(0, 3)
+
+
+def _hook_window(n: int) -> tuple[slice, int]:
+    """Return the slice of predicted seconds used for the hook, and how many
+    of them fall inside HOOK_WINDOW (0 means the short-clip fallback)."""
+    start, stop = HOOK_WINDOW.start, HOOK_WINDOW.stop
+    if n > start:
+        end = min(stop, n)
+        return slice(start, end), end - start
+    return slice(max(n - 1, 0), n), 0
+
 
 _CSV_DIMS = list(_BATCH_MASKS.keys())
 _CSV_FIELDS = (
     ["filename", "label", "n_seconds"]
     + [f"{d}_mean"   for d in _CSV_DIMS]
     + [f"{d}_hook"   for d in _CSV_DIMS]
+    + [f"{d}_hook_0_3" for d in _CSV_DIMS]
     + [f"{d}_offset" for d in _CSV_DIMS]
     + [f"{d}_peak_s" for d in _CSV_DIMS]
     + [f"{d}_ts_ratio" for d in _CSV_DIMS]
-    + ["composite_raw", "gfp_mean", "gfp_hook", "gfp_offset",
-       "vmPFC_TPJ_coupling", "pleasantness_index"]
+    + ["composite_raw", "gfp_mean", "gfp_hook", "gfp_hook_0_3", "gfp_offset",
+       "hook_window_n", "vmPFC_TPJ_coupling", "pleasantness_index"]
 )
 
 
@@ -73,10 +125,14 @@ def quick_scores(preds: np.ndarray) -> dict:
     """
     Compute per-ROI summary stats from a raw TRIBE v2 prediction array.
     Returns a flat dict suitable for the batch CSV row.
-    Uses approximate vertex masks (numpy-only, no nilearn needed on RunPod).
+    Uses Destrieux-atlas vertex masks from roi_masks_fsaverage5.json
+    (numpy-only, no nilearn needed on RunPod).
 
     Metrics:
       mean/hook/offset/peak_s — Berns 2020 (onset + offset outperform clip average)
+                                hook = predicted s 4-8 (BOLD-lagged, see HOOK_WINDOW);
+                                hook_0_3 = the old, unlagged 0-3 s window
+      hook_window_n           — samples inside HOOK_WINDOW (4 full, <4 short, 0 fallback)
       ts_ratio                — transient/sustained ratio (BOLD transient lit)
       gfp_*                   — Global Field Power (Frontiers Psych 2017)
       vmPFC_TPJ_coupling      — viral circuit Pearson r (Scholz 2017)
@@ -85,6 +141,7 @@ def quick_scores(preds: np.ndarray) -> dict:
     n   = preds.shape[0]
     row: dict = {}
     roi_means: dict = {}
+    hook_sl, hook_n = _hook_window(n)
 
     # Per-ROI stats
     ts_store: dict = {}
@@ -93,7 +150,8 @@ def quick_scores(preds: np.ndarray) -> dict:
         ts_store[dim] = ts
 
         mean_act  = float(ts.mean())
-        hook_act  = float(ts[:min(3, n)].mean())
+        hook_act  = float(ts[hook_sl].mean())
+        hook_0_3  = float(ts[LEGACY_HOOK_WINDOW].mean())
         offset_act = float(ts[-min(5, n):].mean())
         peak_s    = int(ts.argmax())
 
@@ -103,6 +161,7 @@ def quick_scores(preds: np.ndarray) -> dict:
 
         row[f"{dim}_mean"]     = round(mean_act,   6)
         row[f"{dim}_hook"]     = round(hook_act,   6)
+        row[f"{dim}_hook_0_3"] = round(hook_0_3,   6)
         row[f"{dim}_offset"]   = round(offset_act, 6)
         row[f"{dim}_peak_s"]   = peak_s
         row[f"{dim}_ts_ratio"] = round(ts_ratio,   4)
@@ -113,8 +172,10 @@ def quick_scores(preds: np.ndarray) -> dict:
     # Global Field Power (total cortical energy per second)
     gfp = np.sqrt((preds ** 2).mean(axis=1))
     row["gfp_mean"]   = round(float(gfp.mean()),              6)
-    row["gfp_hook"]   = round(float(gfp[:min(3, n)].mean()),  6)
+    row["gfp_hook"]   = round(float(gfp[hook_sl].mean()),     6)
+    row["gfp_hook_0_3"] = round(float(gfp[LEGACY_HOOK_WINDOW].mean()), 6)
     row["gfp_offset"] = round(float(gfp[-min(5, n):].mean()), 6)
+    row["hook_window_n"] = hook_n
 
     # vmPFC–TPJ coupling (Scholz 2017 viral circuit) — valuation × social Pearson r
     if n >= 4:
@@ -124,7 +185,8 @@ def quick_scores(preds: np.ndarray) -> dict:
         row["vmPFC_TPJ_coupling"] = 0.0
 
     # Pleasantness Index: left-hemisphere vertices (0–10241) vs right (10242–20483)
-    # Using attention ROI (IFJa/IFJp) as frontal proxy — Frontiers Psych 2017
+    # Using the attention ROI (IFJ: inferior frontal + inferior precentral
+    # sulci) as frontal proxy — Frontiers Psych 2017
     att_idx = _BATCH_MASKS["attention"]
     lh_att  = att_idx[att_idx < 10242]
     rh_att  = att_idx[att_idx >= 10242]

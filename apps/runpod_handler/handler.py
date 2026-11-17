@@ -9,6 +9,7 @@ Output: <quick_scores() flat dict>  — RunPod wraps this in the single "output"
 """
 import base64
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -39,17 +40,50 @@ def _get_model():
     return _model
 
 
+
+# Linux NAME_MAX is 255 bytes; stay well under it so a long client filename
+# can't make write_bytes()/unlink() raise.
+_MAX_NAME_BYTES = 200
+
+
+def _safe_filename(raw) -> str:
+    """Client-supplied filename reduced to something safe to create in tmp_dir.
+
+    Basename only (writes/unlinks stay in tmp_dir), NULs stripped, lone
+    surrogates replaced, and truncated to _MAX_NAME_BYTES of UTF-8 while keeping
+    a short extension -- otherwise open()/unlink() raise ValueError/OSError.
+    """
+    text = str(raw or "").replace("\x00", "")
+    # Lone surrogates (valid in JSON "\ud800") can't be encoded to a path.
+    text = text.encode("utf-8", "replace").decode("utf-8")
+    name = Path(text).name
+    if len(name.encode("utf-8")) > _MAX_NAME_BYTES:
+        suffix = Path(name).suffix
+        if len(suffix.encode("utf-8")) > 16:
+            suffix = ""
+        stem = name[: len(name) - len(suffix)] if suffix else name
+        budget = _MAX_NAME_BYTES - len(suffix.encode("utf-8"))
+        stem = stem.encode("utf-8")[:budget].decode("utf-8", "ignore")
+        name = stem + suffix
+    if name in ("", ".", ".."):
+        return "video.mp4"
+    return name
+
+
 def handler(event: dict) -> dict:
     inp       = event.get("input", {})
     video_b64 = inp.get("video_b64")
-    filename  = inp.get("filename", "video.mp4")
+    filename  = _safe_filename(inp.get("filename", "video.mp4"))
 
     if not video_b64:
         return {"error": "Missing video_b64 in input"}
 
-    video_bytes = base64.b64decode(video_b64)
+    try:
+        video_bytes = base64.b64decode(video_b64)
+    except (ValueError, TypeError):
+        return {"error": "Invalid video data — video_b64 is not valid base64"}
     if len(video_bytes) < 1024:
-        raise RuntimeError("Invalid video data — payload too small or corrupted")
+        return {"error": "Invalid video data — payload too small or corrupted"}
     tmp_dir     = tempfile.mkdtemp()
     video_path  = Path(tmp_dir) / filename
 
@@ -69,11 +103,9 @@ def handler(event: dict) -> dict:
     except Exception as exc:
         return {"error": str(exc)}
     finally:
-        video_path.unlink(missing_ok=True)
-        try:
-            Path(tmp_dir).rmdir()
-        except OSError:
-            pass
+        # rmtree never raises here, so cleanup can't turn a result (or the
+        # {"error": ...} above) into an unhandled exception.
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

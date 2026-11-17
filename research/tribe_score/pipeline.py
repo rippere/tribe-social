@@ -18,8 +18,9 @@ console = Console()
 # standalone file named run_and_save.py and run there with `python run_and_save.py`.
 _SCORING_DIR = Path(__file__).resolve().parents[2] / "packages" / "tribe_scoring"
 
-# Files uploaded to RunPod for batch scoring (absolute source paths)
-_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py"]
+# Files uploaded to RunPod for batch scoring (absolute source paths).
+# run_and_save.py reads its ROI masks from roi_masks_fsaverage5.json next to it.
+_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py", _SCORING_DIR / "roi_masks_fsaverage5.json"]
 _REMOTE_WORK_DIR = "/workspace/tribe"
 
 
@@ -215,7 +216,7 @@ def run_single(cfg: Config, video_path: Path, label: str) -> None:
             _install_tribev2(sess, cfg.hf_token)
 
             _step("Uploading video + script…")
-            scripts = [_SCORING_DIR / "run_and_save.py"]
+            scripts = list(_REMOTE_SCRIPTS)
             sess.upload(scripts + [video_path], _REMOTE_WORK_DIR)
 
             _step("Running TRIBE v2 inference…")
