@@ -56,16 +56,52 @@ _BATCH_MASKS = {
 
 from .composite import compute_composite_raw  # single source of truth
 
+# ---------------------------------------------------------------------------
+# Hook window.
+# TRIBE v2 predicts fMRI (BOLD) responses, and BOLD lags the stimulus by about
+# 5 s (the haemodynamic delay). Predicted seconds 0-3 are the haemodynamic
+# warm-up, not the brain's response to the video's opening seconds. The
+# response to the hook shows up in predicted seconds 4-8 (indices 4..7), so
+# `*_hook` and `gfp_hook` average that window.
+#
+# Short clips (n = number of predicted seconds):
+#   n >= 8     the full window, indices 4..7 (hook_window_n = 4)
+#   4 < n < 8  the part of the window that exists, indices 4..n-1
+#              (hook_window_n = n - 4)
+#   n <= 4     no lagged sample exists; fall back to the last predicted second
+#              (index n-1), the sample closest to the lagged window
+#              (hook_window_n = 0, so callers can filter these rows out)
+# The values are always finite: no NaN reaches the CSV or the JSON responses.
+#
+# The old 0-3 s value is kept as `*_hook_0_3` / `gfp_hook_0_3` so old and new
+# can be compared. Pre-registered research analyses that used the old window
+# are not changed here.
+# ---------------------------------------------------------------------------
+HOOK_WINDOW = slice(4, 8)
+LEGACY_HOOK_WINDOW = slice(0, 3)
+
+
+def _hook_window(n: int) -> tuple[slice, int]:
+    """Return the slice of predicted seconds used for the hook, and how many
+    of them fall inside HOOK_WINDOW (0 means the short-clip fallback)."""
+    start, stop = HOOK_WINDOW.start, HOOK_WINDOW.stop
+    if n > start:
+        end = min(stop, n)
+        return slice(start, end), end - start
+    return slice(max(n - 1, 0), n), 0
+
+
 _CSV_DIMS = list(_BATCH_MASKS.keys())
 _CSV_FIELDS = (
     ["filename", "label", "n_seconds"]
     + [f"{d}_mean"   for d in _CSV_DIMS]
     + [f"{d}_hook"   for d in _CSV_DIMS]
+    + [f"{d}_hook_0_3" for d in _CSV_DIMS]
     + [f"{d}_offset" for d in _CSV_DIMS]
     + [f"{d}_peak_s" for d in _CSV_DIMS]
     + [f"{d}_ts_ratio" for d in _CSV_DIMS]
-    + ["composite_raw", "gfp_mean", "gfp_hook", "gfp_offset",
-       "vmPFC_TPJ_coupling", "pleasantness_index"]
+    + ["composite_raw", "gfp_mean", "gfp_hook", "gfp_hook_0_3", "gfp_offset",
+       "hook_window_n", "vmPFC_TPJ_coupling", "pleasantness_index"]
 )
 
 
@@ -77,6 +113,9 @@ def quick_scores(preds: np.ndarray) -> dict:
 
     Metrics:
       mean/hook/offset/peak_s — Berns 2020 (onset + offset outperform clip average)
+                                hook = predicted s 4-8 (BOLD-lagged, see HOOK_WINDOW);
+                                hook_0_3 = the old, unlagged 0-3 s window
+      hook_window_n           — samples inside HOOK_WINDOW (4 full, <4 short, 0 fallback)
       ts_ratio                — transient/sustained ratio (BOLD transient lit)
       gfp_*                   — Global Field Power (Frontiers Psych 2017)
       vmPFC_TPJ_coupling      — viral circuit Pearson r (Scholz 2017)
@@ -85,6 +124,7 @@ def quick_scores(preds: np.ndarray) -> dict:
     n   = preds.shape[0]
     row: dict = {}
     roi_means: dict = {}
+    hook_sl, hook_n = _hook_window(n)
 
     # Per-ROI stats
     ts_store: dict = {}
@@ -93,7 +133,8 @@ def quick_scores(preds: np.ndarray) -> dict:
         ts_store[dim] = ts
 
         mean_act  = float(ts.mean())
-        hook_act  = float(ts[:min(3, n)].mean())
+        hook_act  = float(ts[hook_sl].mean())
+        hook_0_3  = float(ts[LEGACY_HOOK_WINDOW].mean())
         offset_act = float(ts[-min(5, n):].mean())
         peak_s    = int(ts.argmax())
 
@@ -103,6 +144,7 @@ def quick_scores(preds: np.ndarray) -> dict:
 
         row[f"{dim}_mean"]     = round(mean_act,   6)
         row[f"{dim}_hook"]     = round(hook_act,   6)
+        row[f"{dim}_hook_0_3"] = round(hook_0_3,   6)
         row[f"{dim}_offset"]   = round(offset_act, 6)
         row[f"{dim}_peak_s"]   = peak_s
         row[f"{dim}_ts_ratio"] = round(ts_ratio,   4)
@@ -113,8 +155,10 @@ def quick_scores(preds: np.ndarray) -> dict:
     # Global Field Power (total cortical energy per second)
     gfp = np.sqrt((preds ** 2).mean(axis=1))
     row["gfp_mean"]   = round(float(gfp.mean()),              6)
-    row["gfp_hook"]   = round(float(gfp[:min(3, n)].mean()),  6)
+    row["gfp_hook"]   = round(float(gfp[hook_sl].mean()),     6)
+    row["gfp_hook_0_3"] = round(float(gfp[LEGACY_HOOK_WINDOW].mean()), 6)
     row["gfp_offset"] = round(float(gfp[-min(5, n):].mean()), 6)
+    row["hook_window_n"] = hook_n
 
     # vmPFC–TPJ coupling (Scholz 2017 viral circuit) — valuation × social Pearson r
     if n >= 4:
