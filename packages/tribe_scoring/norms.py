@@ -7,9 +7,15 @@ the sorted reference values, so a new clip's value at that second gets an exact 
 
 `diagnose()` turns the ranks into flags: runs of consecutive seconds that sit below the low
 percentile (or above the high one). Each flag carries both the predicted second and the video
-second it most likely reflects. TRIBE v2 predicts BOLD, which lags the stimulus, so predicted
-second t is read as video second t - LAG_S (the same 4 s offset as the scorer's HOOK_WINDOW),
-and predicted seconds before LAG_S are the haemodynamic warm-up and are never flagged.
+second it reflects, video second = predicted second - band["lag_s"]. Predicted seconds before
+the lag are treated as warm-up and never ranked.
+
+For TRIBE v2 the lag is 0 (LAG_S): its output is already stimulus-aligned, so predicted second t
+reflects video second t and there is no warm-up to exclude. tribev2 trains with the fMRI target
+shifted by the haemodynamic delay (`grids/defaults.py`: FmriExtractor "offset": 5), and the
+speech -> auditory cross-correlation over 64 clips peaks at lag 0. This matches the scorer's
+HOOK_WINDOW (predicted s 0-3). The lag stays a band parameter so a model with lagged output
+could be banded without changing this code.
 
 Numpy only. Masks are passed in (`run_and_save._BATCH_MASKS`), so this module does not import
 the GPU-only scorer.
@@ -23,7 +29,7 @@ from pathlib import Path
 import numpy as np
 
 PERCENTILES = (10, 25, 50, 75, 90)
-LAG_S = 4           # predicted second t ~ video second t - LAG_S (matches HOOK_WINDOW.start)
+LAG_S = 0           # TRIBE v2 output is stimulus-aligned: predicted second t ~ video second t
 MIN_N = 20          # a second is in the band only if at least this many reference clips reach it
 BAND_VERSION = 1
 
@@ -109,7 +115,8 @@ def diagnose(tc: Mapping[str, np.ndarray], band: Mapping, *, low: float = 25.0, 
              min_run: int = 2) -> dict:
     """Rank a clip's timecourses against a band and flag sustained low/high stretches.
 
-    Seconds before the band's lag (warm-up) and past the band's coverage are not ranked.
+    Seconds before the band's lag (warm-up; none for TRIBE v2, lag 0) and past the band's
+    coverage are not ranked.
     Flags are sorted by size: distance from the median times run length, largest first.
     """
     lag = int(band["lag_s"])

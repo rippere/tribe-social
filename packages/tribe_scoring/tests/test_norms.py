@@ -52,8 +52,28 @@ def test_percentile_rank_edges_and_ties():
     assert norms.percentile_rank(2.0, sv) == pytest.approx(37.5)
 
 
-def test_diagnose_flags_low_stretch_with_video_time():
-    band = norms.build_band(ref_clips(), name="t")
+def band_with_lag(lag, **kw):
+    """A band whose lag_s is overridden, to exercise the warm-up/offset logic at lags other than
+    TRIBE v2's (LAG_S = 0)."""
+    band = norms.build_band(ref_clips(**kw), name="t")
+    band["lag_s"] = lag
+    return band
+
+
+def test_tribe_v2_lag_is_zero():
+    # TRIBE v2 output is stimulus-aligned (tribev2 trains with FmriExtractor offset=5).
+    assert norms.LAG_S == 0
+    assert norms.build_band(ref_clips(), name="t")["lag_s"] == 0
+
+
+def test_shipped_band_lag_is_zero():
+    band = norms.load_band(Path(norms.__file__).parent / "norm_bands" / "ugc64_v1.json")
+    assert band["lag_s"] == 0
+
+
+@pytest.mark.parametrize("lag", [0, 2])
+def test_diagnose_flags_low_stretch_with_video_time(lag):
+    band = band_with_lag(lag)
     clip = {"gfp": np.full(30, 1.0), "attention": np.zeros(30)}
     clip["gfp"][10:14] = 0.0                       # far below every reference value
     out = norms.diagnose(clip, band)
@@ -61,20 +81,31 @@ def test_diagnose_flags_low_stretch_with_video_time():
     assert len(low) == 1
     f = low[0]
     assert (f["pred_start_s"], f["pred_end_s"]) == (10, 13)
-    assert (f["video_start_s"], f["video_end_s"]) == (10 - norms.LAG_S, 13 - norms.LAG_S)
+    assert (f["video_start_s"], f["video_end_s"]) == (10 - lag, 13 - lag)
     assert f["extreme_rank"] == 0.0
 
 
-def test_diagnose_never_ranks_warmup_or_past_coverage():
-    band = norms.build_band(ref_clips(lengths=[20] * 40), name="t")
+@pytest.mark.parametrize("lag", [0, 2])
+def test_diagnose_never_ranks_warmup_or_past_coverage(lag):
+    band = band_with_lag(lag, lengths=[20] * 40)
     clip = {"gfp": np.zeros(30), "attention": np.zeros(30)}
     out = norms.diagnose(clip, band)
     r = out["ranks"]["gfp"]
-    assert all(x is None for x in r[: norms.LAG_S])
+    assert all(x is None for x in r[:lag])
+    assert r[lag] is not None
     assert all(x is None for x in r[20:])
-    assert out["ranked_seconds"] == [norms.LAG_S, 19]
+    assert out["ranked_seconds"] == [lag, 19]
     for f in out["flags"]:
-        assert f["pred_start_s"] >= norms.LAG_S and f["pred_end_s"] <= 19
+        assert f["pred_start_s"] >= lag and f["pred_end_s"] <= 19
+
+
+def test_diagnose_at_lag_zero_ranks_and_flags_the_opening():
+    band = norms.build_band(ref_clips(), name="t")
+    clip = {"gfp": np.full(30, 1.0), "attention": np.zeros(30)}
+    clip["gfp"][0:3] = 0.0                         # weak opening, video s 0-2
+    out = norms.diagnose(clip, band)
+    low = [f for f in out["flags"] if f["signal"] == "gfp" and f["direction"] == "low"]
+    assert [(f["video_start_s"], f["video_end_s"]) for f in low] == [(0, 2)]
 
 
 def test_diagnose_ignores_single_second_blips():

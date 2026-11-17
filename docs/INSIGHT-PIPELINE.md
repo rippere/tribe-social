@@ -22,7 +22,7 @@ labelled as a model reading, with its sample size (public-repo contract, root `C
 ## Output contract (one insight)
 
 ```
-where:    video seconds a–b (and the predicted seconds they map to; lag 4 s)
+where:    video seconds a–b (= predicted seconds a–b; TRIBE v2 output is stimulus-aligned, lag 0)
 what:     signal, percentile rank vs band, band name + n
 because:  content event(s) at those seconds + reference-set effect size, n      (stage 3)
 try:      edit type + measured model shift, n edits tested                      (stage 4)
@@ -32,11 +32,17 @@ status:   model reading | validated                                             
 ## Stage 2: norm band (v1)
 
 - Reference set: the 64-ad UGC baseline (`research/ugc_baseline/`), scored on the DGX Spark.
-  Covers predicted seconds 0–39 (video ~0–35 s); a second is in the band only if ≥ 20 clips reach it.
+  Covers predicted seconds 0–39 (= video seconds 0–39); a second is in the band only if ≥ 20 clips reach it.
 - Signals: global field power plus the 7 Destrieux ROI timecourses.
-- Predicted seconds 0–3 are the BOLD warm-up and are never ranked. Predicted second t ≈ video second t − 4.
+- Predicted second t ≈ video second t (band `lag_s` = 0), and every covered second is ranked, the opening
+  included. TRIBE v2 output is already stimulus-aligned: tribev2 trains with the fMRI target shifted 5 s
+  (`grids/defaults.py`, `FmriExtractor` `"offset": 5`), and over the 64 clips the speech → auditory
+  cross-correlation peaks at lag 0 (r ≈ 0.5). An earlier draft of this band assumed a 4 s BOLD lag and
+  skipped predicted s 0–3 as warm-up; that was wrong.
 - Calibration (leave-one-out over the 64): 25.2% of ranked seconds below P25 and 25.2% above P75
-  (expected 25/25).
+  (expected 25/25). Measured under the old 4 s lag, i.e. with predicted s 0–3 left out; the stored
+  per-second values don't depend on the lag, but these figures (and the flag counts below) need a
+  rerun of `build_norm_band.py` to cover s 0–3.
 - **Same-stack only.** Spark scores are bit-reproducible run to run but differ from RunPod scores by up to
   24% on some fields. Rank only Spark-scored clips against this band.
 - Known gap: median 12 flags per clip, which is too many to act on. Stage 3/4 evidence decides which ones

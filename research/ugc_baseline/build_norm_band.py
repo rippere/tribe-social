@@ -7,6 +7,9 @@ Checks printed (no per-clip IDs in the output):
 - leave-one-out: each reference clip ranked against a band built from the other clips. If the band is
   calibrated, about 25% of ranked seconds fall below P25 and 25% above P75.
 - probes: any extra clips (not in the band) diagnosed against the full band.
+
+The band's lag is norms.LAG_S = 0: TRIBE v2 output is stimulus-aligned, so a flag's video seconds equal
+its predicted seconds and the opening seconds are ranked too (there is no BOLD warm-up to skip).
 """
 import json
 import sys
@@ -28,7 +31,7 @@ def main(preds_dir, vetting, out, *probes):
             "stack": "DGX Spark, whisperx CPU int8; do not rank RunPod-scored clips against this band"}
     band = norms.build_band(tcs, name="ugc64-v1", meta=meta)
     norms.save_band(band, Path(out))
-    print(f"band: {band['n_clips']} clips, predicted seconds 0-{band['n_seconds'] - 1} "
+    print(f"band: {band['n_clips']} clips, predicted seconds 0-{band['n_seconds'] - 1} (lag {band['lag_s']} s) "
           f"(n at last second {band['n_per_second'][-1]}), {Path(out).stat().st_size // 1024} KB")
 
     below = above = total = 0
