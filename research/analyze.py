@@ -2,10 +2,10 @@
 tribe-social: TRIBE v2 output → content insights
 Usage:
     uv run python analyze.py --input preds.npy --label "my_reel_title"
-    uv run python analyze.py --input preds.npy --label "title" --rebuild-masks
+    uv run python analyze.py --input preds.npy --label "title" [--mask-source hcp]
 
 Metrics implemented:
-  Baseline   — per-ROI mean, hook (0–3s), peak second, weighted composite
+  Baseline   — per-ROI mean, hook (predicted s 4–8, the lagged response to the 0–3 s hook; 0–3 s kept for comparison), peak second, weighted composite
   Berns 2020 — onset + offset windows (strongest predictors of view duration)
   BOLD lit   — transient/sustained ratio (onset vs. steady-state activation)
   EEG neuro  — Global Field Power per second (total cortical energy; Frontiers 2017)
@@ -60,6 +60,20 @@ TRW = {
 
 # ── METRIC COMPUTATION ─────────────────────────────────────────────────────────
 
+# The hook is the first 3 s of the clip, but predicted BOLD lags the stimulus by
+# ~5 s, so the response to it sits in predicted seconds 4-8 (indices 4..7). Same
+# window as packages/tribe_scoring/run_and_save.py HOOK_WINDOW (a test pins the
+# two together). The 0-3 s window is kept as Hook_0_3s for comparison only.
+HOOK_WINDOW = slice(4, 8)
+LEGACY_HOOK_WINDOW = slice(0, 3)
+
+
+def hook_mean(ts: np.ndarray) -> float:
+    """Mean over the lagged hook window; NaN when the clip is too short to reach it."""
+    w = ts[HOOK_WINDOW]
+    return float(w.mean()) if len(w) else float("nan")
+
+
 def extract_roi_timeseries(preds: np.ndarray, masks: dict) -> dict:
     """Map raw vertex activations to per-ROI time series using HCP MMP1.0 masks."""
     return {
@@ -89,7 +103,8 @@ def compute_extra_metrics(preds: np.ndarray, group_ts: dict, masks: dict) -> dic
     out: dict = {
         "gfp":        gfp,
         "gfp_mean":   float(gfp.mean()),
-        "gfp_hook":   float(gfp[:min(3, n)].mean()),
+        "gfp_hook":   hook_mean(gfp),
+        "gfp_hook_0_3": float(gfp[LEGACY_HOOK_WINDOW].mean()),
         "gfp_offset": float(gfp[-min(5, n):].mean()),
     }
 
@@ -138,7 +153,8 @@ def score_card(group_ts: dict, extra: dict) -> pd.DataFrame:
             "Mean":        ts.mean(),
             "Peak":        ts.max(),
             "Peak_second": int(ts.argmax()),
-            "Hook_0_3s":   ts[:3].mean(),
+            "Hook":        hook_mean(ts),
+            "Hook_0_3s":   ts[LEGACY_HOOK_WINDOW].mean(),
             "Offset_5s":   extra.get(f"{group}_offset", np.nan),
             "T_S_ratio":   extra.get(f"{group}_transient_sustained", np.nan),
             "SignFlips":   extra.get(f"{group}_sign_flips", 0),
@@ -309,7 +325,7 @@ def plot_insights(preds: np.ndarray, label: str, out_dir: Path, masks: dict):
     print(f"  {'-'*57}")
     for dim in dims:
         score  = df.loc[dim, "Normalized"] * 100
-        hook   = df.loc[dim, "Hook_0_3s"]
+        hook   = df.loc[dim, "Hook"]
         offset = df.loc[dim, "Offset_5s"]
         ts_r   = df.loc[dim, "T_S_ratio"]
         flips  = int(df.loc[dim, "SignFlips"])
@@ -332,14 +348,14 @@ def main():
     parser.add_argument("--input",         required=True, help="Path to preds.npy")
     parser.add_argument("--label",         default="content", help="Content label")
     parser.add_argument("--outdir",        default=".", help="Directory to save plots")
-    parser.add_argument("--rebuild-masks", action="store_true",
-                        help="Force neuromaps re-download for ROI masks")
+    parser.add_argument("--mask-source",   default="destrieux", choices=("destrieux", "hcp"),
+                        help="ROI mask source (see roi_masks.py)")
     args = parser.parse_args()
 
     preds = np.load(args.input)
     print(f"Loaded predictions: {preds.shape}")
 
-    masks = get_roi_masks(rebuild=args.rebuild_masks)
+    masks = get_roi_masks(source=args.mask_source)
 
     out_dir = Path(args.outdir)
     out_dir.mkdir(parents=True, exist_ok=True)
