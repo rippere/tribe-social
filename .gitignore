@@ -39,3 +39,6 @@ research/PROJECT.md
 research/STIMULUS-BRIEF.md
 # Generated report artifacts.
 .reports/
+
+# Wrangler local state (account id, login email, dev DBs). Never commit.
+.wrangler/
