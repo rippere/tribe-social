@@ -4,10 +4,11 @@ import type { ScoreResult } from '@/lib/types'
 import ScoreGauge from './ScoreGauge'
 import ROIRadar from './ROIRadar'
 import TemporalTimeline from './TemporalTimeline'
-import RevisionPanel from './RevisionPanel'
 
 interface Props {
   result: ScoreResult
+  /** 'model': the curves are TRIBE's per-second output (trial). Default: illustrative shape. */
+  temporalSource?: 'model' | 'illustrative'
 }
 
 function Card({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
@@ -19,9 +20,10 @@ function Card({ title, children, className = '' }: { title: string; children: Re
   )
 }
 
-// The API still returns a `verdict` field; it is intentionally not shown. A
-// Post/Revise/Rethink call implies a performance forecast the evidence doesn't support.
-export default function ResultsCard({ result }: Props) {
+// The API still returns a `verdict` and `revision_tips`; neither is shown. A
+// Post/Revise/Rethink call or a list of "edits to try" implies a performance claim
+// the evidence doesn't support (pilot: r = 0.25, p = 0.24, n = 24).
+export default function ResultsCard({ result, temporalSource = 'illustrative' }: Props) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-[1fr_1.4fr]">
@@ -35,12 +37,8 @@ export default function ResultsCard({ result }: Props) {
         </Card>
       </div>
 
-      <Card title="Over time (illustrative)">
-        <TemporalTimeline temporal={result.temporal} />
-      </Card>
-
-      <Card title="Edits to try">
-        <RevisionPanel tips={result.revision_tips} />
+      <Card title={temporalSource === 'model' ? 'Over time, second by second' : 'Over time (illustrative)'}>
+        <TemporalTimeline temporal={result.temporal} source={temporalSource} />
       </Card>
 
       <p className="text-center text-[12px] text-muted">

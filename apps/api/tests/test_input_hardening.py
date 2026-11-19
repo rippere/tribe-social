@@ -218,7 +218,7 @@ class _FakeModel:
         return object()
 
     def predict(self, events):
-        return np.zeros((3, 4)), None
+        return np.zeros((3, 20484)), None  # fsaverage5 vertex count; the handler checks it
 
 
 def _stub_scoring(monkeypatch):
@@ -226,6 +226,7 @@ def _stub_scoring(monkeypatch):
     mod = types.ModuleType("tribe_scoring.run_and_save")
     mod.load_model = lambda cache_folder=None: _FakeModel()
     mod.quick_scores = lambda preds: {}
+    mod._BATCH_MASKS = {}  # runpod_handler builds per-ROI series from it
     pkg.run_and_save = mod
     monkeypatch.setitem(sys.modules, "tribe_scoring", pkg)
     monkeypatch.setitem(sys.modules, "tribe_scoring.run_and_save", mod)

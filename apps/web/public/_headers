@@ -20,5 +20,12 @@
 /cortex*
   X-Robots-Tag: noindex
 
+# Invite-only trial. Invite codes and result tokens live in the URL fragment, which
+# browsers never send; no-referrer keeps the page URL out of outbound requests too.
+/trial*
+  X-Robots-Tag: noindex
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+
 /opengraph-image
   Content-Type: image/png

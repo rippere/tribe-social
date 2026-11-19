@@ -1,5 +1,6 @@
 # Cloudflare Pages project for the static PrePost site (npm run cf:deploy).
-# Server code: functions/api/clip-chat.ts (Workers AI) and functions/api/waitlist.ts (KV).
+# Server code: functions/api/clip-chat.ts (Workers AI), functions/api/waitlist.ts (KV),
+# functions/api/trial/* (invite-only trial: KV invites, D1 jobs, R2 clips).
 name = "prepost"
 pages_build_output_dir = "out"
 compatibility_date = "2026-10-01"
@@ -12,3 +13,24 @@ binding = "AI"
 [[kv_namespaces]]
 binding = "WAITLIST"
 id = "d2d0c4cb3fed43b9a0029204168452f4"
+
+# Invite-only research trial (functions/api/trial/*). Jobs in D1, clips + results in R2
+# (uploads/ expire after 3 days by bucket lifecycle). The batch dispatcher is the
+# separate Cron Worker in apps/trial-dispatcher, bound to the same two resources.
+# Secret: TRIAL_SIGNING_KEY (signed blob URLs + RunPod webhook), shared with the Worker.
+[[d1_databases]]
+binding = "TRIAL_DB"
+database_name = "prepost-trial"
+database_id = "d4ab5f3c-e9db-4c3b-8a95-a38022eb4a98"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "TRIAL_BUCKET"
+bucket_name = "prepost-trial"
+
+[vars]
+# Origins the trial runs on. Result links and the GPU worker's signed URLs are built
+# only from these (functions/api/trial/upload.ts refuses any other host).
+TRIAL_SITES = "https://prepost-clw.pages.dev,https://trial.prepost-clw.pages.dev"
+# RunPod job API (webhook confirms results via /status; DELETE cancels). Secret: RUNPOD_API_KEY.
+RUNPOD_ENDPOINT_ID = "tk1a3vuytw9gyw"
