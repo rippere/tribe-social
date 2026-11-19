@@ -143,13 +143,41 @@ def per_second_series(preds: np.ndarray) -> dict[str, list[float]]:
     out["gfp"] = [round(float(v), 6) for v in np.sqrt((preds ** 2).mean(axis=1))]
     return out
 
+# Linux NAME_MAX is 255 bytes; stay well under it so a long client filename
+# can't make write_bytes()/unlink() raise.
+_MAX_NAME_BYTES = 200
+
+
+def _safe_filename(raw) -> str:
+    """Client-supplied filename reduced to something safe to create in tmp_dir.
+
+    Basename only (writes/unlinks stay in tmp_dir), NULs stripped, lone
+    surrogates replaced, and truncated to _MAX_NAME_BYTES of UTF-8 while keeping
+    a short extension -- otherwise open()/unlink() raise ValueError/OSError.
+    """
+    text = str(raw or "").replace("\x00", "")
+    # Lone surrogates (valid in JSON "\ud800") can't be encoded to a path.
+    text = text.encode("utf-8", "replace").decode("utf-8")
+    name = Path(text).name
+    if len(name.encode("utf-8")) > _MAX_NAME_BYTES:
+        suffix = Path(name).suffix
+        if len(suffix.encode("utf-8")) > 16:
+            suffix = ""
+        stem = name[: len(name) - len(suffix)] if suffix else name
+        budget = _MAX_NAME_BYTES - len(suffix.encode("utf-8"))
+        stem = stem.encode("utf-8")[:budget].decode("utf-8", "ignore")
+        name = stem + suffix
+    if name in ("", ".", ".."):
+        return "video.mp4"
+    return name
+
 
 def handler(event: dict) -> dict:
     global _jobs_done
     inp = event.get("input", {}) or {}
     video_url = inp.get("video_url")
     video_b64 = inp.get("video_b64")
-    filename = Path(inp.get("filename") or "video.mp4").name
+    filename = _safe_filename(inp.get("filename") or "video.mp4")
     put_url = inp.get("activity_put_url")
     max_seconds = int(inp.get("max_seconds") or 0)
 
@@ -167,7 +195,11 @@ def handler(event: dict) -> dict:
         if video_url:
             _download(video_url, video_path)
         else:
-            video_path.write_bytes(base64.b64decode(video_b64))
+            try:
+                video_bytes = base64.b64decode(video_b64)
+            except (ValueError, TypeError):
+                return {"error": "[fatal] Invalid video data: video_b64 is not valid base64"}
+            video_path.write_bytes(video_bytes)
         if video_path.stat().st_size < 1024:
             return {"error": "[fatal] Invalid video data: payload too small or corrupted"}
         timings["download_s"] = round(time.time() - t0, 2)
