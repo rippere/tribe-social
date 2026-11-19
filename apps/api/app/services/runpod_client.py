@@ -30,7 +30,7 @@ def _headers() -> dict:
 
 
 ENDPOINT_NAME = os.getenv("RUNPOD_ENDPOINT_NAME", "tribe-v2-inference")
-ENDPOINT_GPU_IDS = os.getenv("RUNPOD_GPU_IDS", "AMPERE_16")
+ENDPOINT_GPU_IDS = os.getenv("RUNPOD_GPU_IDS", "AMPERE_80")  # TRIBE v2 needs an 80 GB A100
 
 
 async def _set_workers_max(n: int) -> None:

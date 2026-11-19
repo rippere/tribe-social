@@ -26,3 +26,7 @@ runpod_session.sh
 
 # Hook-test stimulus clips (shared via the team drive, not git)
 stimuli/
+
+# UGC baseline: per-clip IDs and media stay off the public repo
+ugc_baseline/human_labels.json
+ugc_baseline/review_cache/

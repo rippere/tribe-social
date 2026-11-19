@@ -1,5 +1,6 @@
 """SSH / SFTP operations via paramiko."""
 
+import shlex
 import socket
 import time
 from contextlib import contextmanager
@@ -46,8 +47,9 @@ class SSHSession:
     def run(self, cmd: str, env: dict[str, str] | None = None) -> int:
         """Run command, stream stdout/stderr to console. Returns exit code."""
         assert self._client
-        env_prefix = " ".join(f"{k}={v}" for k, v in (env or {}).items())
-        full_cmd = f"{env_prefix} {cmd}".strip() if env_prefix else cmd
+        # Export, don't prefix: `K=v cd x && python y` only gives K to `cd`.
+        env_prefix = "".join(f"export {k}={shlex.quote(v)}; " for k, v in (env or {}).items())
+        full_cmd = env_prefix + cmd
 
         _, stdout, stderr = self._client.exec_command(full_cmd, get_pty=True)
         channel = stdout.channel
