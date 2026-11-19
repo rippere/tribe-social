@@ -4,7 +4,7 @@ One copy per shooter, signed before they shoot. Signed copies are stored outside
 
 ---
 
-**Study:** Hook test of predicted cortical response and early video retention (`research/PREREGISTRATION.md`, v0.3)
+**Study:** Hook test of predicted cortical response and early video retention (`research/PREREGISTRATION.md`, v0.4)
 **Investigator:** Ben Rippere
 **Shooter:** ______________________
 
@@ -19,9 +19,10 @@ I give Ben Rippere permission to use the video clips I shoot and edit for this s
 
 ## What I confirm
 
-- I shot the clips, or I have permission from whoever did.
+- I shot the clips, or I have permission from whoever did. All four openings are footage I shot myself.
+- Any stock footage, stills or library audio in my clips comes from a source allowed by `PREREGISTRATION.md` §3a, and I have logged each asset in the asset ledger (source URL, licence, download date, saved licence page).
 - Anyone recognisable in my clips has agreed to appear in a public ad. I will get their written permission and give it to Ben.
-- The audio is my own, royalty-free, or licensed for use in ads. No commercial music without a licence.
+- The audio is my own, CC0 or public domain, or from Meta's Sound Collection, and sits under the body only. No commercial music.
 - The clips don't promote anything in a restricted ad category (alcohol, drugs, weapons, gambling, dating, financial or health claims, politics).
 
 ## What I get, and what I can take back

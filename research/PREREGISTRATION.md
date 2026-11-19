@@ -1,7 +1,7 @@
 # Pre-registration: does predicted cortical response add anything to a content model for short-form hook rate?
 
 **Status:** DRAFT until frozen. Freeze by committing this file, the extracted features and the analysis code, tagging the commit, and recording the tag and SHA in section 12. Nothing is measured before that.
-**Version:** 0.3, written 2026-09-24. Version 0.2 (2026-09-17) changed the design after the power simulation (`power_sim.py`, `power_sim2.py`) showed version 0.1 could not succeed: the fixed rank bar was unreachable and the rank test was the weaker instrument. Version 0.3 spreads stimulus production across the team, adds a frame-exact hook rule and an automated stimulus gate (section 3), and adds an exploratory human-guess comparison (section 7a). All changes are pre-data.
+**Version:** 0.5, written 2026-11-16. Version 0.5 fixes two measurement errors found before any data: (1) The hook window is predicted seconds 0 to 3, now stated with its reason: TRIBE v2's output is already aligned to the stimulus (its training shifts the fMRI target by 5 seconds), so predicted second t reflects video second t and no lag shift is applied (section 6). A lag-shifted window (seconds 4 to 8) was tried in the scoring code and reverted before any data. (2) The ROI masks used until now were vertex-index ranges, which on fsaverage5 are scattered points rather than the named areas, and the code meant to build atlas masks had never run; Model B now uses anatomical masks, fixed and hashed at freeze (sections 6 and 12). No data exists yet, so these are pre-data changes. Version 0.4 (2026-10-16) replaces the blanket bans on third-party material with a licensing rule: stock footage and library audio are allowed in the body under licences that cover paid ads, every asset is logged, and brands may appear with the owner's written permission (section 3a). It also fixes the ad text within each base (section 4). No data exists yet, so these are pre-data changes. Version 0.3 was written 2026-09-24. Version 0.2 (2026-09-17) changed the design after the power simulation (`power_sim.py`, `power_sim2.py`) showed version 0.1 could not succeed: the fixed rank bar was unreachable and the rank test was the weaker instrument. Version 0.3 spreads stimulus production across the team, adds a frame-exact hook rule and an automated stimulus gate (section 3), and adds an exploratory human-guess comparison (section 7a). All changes are pre-data.
 **Investigator:** Ben Rippere. **Stimuli:** ENTRP 490 Team 2 (six shooters, Lucas Blais as edit lead). **Model license:** TRIBE v2 is CC BY-NC 4.0, so this is non-commercial research only.
 **Registry:** OSF (public, no embargo).
 
@@ -35,7 +35,23 @@ Within a base, the 4 variants share identical body footage, audio, cut and lengt
 
 Six team members each shoot three bases. The shooter varies only between bases, never within one, so the within-base centring in section 7 removes any shooter effect along with every other between-base difference. Before scoring, every clip must pass `validate_stimuli.py`, which checks the specs below and compares every pair of variants in a base: identical frame count, body starting on the same frame, body footage (SSIM at least 0.95) and body audio (correlation at least 0.95, offset under 10 ms). A base that fails is re-edited or dropped before freeze, never after. The gate's per-clip manifest, including a SHA-256 for every file, is part of the freeze record.
 
-Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized to about -14 LUFS, no licensed music, no third-party brands. (The shooting brief issued to the stimulus creator is held separately and is not part of this repository; the specs that bind the design are the ones stated here.)
+Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized to about -14 LUFS. Third-party footage, audio and brands follow section 3a. Bases may differ in subject and body format; each base's format is recorded in the clip log and reported. (The shooting brief issued to the stimulus creator is held separately and is not part of this repository; the specs that bind the design are the ones stated here.)
+
+## 3a. Third-party material
+
+The within-base design only needs the four variants of a base to be identical after frame 90. Where the body's material comes from does not affect that comparison, so third-party material is allowed under the rules below rather than banned.
+
+**Footage and stills** are allowed in the body (frame 91 onward) when the licence permits commercial use in paid advertising and modification, with no attribution required inside the video. Qualifying sources: Pexels, Pixabay, Creative Commons CC0 and public-domain works. Any other source needs the licence text checked and recorded before the asset is used.
+
+**Audio** in the body may be original sound, CC0 or public-domain audio, or tracks from Meta's Sound Collection, whose terms allow commercial use on Meta products, which covers these ads. No commercial or copyrighted music. Library audio sits under the body only and never crosses the 3-second cut.
+
+**Not allowed, whatever the source says:** clips taken from YouTube, TikTok, Instagram or other creators (including "no copyright intended" uploads; fair use does not cover paid ads); material under CC BY-NC (these ads are commercial use) or CC BY-ND (we edit); editorial-use-only stock; stock that shows a recognisable trademark or logo; and stock in which a recognisable person appears to recommend or endorse anything.
+
+**Openings are original.** All four openings (frames 1 to 90) are filmed by the shooter. Stock in only one opening type would make "opening type" also mean "stock versus original footage", which confounds the comparison the study is built on.
+
+**Brands** may appear when the brand owner has given written permission to show the mark in paid ads run by this study, and that permission is on file before freeze. Otherwise marks are hidden. A creator's own usage-rights or whitelisting deal does not count, because those rights run from creator to brand, not the other way.
+
+**Asset ledger.** Every third-party asset gets one row: base, asset, source URL, licence name, licence URL, download date, and a saved copy of the licence page as it read on that date. The ledger's SHA-256 is recorded in section 12. An asset without a complete row removes its base before freeze.
 
 ## 4. Delivery protocol
 
@@ -45,6 +61,7 @@ Fixed specs: vertical 1080 x 1920, 30fps, 15 to 25 seconds, all files normalized
 - Single placement: Instagram Reels.
 - Objective: reach. Optimizing for video views would select viewers who were going to watch anyway.
 - Frequency cap 1 per person per day.
+- Ad text (primary text, headline, call to action) is identical across the four variants of a base. The default is no primary text and no call-to-action button.
 - All 72 ad sets start and stop at the same time and run at least 3 full days.
 - If capacity forces waves, a wave contains complete bases, never a partial base.
 
@@ -63,7 +80,7 @@ Delivery diagnostics, pulled with the results: impressions per clip, frequency, 
 | Model | Features |
 |---|---|
 | **A, content baseline** | Visual embeddings (whole clip and first 3 seconds), audio loudness in LUFS and RMS envelope statistics, motion energy from frame differences, transcript embedding, clip duration |
-| **B, brain only** | TRIBE v2 predicted response over the project's ROI set (attention IFJa and IFJp, auditory and social STS, language area 45, social cognition TPJ, valuation vmPFC, motion MT/V5) plus global field power, each summarized over the first 3 seconds, its slope, and the whole clip |
+| **B, brain only** | TRIBE v2 predicted response over the project's ROI set (attention IFJa and IFJp, auditory and social STS, language area 45, social cognition TPJ, valuation vmPFC, motion MT/V5) plus global field power, each summarized over the hook window, its slope, and the whole clip. The hook window is predicted seconds 0 to 3. TRIBE v2's output is already aligned to the stimulus, so no haemodynamic lag shift is applied. ROI masks are anatomical: the Destrieux-atlas masks in `packages/tribe_scoring/roi_masks_fsaverage5.json` (attention and motion are the nearest Destrieux cover, larger than IFJa/IFJp and MT/V5), or exact HCP MMP1.0 masks if they are built before freeze (`research/roi_masks.py --source hcp`). The source is fixed at freeze and its file hash recorded in section 12. |
 | **C, combined** | A plus B |
 | **R, negative control** | A plus random projections with exactly the same dimensionality as B, same pipeline |
 
@@ -151,7 +168,10 @@ Filled in at freeze time, before any ad spend:
 - Stimulus manifest hash (`validate_stimuli.py --manifest`, all 72 clips passing): ______
 - Human-guess file hash (section 7a): ______
 - Feature file hash (all 72 clips scored): ______
+- ROI mask source and file hash (section 6): ______
 - Analysis script hash: ______
+- Third-party asset ledger hash (section 3a), or "none used": ______
+- Brand permissions on file (section 3a), or "none": ______
 - OSF registration URL: ______
 
 Any deviation after this point is logged below with the date, what changed and why, and appears in the write-up.
@@ -169,4 +189,4 @@ A preprint goes up whichever way the result lands, together with the evaluation 
 
 ## 15. Ethics
 
-Creator clips are used with written permission and may be withdrawn before publication. No personal data about viewers is collected; only platform-level aggregates. Ads comply with platform policy and avoid restricted categories. Nothing here is a commercial product test.
+Creator clips are used with written permission and may be withdrawn before publication. Third-party material is used only under the licences recorded in the asset ledger (section 3a). No personal data about viewers is collected; only platform-level aggregates. Ads comply with platform policy and avoid restricted categories. Nothing here is a commercial product test.
