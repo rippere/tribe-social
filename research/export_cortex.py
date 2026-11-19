@@ -227,9 +227,8 @@ def illustrative_activity(seconds: int = 30, seed: int = 7) -> np.ndarray:
         act[:, mask] += tl[:, None].astype(np.float32)
     act += 0.08 * rng.standard_normal(act.shape).astype(np.float32)
     act = _smooth_on_fs5(act)
-    # Hemodynamic lag: TRIBE predicts BOLD, which trails the stimulus by seconds.
-    act = np.roll(act, 2, axis=0)
-    act[:2] *= np.array([0.3, 0.8], dtype=np.float32)[:, None]
+    # No haemodynamic shift: TRIBE v2's output is already stimulus-aligned (it trains
+    # with FmriExtractor offset=5), so the placeholder keeps second t on video second t.
     return act
 
 
