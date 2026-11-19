@@ -105,3 +105,27 @@ ali_001 re-scored from a fresh copy (transcription redone, no cached TSV) vs its
 predictions bit-identical (max abs diff 0.0), transcript identical, every score 0.0% apart, 0 peak seconds moved.
 The Spark-vs-RunPod gap (up to 24%) is a stack difference (whisperx CPU int8 vs CUDA fp16, torch build), not
 run-to-run noise. Same-machine comparisons are exact; cross-machine scores still must not be mixed.
+
+### Hand-label check (2026-11-19)
+Ben labelled all 64 included clips blind (`label_review.py`: anonymous IDs, shuffled, no file name or prior
+label shown; video + contact sheet). Labels in `human_labels.json` (carries clip IDs: keep off the public repo).
+- **Agreement** with the search+subagent labels: 45/47 (96%). Of the 17 "unclear", Ben called 15 AI and 2 unclear.
+  Totals: 40 AI, 21 human, 3 unclear. Cues in his notes: physics/motion, voice not matching the person,
+  "too perfect", diction; human calls cite imperfection, noise, real cuts.
+- **Human vs AI on Ben's labels (n=61, v2 scores):**
+  - gfp_mean: human +15% pooled (eta² 0.139, p = 0.003); within category +0.031 (stratified p = 0.013);
+    adjusted for category + length +0.032.
+  - gfp_hook_lag: human +14% pooled (eta² 0.085, p = 0.019); within category +0.036 (p = 0.015);
+    adjusted +0.035.
+  - composite_raw: no arm effect (p = 0.40).
+  - By category (gfp_hook_lag, human − AI; n human/AI): beauty +0.036 (4/15), food +0.025 (4/11),
+    home +0.010 (8/3), tech +0.074 (2/11). gfp_mean in home is −0.009. Home is flat; tech has 2 human clips.
+- **Agreed-only subset (n=45):** effect slightly larger (gfp_hook_lag within-category +0.046, p = 0.007).
+- **Exploratory, not planned:** the 15 AI clips the automated check couldn't call ("hard AI") score
+  between obvious AI and human on gfp_hook_lag (obvious AI 0.171, hard AI 0.201, human 0.208;
+  hard − obvious p = 0.027, uncorrected). gfp_mean shows the same order, not significant (p = 0.32).
+  n = 15 and post hoc: a hypothesis for the next batch, not a finding.
+- Labels are still one person's judgement, not creator disclosure; very realistic AI may sit in "human".
+- **Next avenue (Ben, 2026-11-19):** test whether prepost can flag when a video *reads as artificial*,
+  second by second, rather than detect who made it. Needs a larger labelled set, per-second features, a held-out
+  test, and outcome data. Provenance (C2PA credentials, generator watermarks) would be a separate signal.
