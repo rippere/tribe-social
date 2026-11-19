@@ -431,6 +431,7 @@ function Arrow({ L, p }: { L: Layout; p: number }) {
 /* ---------- encode: frames (up-left), audio (up), words (up-right) → TRIBE v2; no scanner (up-right) ---------- */
 
 function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
+  const brand = useContext(BrandContext)
   const frame = useCurrentFrame()
   const at3 = [cue(w, /^frames/), cue(w, /^audio/), cue(w, /^words/)]
   const model = cue(w, /^Meta/)
@@ -492,7 +493,7 @@ function EncodePane({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
           <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: lit(t, alone) > 0.5 ? C.muted : C.ink, textDecoration: lit(t, alone) > 0.5 ? 'line-through' : 'none' }}>
             Someone lies in an MRI machine while they watch.
           </div>
-          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: C.accent, opacity: lit(t, alone, 0.4) }}>fMRIght predicts it from the video file.</div>
+          <div style={{ fontSize: L.portrait ? 26 : 21, lineHeight: 1.35, color: C.accent, opacity: lit(t, alone, 0.4) }}>{brand} predicts it from the video file.</div>
         </div>
       </Spot>
     </>
@@ -674,6 +675,7 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
 /* ---------- sign-off (outside the scorer) ---------- */
 
 function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
+  const brand = useContext(BrandContext)
   const frame = useCurrentFrame()
   const upload = cue(w, /^Try/)
   const light = cue(w, /^fMRIght/)
@@ -682,7 +684,7 @@ function Cta({ L, w, t }: { L: Layout; w: Word[]; t: number }) {
   return (
     <AbsoluteFill style={{ alignItems: 'center', paddingTop: L.portrait ? 420 : 150, opacity: fadeIn(frame, 0, 15) }}>
       <Spot on={pulse(t, light, 1.6)} radius={28} style={{ padding: '10px 40px' }}>
-        <div style={{ fontSize: L.portrait ? 120 : 140, fontWeight: 500, letterSpacing: -3 }}>fMRIght</div>
+        <div style={{ fontSize: L.portrait ? 120 : 140, fontWeight: 500, letterSpacing: -3 }}>{brand}</div>
       </Spot>
       <Spot on={pulse(t, upload, 2.4)} radius={999} style={{ marginTop: 30 }}>
         <div style={{ padding: '20px 40px', borderRadius: 999, background: C.ink, color: C.bg, fontSize: 34, fontWeight: 500 }}>Score a clip</div>

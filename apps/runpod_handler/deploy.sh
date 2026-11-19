@@ -48,7 +48,7 @@ ENDPOINT_RESPONSE=$(curl -s -X POST https://api.runpod.io/graphql \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $RUNPOD_API_KEY" \
   -d "{
-    \"query\": \"mutation { saveEndpoint(input: { name: \\\"tribe-v2-inference\\\", templateId: \\\"$TEMPLATE_ID\\\", workersMin: 0, workersMax: 3, idleTimeout: 60, gpuIds: \\\"AMPERE_16\\\" }) { id name } }\"
+    \"query\": \"mutation { saveEndpoint(input: { name: \\\"tribe-v2-inference\\\", templateId: \\\"$TEMPLATE_ID\\\", workersMin: 0, workersMax: 3, idleTimeout: 60, gpuIds: \\\"AMPERE_80\\\" }) { id name } }\"
   }")
 
 echo "Endpoint response: $ENDPOINT_RESPONSE"

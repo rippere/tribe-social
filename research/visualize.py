@@ -652,12 +652,18 @@ try:
             x_unit.next_to(axes.x_axis.get_right(), RIGHT, buff=0.12)
             self.play(Create(axes), FadeIn(x_unit), run_time=0.7)
 
-            hook_end     = min(3, n_secs - 1)
-            offset_start = max(n_secs - 5, hook_end + 1)
+            # Same window as quick_scores' *_hook: predicted s 0-3, the video's
+            # opening. TRIBE v2 output is already stimulus-aligned (tribev2
+            # trains with FmriExtractor offset=5), so no lag shift; see
+            # HOOK_WINDOW in packages/tribe_scoring/run_and_save.py. Clamped
+            # for clips shorter than 3 s.
+            hook_start   = 0
+            hook_end     = min(3, n_secs)
+            offset_start = min(max(n_secs - 5, hook_end), max(n_secs - 1, 0))
 
             hook_rect = axes.get_area(
-                axes.plot(lambda x: 1.02, x_range=[0, hook_end]),
-                x_range=[0, hook_end],
+                axes.plot(lambda x: 1.02, x_range=[hook_start, hook_end]),
+                x_range=[hook_start, hook_end],
                 color=ManimColor(C_ATTENTION), opacity=0.12,
             )
             cta_rect = axes.get_area(
@@ -666,7 +672,7 @@ try:
                 color=ManimColor(C_VALUATION), opacity=0.12,
             )
             hook_lbl = Text("HOOK", font_size=11, color=ManimColor(C_ATTENTION), weight=BOLD)
-            hook_lbl.move_to(axes.c2p(hook_end / 2, 0.97))
+            hook_lbl.move_to(axes.c2p((hook_start + hook_end) / 2, 0.97))
             cta_lbl  = Text("CTA", font_size=11, color=ManimColor(C_VALUATION), weight=BOLD)
             cta_lbl.move_to(axes.c2p((offset_start + n_secs) / 2, 0.97))
             self.play(FadeIn(hook_rect), FadeIn(cta_rect),

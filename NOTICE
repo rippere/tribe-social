@@ -51,11 +51,34 @@ THIRD-PARTY COMPONENTS
 
 TRIBE v2 ............ Meta FAIR, CC-BY-NC-4.0 (model weights + reference code)
 HCP MMP1.0 atlas .... Glasser et al. 2016, via neuromaps
+fsaverage surfaces .. FreeSurfer (The General Hospital Corporation / MGH),
+                      FreeSurfer Software License v1.0. Fischl, Sereno, Tootell
+                      & Dale 1999, Hum Brain Mapp 8:272-284. The web cortex
+                      mesh (apps/web/public/cortex/cortex.glb) is a modified
+                      derivative; full terms in
+                      apps/web/public/cortex/LICENSE-fsaverage.txt.
+Destrieux atlas ..... Destrieux et al. 2010, via nilearn (illustrative
+                      placeholder activity in research/export_cortex.py only)
 CNeuroMod ........... CC0 1.0 (public domain)
 yt-dlp .............. Unlicense
 Python / Node dependencies — see pyproject.toml, uv.lock, apps/web/package.json
 
 Each third-party component remains under its own license.
+
+
+================================================================================
+MODEL OUTPUT ON THE WEB PAGE
+================================================================================
+
+apps/web/public/cortex/activity.bin is TRIBE v2 output: the model's predicted
+cortical response (fsaverage5, one frame per second) for one sample clip, an
+AI-generated video, quantised to uint8. It is output of a CC-BY-NC-4.0 model;
+the page credits TRIBE v2 and its license in the footer. Whether showing it on
+a page that also lists pricing stays within the NonCommercial terms is an open
+licensing check (docs/CORTEX-VIEW.md, open item 2), not a settled question.
+It is a prediction for an average viewer, not a recorded brain scan.
+activity.json.source says whether the file holds real model output ("tribe")
+or the illustrative placeholder.
 
 
 ================================================================================

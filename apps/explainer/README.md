@@ -1,4 +1,4 @@
-# fMRIght explainer
+# PrePost explainer
 
 Remotion source for the scoring explainer: Ben (who built fMRIght) narrates off-screen
 in the first person while the brain mascot walks in, stands by the scorer UI through
@@ -30,6 +30,8 @@ uv run --no-project --with faster-whisper --with numpy python scripts/build_data
 
 # 5. preview / render
 npm run studio            # http://<host>:3200
+npm run render:landing    # out/prepost-explainer-16x9.mp4
+npm run render:vertical   # out/prepost-explainer-9x16.mp4
 npm run render:v6         # out/fmright-explainer-v6[-standin]-{16x9,9x16}.mp4
 # no GPU GL (e.g. a driver/library mismatch)? bash scripts/render-v6.sh --gl=swangle
 ```

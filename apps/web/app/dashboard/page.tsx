@@ -1,7 +1,8 @@
 'use client'
 
 import useSWR from 'swr'
-import { fetchCorpus, fetchStats } from '@/lib/api'
+import Link from 'next/link'
+import { API_CONFIGURED, fetchCorpus, fetchStats } from '@/lib/api'
 import { CorpusStats, CorpusVideo } from '@/lib/types'
 
 import CorpusOverview       from '@/components/corpus/CorpusOverview'
@@ -32,17 +33,35 @@ export default function DashboardPage() {
     data: corpusData,
     error: corpusError,
     isLoading: corpusLoading,
-  } = useSWR<{ videos: CorpusVideo[] }>('/corpus', fetchCorpus)
+  } = useSWR<{ videos: CorpusVideo[] }>(API_CONFIGURED ? '/corpus' : null, fetchCorpus)
 
   const {
     data: stats,
     error: statsError,
     isLoading: statsLoading,
-  } = useSWR<CorpusStats>('/corpus/stats', fetchStats)
+  } = useSWR<CorpusStats>(API_CONFIGURED ? '/corpus/stats' : null, fetchStats)
 
   const videos = corpusData?.videos ?? []
   const isLoading = corpusLoading || statsLoading
   const hasError = corpusError || statsError
+
+  // The public static site has no scoring API, so say so instead of showing a
+  // "failed to load localhost:8000" error to visitors who find this URL.
+  if (!API_CONFIGURED) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-24">
+        <h1 className="type-h2">The research dashboard runs locally</h1>
+        <p className="type-lead mt-4">
+          It reads the scoring API on the research machine, which this site doesn&apos;t expose. The method and
+          the pilot result are on the science page.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/science" className="btn-primary btn-lg">Read the science</Link>
+          <Link href="/clips" className="btn-secondary btn-lg">See a sample read</Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">

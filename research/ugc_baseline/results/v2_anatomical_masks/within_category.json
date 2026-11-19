@@ -1,0 +1,131 @@
+{
+ "n": 44,
+ "cells": {
+  "beauty": {
+   "human": 5,
+   "ai": 9
+  },
+  "food": {
+   "human": 4,
+   "ai": 7
+  },
+  "home": {
+   "human": 8,
+   "ai": 3
+  },
+  "tech": {
+   "human": 2,
+   "ai": 6
+  }
+ },
+ "metrics": {
+  "composite_raw": {
+   "per_category": {
+    "beauty": {
+     "human_mean": 0.0696,
+     "ai_mean": 0.0699,
+     "diff": -0.0003
+    },
+    "food": {
+     "human_mean": 0.0757,
+     "ai_mean": 0.0547,
+     "diff": 0.021
+    },
+    "home": {
+     "human_mean": 0.0644,
+     "ai_mean": 0.1076,
+     "diff": -0.0432
+    },
+    "tech": {
+     "human_mean": 0.0948,
+     "ai_mean": 0.0578,
+     "diff": 0.037
+    }
+   },
+   "pooled_diff": 0.0041,
+   "stratified_diff": 0.0011,
+   "stratified_perm_p": 0.9353,
+   "sd": 0.0393,
+   "ols_arm_cat": {
+    "coef": 0.0015,
+    "perm_p": 0.909
+   },
+   "ols_arm_cat_len": {
+    "coef": 0.0019,
+    "perm_p": 0.888
+   }
+  },
+  "gfp_mean": {
+   "per_category": {
+    "beauty": {
+     "human_mean": 0.2109,
+     "ai_mean": 0.1753,
+     "diff": 0.0355
+    },
+    "food": {
+     "human_mean": 0.2236,
+     "ai_mean": 0.1727,
+     "diff": 0.0509
+    },
+    "home": {
+     "human_mean": 0.2068,
+     "ai_mean": 0.2153,
+     "diff": -0.0085
+    },
+    "tech": {
+     "human_mean": 0.2356,
+     "ai_mean": 0.1814,
+     "diff": 0.0542
+    }
+   },
+   "pooled_diff": 0.0336,
+   "stratified_diff": 0.0318,
+   "stratified_perm_p": 0.0117,
+   "sd": 0.0378,
+   "ols_arm_cat": {
+    "coef": 0.0325,
+    "perm_p": 0.0065
+   },
+   "ols_arm_cat_len": {
+    "coef": 0.0317,
+    "perm_p": 0.006
+   }
+  },
+  "gfp_hook_lag": {
+   "per_category": {
+    "beauty": {
+     "human_mean": 0.1961,
+     "ai_mean": 0.1576,
+     "diff": 0.0385
+    },
+    "food": {
+     "human_mean": 0.216,
+     "ai_mean": 0.1646,
+     "diff": 0.0514
+    },
+    "home": {
+     "human_mean": 0.2021,
+     "ai_mean": 0.1924,
+     "diff": 0.0098
+    },
+    "tech": {
+     "human_mean": 0.2557,
+     "ai_mean": 0.1801,
+     "diff": 0.0756
+    }
+   },
+   "pooled_diff": 0.04,
+   "stratified_diff": 0.0413,
+   "stratified_perm_p": 0.006,
+   "sd": 0.0453,
+   "ols_arm_cat": {
+    "coef": 0.0412,
+    "perm_p": 0.0045
+   },
+   "ols_arm_cat_len": {
+    "coef": 0.0398,
+    "perm_p": 0.006
+   }
+  }
+ }
+}

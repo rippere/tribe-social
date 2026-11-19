@@ -19,8 +19,14 @@ console = Console()
 # composite.py goes with it because run_and_save imports it.
 _SCORING_DIR = Path(__file__).resolve().parents[2] / "packages" / "tribe_scoring"
 
-# Files uploaded to RunPod for batch scoring (absolute source paths)
-_REMOTE_SCRIPTS = [_SCORING_DIR / "run_and_save.py", _SCORING_DIR / "composite.py"]
+# Files uploaded to RunPod for batch scoring (absolute source paths).
+# run_and_save.py imports composite.py and reads its ROI masks from
+# roi_masks_fsaverage5.json, both next to it.
+_REMOTE_SCRIPTS = [
+    _SCORING_DIR / "run_and_save.py",
+    _SCORING_DIR / "composite.py",
+    _SCORING_DIR / "roi_masks_fsaverage5.json",
+]
 _REMOTE_WORK_DIR = "/workspace/tribe"
 
 

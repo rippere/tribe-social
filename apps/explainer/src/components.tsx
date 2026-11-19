@@ -9,7 +9,7 @@ export type Stage = 'upload' | 'encode' | 'extract' | 'read'
 export interface Word { w: string; s: number; e: number }
 
 /** On-screen spelling for words the narrator says phonetically. */
-const DISPLAY: Record<string, string> = { 'Eff-em-aright': 'fMRIght' }
+const DISPLAY: Record<string, string> = { 'Eff-em-aright': 'PrePost' }
 
 function display(word: string): string {
   const m = word.match(/^(.*?)([.,:;?!]?)$/)
