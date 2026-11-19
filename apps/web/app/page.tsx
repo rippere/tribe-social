@@ -1,11 +1,65 @@
-import BrainHero from '@/components/brain/BrainHero'
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import CortexHero from '@/components/landing/CortexHero'
+import { Faq } from '@/components/landing/Interactive'
+import { FinalCta, ForReviewers, HowItWorks, PREREG_URL, Science, SeeItInAction } from '@/components/landing/Sections'
+import { CLIPS } from '@/lib/clips'
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, pageMeta } from '@/lib/site'
 
-// Stripped hero: off-black canvas, 3D brain centerpiece, no copy yet.
-// Language + CTAs return once the feature set is cemented.
+export const metadata: Metadata = pageMeta({
+  title: `${SITE_NAME}: ${SITE_TAGLINE.toLowerCase()}`,
+  description: SITE_DESCRIPTION,
+  path: '/',
+})
+
+// Landing page, laid out part by part on the x.ai/bot format
+// (business/lanes/design-ref/DESIGN-SPEC.md), dark variant per docs/CORTEX-VIEW.md.
+// Hero: the real cortex playing TRIBE v2's per-second prediction for the sample clip
+// (decided with Ben 2026-10-01; supersedes "scorer is the hero"). The clip itself, its
+// timeline and the chat about it live on /clips/<slug>; the home page only points there.
 export default function HomePage() {
   return (
-    <section className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-hidden bg-bg px-6">
-      <BrainHero />
-    </section>
+    <>
+      {/* Parts 2–4: announcement, headline, the cortex as the hero */}
+      <section className="mx-auto grid max-w-[1232px] items-center gap-4 px-6 pt-10 md:pt-16 lg:min-h-[min(820px,calc(100svh-64px))] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-4 lg:pt-0">
+        <div className="text-center lg:text-left">
+          <a
+            href={PREREG_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full py-1.5 pr-1.5 pl-3 text-[14px] text-ink shadow-[var(--shadow-hairline)] transition-colors hover:bg-fill"
+          >
+            Validation study under way · Read the plan
+            <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full bg-fill text-[11px]">
+              ↗
+            </span>
+          </a>
+
+          <h1 className="type-h1 mt-6 text-ink md:mt-8">Know where a creator draft loses people, before it posts.</h1>
+          <p className="type-lead mx-auto mt-5 max-w-xl lg:mx-0 lg:max-w-[460px]">
+            For agencies and brands reviewing creator video. PrePost predicts how an average viewer&apos;s brain responds
+            to each second of a draft, then tells your team in plain English which moment to fix.
+          </p>
+
+          <div className="mt-7 flex justify-center gap-2 md:mt-8 lg:justify-start">
+            <Link href="/#waitlist" className="btn-primary btn-lg">
+              Join the waitlist
+            </Link>
+            <Link href={`/clips/${CLIPS[0].slug}`} className="btn-secondary btn-lg">
+              See a sample read
+            </Link>
+          </div>
+        </div>
+
+        <CortexHero />
+      </section>
+
+      <ForReviewers />
+      <SeeItInAction />
+      <HowItWorks />
+      <Science />
+      <Faq />
+      <FinalCta />
+    </>
   )
 }

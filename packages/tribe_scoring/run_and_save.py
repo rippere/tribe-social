@@ -45,7 +45,10 @@ from tribev2.demo_utils import TribeModel
 # research/analyze.py still uses HCP MMP1.0 masks (research/roi_masks.py);
 # Destrieux is a coarser, anatomical approximation of those areas.
 # ---------------------------------------------------------------------------
-from .composite import ROI_WEIGHTS, compute_composite_raw  # single source of truth
+try:
+    from .composite import ROI_WEIGHTS, compute_composite_raw  # single source of truth
+except ImportError:  # run as a standalone script on a pod, next to composite.py
+    from composite import ROI_WEIGHTS, compute_composite_raw
 
 _R = 10242          # right hemisphere vertex offset (fsaverage5)
 _N_VERTS = 20484    # total vertices in TRIBE v2 output
@@ -107,7 +110,6 @@ def _hook_window(n: int) -> tuple[slice, int]:
     samples it holds (3 for a full window, n for a clip shorter than 3 s)."""
     stop = min(HOOK_WINDOW.stop, n)
     return slice(HOOK_WINDOW.start, stop), max(stop - HOOK_WINDOW.start, 0)
-
 
 _CSV_DIMS = list(_BATCH_MASKS.keys())
 _CSV_FIELDS = (

@@ -74,21 +74,33 @@ export default function VideoDropzone({ onJobCreated }: Props) {
     }
   }
 
+  const consent = (
+    <p className="text-[12px] leading-5 text-muted">
+      By scoring a clip you confirm you have the rights to it. The video is sent to a rented cloud GPU and isn&apos;t
+      kept; the scores are saved to our research dataset.
+    </p>
+  )
+
+  const errorBox = error && (
+    <p className="rounded-xl bg-[#F87171]/10 px-4 py-2 text-[13px] text-[#F87171]">{error}</p>
+  )
+
   return (
-    <div className="mt-8 rounded-xl border border-[#1F2937] bg-[#111827] p-6">
+    <div>
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-lg bg-[#0D0D0D] w-fit">
+      <div className="mb-5 flex w-fit gap-1 rounded-full bg-fill p-1" role="tablist" aria-label="Input type">
         {(['upload', 'url'] as const).map((t) => (
           <button
             key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
             onClick={() => { setTab(t); setError(null); setSelectedFile(null) }}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              tab === t
-                ? 'bg-[#6366F1] text-white'
-                : 'text-[#9CA3AF] hover:text-[#F9FAFB]'
+            className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${
+              tab === t ? 'bg-ink text-on-ink' : 'text-muted hover:text-ink'
             }`}
           >
-            {t === 'upload' ? 'Upload File' : 'Paste URL'}
+            {t === 'upload' ? 'Upload file' : 'Paste URL'}
           </button>
         ))}
       </div>
@@ -97,47 +109,43 @@ export default function VideoDropzone({ onJobCreated }: Props) {
         <div className="space-y-4">
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-              isDragActive
-                ? 'border-[#6366F1] bg-[#6366F1]/5'
-                : 'border-[#374151] hover:border-[#6366F1]/60 hover:bg-[#6366F1]/5'
+            className={`cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-colors ${
+              isDragActive ? 'border-accent bg-accent-bg' : 'border-line bg-fill hover:border-ink/30'
             }`}
           >
             <input {...getInputProps()} />
             {selectedFile ? (
               <div className="space-y-1">
-                <p className="text-[#F9FAFB] font-medium">{selectedFile.name}</p>
-                <p className="text-[#9CA3AF] text-sm">
-                  {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
-                </p>
-                <p className="text-[#6366F1] text-xs mt-2">Click or drop to replace</p>
+                <p className="font-medium text-ink">{selectedFile.name}</p>
+                <p className="text-[13px] text-muted">{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                <p className="mt-2 text-[12px] text-accent">Click or drop to replace</p>
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="mx-auto w-12 h-12 rounded-full bg-[#1F2937] flex items-center justify-center mb-3">
-                  <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-fill">
+                  <svg className="h-6 w-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <p className="text-[#F9FAFB] font-medium">
-                  {isDragActive ? 'Drop your .mp4 here' : 'Drag & drop your .mp4 here, or click to browse'}
+                <p className="font-medium text-ink">
+                  {isDragActive ? 'Drop your .mp4 here' : 'Drag and drop an .mp4, or click to browse'}
                 </p>
-                <p className="text-[#9CA3AF] text-xs">MP4 only · 50 MB · 60s max</p>
+                <p className="text-[12px] text-muted">MP4 only · 50 MB · 60 seconds max</p>
               </div>
             )}
           </div>
 
-          {error && (
-            <p className="text-[#DC2626] text-sm bg-[#DC2626]/10 rounded-lg px-4 py-2">{error}</p>
-          )}
+          {errorBox}
+          {consent}
 
           <button
+            type="button"
             onClick={handleSubmitFile}
             disabled={!selectedFile || loading}
-            className="w-full py-2.5 rounded-lg bg-[#6366F1] text-white font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#4F46E5] transition-colors"
+            className="btn-primary btn-lg w-full disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loading ? 'Submitting…' : 'Analyze Video'}
+            {loading ? 'Submitting…' : 'Score this clip'}
           </button>
         </div>
       )}
@@ -145,27 +153,30 @@ export default function VideoDropzone({ onJobCreated }: Props) {
       {tab === 'url' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-[#9CA3AF] mb-2">YouTube Shorts or Instagram Reel URL</label>
+            <label htmlFor="clip-url" className="mb-2 block text-[13px] text-muted">
+              YouTube Shorts or Instagram Reel URL
+            </label>
             <input
+              id="clip-url"
               type="text"
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmitUrl()}
               placeholder="https://www.instagram.com/reel/... or https://youtu.be/..."
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0D0D0D] border border-[#374151] text-[#F9FAFB] placeholder-[#4B5563] focus:outline-none focus:border-[#6366F1] text-sm"
+              className="w-full rounded-full border border-line bg-fill px-4 py-2.5 text-[14px] text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none"
             />
           </div>
 
-          {error && (
-            <p className="text-[#DC2626] text-sm bg-[#DC2626]/10 rounded-lg px-4 py-2">{error}</p>
-          )}
+          {errorBox}
+          {consent}
 
           <button
+            type="button"
             onClick={handleSubmitUrl}
             disabled={!youtubeUrl.trim() || loading}
-            className="w-full py-2.5 rounded-lg bg-[#6366F1] text-white font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#4F46E5] transition-colors"
+            className="btn-primary btn-lg w-full disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loading ? 'Submitting…' : 'Analyze URL'}
+            {loading ? 'Submitting…' : 'Score this URL'}
           </button>
         </div>
       )}
