@@ -57,15 +57,6 @@
       "duration": 8,
       "prompt": "While it says 'Here's a real clip we scored' it points up and to the upper left, holding the point. While it says 'This line is the predicted response across my whole surface, second by second' it points straight up above its head and holds that point, nodding along. Then it lowers its arm and stands relaxed facing the camera. Its hands are empty: it never holds a stick, pointer or wand. No lines, beams, threads or marks ever appear in the air."
     },
-    "t_lag": {
-      "audio": [
-        "n5_read",
-        7.6,
-        null
-      ],
-      "duration": 9,
-      "prompt": "While it says 'Brain scans run about five seconds late' it taps its wrist with one finger as if checking a watch. While it says 'because blood flow takes time to arrive' it traces a slow wavy line down the front of its own body with one finger. While it says 'So I slide the line back to match the video' it raises one open hand straight up above its head and pushes it slowly from the right to the left, as if sliding something above it toward the left. Then it lowers its arm and stands relaxed facing the camera. Nothing is drawn in the air. Its hands are empty: it never holds a stick, pointer or wand."
-    },
     "t_read2": {
       "audio": [
         "n6_read2",

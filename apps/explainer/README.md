@@ -101,8 +101,12 @@ replace its row in `v3/narration/lines.tsv`, update the quoted phrases in its sh
   the per-second curve (global field power, the RMS across all 20,484 fsaverage5
   points, scaled 0–1 within the clip). No region masks are used: the index-range
   masks in `run_and_save.py` / `roi_masks.py` are not anatomical regions.
-- **Warm-up:** the first 5 s are shaded. The fMRI signal TRIBE predicts lags the
-  stimulus by about 5 s, so every clip starts low. That is not a weak hook.
+- **Timing:** TRIBE v2's output is already stimulus-aligned. It trains with
+  `FmriExtractor offset=5`, so the haemodynamic delay is absorbed in training: second t
+  of the curve (and frame t of the cortex) reflects second t of the video. Nothing is
+  shaded as warm-up or slid back. Earlier cuts got this wrong (v1–v4 shaded the first
+  5 s as "warm-up"; v5 slid the line back 5 s on a narrated "brain scans run about five
+  seconds late" beat, shot `t_lag`, now cut) and need a re-render.
 - **Generated media:** the stimulus clip (Veo 3.1), mascot shots (Kling 3.0 and Seedance 2.0, keyed from green screen), and
   narration (ElevenLabs voice "Isla") come from Higgsfield. The clip is labelled
   "AI-generated test clip" on screen.

@@ -97,21 +97,15 @@ export function ResponseChart({
   width,
   height,
   markers = [],
-  warmup = 0,
   bands = [],
-  shift = 0,
 }: {
   values: number[]
   upTo: number
   width: number
   height: number
   markers?: { second: number; label: string }[]
-  /** Leading seconds shaded as fMRI signal lag rather than read as response. */
-  warmup?: number
   /** Stretches of the curve the narrator is pointing at, faded in by `on` (0..1). */
   bands?: { from: number; to: number; on: number; label: string }[]
-  /** Slide the curve left by this many seconds (the scan delay); the uncovered tail is shaded. */
-  shift?: number
 }) {
   const pad = { l: 16, r: 16, t: 24, b: 40 }
   const w = width - pad.l - pad.r
@@ -122,10 +116,10 @@ export function ResponseChart({
   const reveal = Math.max(0, Math.min(upTo, n - 1))
 
   const pts: [number, number][] = []
-  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s - shift), y(values[s])])
+  for (let s = 0; s <= Math.floor(reveal); s++) pts.push([x(s), y(values[s])])
   const f0 = Math.floor(reveal)
   if (f0 < n - 1 && reveal > f0) {
-    pts.push([x(reveal - shift), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
+    pts.push([x(reveal), y(values[f0] + (values[f0 + 1] - values[f0]) * (reveal - f0))])
   }
   const clipId = `rc-${width}-${height}`
   const head = pts[pts.length - 1]
@@ -135,12 +129,6 @@ export function ResponseChart({
       {[0.25, 0.5, 0.75].map(g => (
         <line key={g} x1={pad.l} x2={pad.l + w} y1={pad.t + g * h} y2={pad.t + g * h} stroke={C.line} />
       ))}
-      {warmup > 0 && n > 1 && (
-        <g>
-          <rect x={pad.l} y={pad.t} width={x(warmup) - pad.l} height={h} fill="rgba(255,255,255,0.045)" />
-          <text x={pad.l + 10} y={pad.t + 22} fill={C.muted} fontSize={14}>warm-up · signal lags ~5 s</text>
-        </g>
-      )}
       {bands.filter(b => b.on > 0).map(b => (
         <g key={b.label} opacity={b.on}>
           <rect x={x(b.from)} y={pad.t} width={x(b.to) - x(b.from)} height={h} fill="rgba(92,225,240,0.14)" rx={6} />
@@ -156,12 +144,6 @@ export function ResponseChart({
           <rect x={pad.l - 6} y={0} width={w + 12} height={height} />
         </clipPath>
       </defs>
-      {shift > 0.05 && (
-        <g opacity={Math.min(1, shift)}>
-          <rect x={x(n - 1 - shift)} y={pad.t} width={x(n - 1) - x(n - 1 - shift)} height={h} fill="rgba(255,255,255,0.045)" />
-          <text x={x(n - 1) - 10} y={pad.t + 22} fill={C.muted} fontSize={14} textAnchor="end">still arriving</text>
-        </g>
-      )}
       <g clipPath={`url(#${clipId})`}>
         {pts.length > 1 && (
           <polyline points={pts.map(p => p.join(',')).join(' ')} fill="none" stroke={C.accent} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />

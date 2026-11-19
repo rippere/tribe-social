@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Audio, Video } from '@remotion/media'
-import { AbsoluteFill, Easing, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
+import { AbsoluteFill, Freeze, Sequence, interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { AppWindow, Phone, ResponseChart, Tag, fadeIn, type Stage, type Word } from './components'
 import { Cortex, useCortexAssets, type CortexAssets } from './cortex'
 import { Captions, MascotLayer, Spot, cue, cutsFor, cutsLength, lit, pulse, type Cut, type Plate } from './mascot'
@@ -11,12 +11,11 @@ import result from './data/result.json'
 export type Orientation = 'landscape' | 'portrait'
 
 type Talk = keyof typeof narration
-// TRIBE predicts a brain scan, and scans trail the video by ~5 s (blood flow). The read
-// scene shows the line sliding back by that lag; from then on the video plays against
-// the aligned curve, which covers its first `ALIGNED.relative.length` seconds.
-const LAG = result.lag_seconds
-const ALIGNED = result.aligned
-const PLAY_SECONDS = ALIGNED.relative.length
+// TRIBE v2's output is already stimulus-aligned (it trains with a 5 s fMRI offset, so
+// the haemodynamic delay is absorbed in training): second t of the line, and frame t of
+// the cortex, is second t of the video. Nothing is shifted or shaded as warm-up.
+// The curve's points sit at seconds 0..n-1, so the clip plays for that span.
+const PLAY_SECONDS = result.relative.length - 1
 const PLAY_FRAMES = PLAY_SECONDS * FPS
 
 type SceneKey = 'intro' | 'upload' | 'encode' | 'extract' | 'read' | 'play' | 'cta'
@@ -34,25 +33,27 @@ interface SceneSpec {
 }
 
 // The watching scene (silent Kling shots, mouth closed) pins its reactions to the
-// aligned result: w_c's excited lean lands just after the peak, w_d's attention drifts
-// over the biggest drop, and w_e stands up as the clip ends. *_AT are measured from
+// result: w_c's excited lean lands just after the peak, w_d's attention drifts over the
+// biggest drop, and w_e stands up as the clip ends (or, when the drop sits at the very
+// end, as soon after it as w_d can play at no more than 2x). *_AT are measured from
 // each shot's track (when the motion starts, seconds into the shot).
 const EXCITE_AT = 1.4
 const DRIFT_AT = 1.5
+const DRIFT_FROM = result.drop.second - 0.3 - DRIFT_AT
 const SPECS: SceneSpec[] = [
   { key: 'intro', shots: [{ clip: 'intro_a' }, { clip: 't_intro' }] },
   { key: 'upload', shots: [{ clip: 't_upload' }] },
   { key: 'encode', shots: [{ clip: 't_enc1' }, { clip: 't_enc2' }] },
   { key: 'extract', shots: [{ clip: 't_extract' }] },
-  { key: 'read', shots: [{ clip: 't_read1' }, { clip: 't_lag' }, { clip: 't_read2' }] },
+  { key: 'read', shots: [{ clip: 't_read1' }, { clip: 't_read2' }] },
   {
     key: 'play',
     shots: [
       { clip: 'w_a' },
       { clip: 'w_b' },
-      { clip: 'w_c', at: ALIGNED.peak.second + 0.3 - EXCITE_AT },
-      { clip: 'w_d', at: ALIGNED.drop.second - 0.3 - DRIFT_AT },
-      { clip: 'w_e', at: PLAY_SECONDS - 0.8 },
+      { clip: 'w_c', at: result.peak.second + 0.3 - EXCITE_AT },
+      { clip: 'w_d', at: DRIFT_FROM },
+      { clip: 'w_e', at: Math.max(PLAY_SECONDS - 0.8, DRIFT_FROM + 2.6) },
     ],
   },
   { key: 'cta', shots: [{ clip: 't_outro' }] },
@@ -79,7 +80,7 @@ export function explainerDuration(): number {
   return SCENES.reduce((n, s) => n + s.frames, 0)
 }
 
-const HAS_RESULT = result.source === 'tribe' && result.relative.length > 1 && ALIGNED.relative.length > 1
+const HAS_RESULT = result.source === 'tribe' && result.relative.length > 1
 const WINDOW_SCENES: Partial<Record<SceneKey, Stage>> = { upload: 'upload', encode: 'encode', extract: 'extract', read: 'read', play: 'read' }
 
 /* ---------- layout ---------- */
@@ -225,7 +226,7 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
   const name = cue(w, /^Eff/)
   const show = (d: number) => interpolate(t, [0.2 + d, 1.1 + d], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const [pw, cw, ch] = L.portrait ? [300, 600, 460] : [240, 500, 400]
-  const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, ALIGNED.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const curveUpTo = interpolate(t, [sbs - 0.2, sbs + 1.6], [0, result.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   const box = (land: R, port: R, extra?: CSSProperties) => at(L, land, port, extra)
   return (
     <AbsoluteFill>
@@ -241,10 +242,10 @@ function Intro({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: C
         </Phone>
       </Spot>
       <Spot on={pulse(t, brain, 2.6)} radius={22} style={box([1340, 300, cw, ch], [420, 470, cw, ch], { opacity: show(0.8) })}>
-        <CortexBox cortex={cortex} t={(t % PLAY_SECONDS) + LAG} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.15} intensity={0.7 + 0.8 * pulse(t, brain, 2.6)} />
+        <CortexBox cortex={cortex} t={t % PLAY_SECONDS} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.15} intensity={0.7 + 0.8 * pulse(t, brain, 2.6)} />
       </Spot>
       <Spot on={pulse(t, sbs, 2.2)} radius={16} style={box([1340, 720, cw, 150], [420, 950, cw, 180], { ...card, padding: 0, opacity: show(1.2) })}>
-        {HAS_RESULT && <ResponseChart values={ALIGNED.relative} upTo={curveUpTo} width={cw} height={L.portrait ? 180 : 150} />}
+        {HAS_RESULT && <ResponseChart values={result.relative} upTo={curveUpTo} width={cw} height={L.portrait ? 180 : 150} />}
       </Spot>
     </AbsoluteFill>
   )
@@ -438,7 +439,7 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
       <Spot on={Math.max(pulse(t, out, 1.2), pulse(t, glow, 2.2))} radius={22} style={at(L, [585, 0, cw, ch], [30, 20, cw, ch])}>
         <CortexBox
           cortex={cortex}
-          t={lit(t, glow) > 0 ? ALIGNED.peak.second + LAG : t % PLAY_SECONDS}
+          t={lit(t, glow) > 0 ? result.peak.second : t % PLAY_SECONDS}
           w={cw}
           h={ch}
           rotation={Math.PI / 2 + Math.min(t, glow) * 0.12}
@@ -458,24 +459,19 @@ function ExtractPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cor
   )
 }
 
-/* ---------- read: the clip (up-left), the line (up, swept left→right), warm-up (up-left), climb (up), dip (up-right) ---------- */
+/* ---------- read: the clip (up-left), the line (up, swept left→right), climb (up), dip (up-right) ---------- */
 
 function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex: CortexAssets | null }) {
   const real = cue(w, /^real/)
   const line = cue(w, /^line/)
   const done = cue(w, /^second\.$/)
-  const late = cue(w, /^late/)
-  const slide = cue(w, /^slide/)
   const climbs = cue(w, /^climbs/)
   const dips = cue(w, /^dips/)
   const upTo = interpolate(t, [line, done + 0.4], [0, result.relative.length - 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-  // The scan trails the video by LAG seconds; on "slide" the line moves back into sync.
-  const shift = interpolate(t, [slide, slide + 1.4], [0, LAG], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) })
   const bands = HAS_RESULT
     ? [
-        { from: 0, to: LAG, on: pulse(t, late, 2.6) * (1 - lit(t, slide)), label: `scan runs ~${LAG} s behind` },
-        { from: Math.max(0, ALIGNED.peak.second - 4), to: ALIGNED.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
-        { from: ALIGNED.drop.second - 1, to: ALIGNED.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
+        { from: Math.max(0, result.peak.second - 4), to: result.peak.second, on: lit(t, climbs, 0.35), label: '▲ climbs' },
+        { from: result.drop.second - 1, to: result.drop.second, on: lit(t, dips, 0.35), label: '▼ dips' },
       ]
     : []
   const [chartW, chartH] = L.portrait ? [980, 440] : [1535, 440]
@@ -489,12 +485,12 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
       </Spot>
       {L.portrait && (
         <div style={at(L, [0, 0, 0, 0], [360, 20, 650, 533])}>
-          <CortexBox cortex={cortex} t={LAG} w={650} h={533} rotation={Math.PI / 2} />
+          <CortexBox cortex={cortex} t={0} w={650} h={533} rotation={Math.PI / 2} />
         </div>
       )}
-      <Spot on={Math.max(pulse(t, line, 3.2), pulse(t, slide, 2))} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
+      <Spot on={pulse(t, line, 3.2)} style={at(L, [300, 20, chartW, chartH], [30, 630, chartW, chartH], { ...card, padding: 0 })}>
         {HAS_RESULT ? (
-          <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} bands={bands} shift={shift} />
+          <ResponseChart values={result.relative} upTo={upTo} width={chartW} height={chartH} bands={bands} />
         ) : (
           <Tag tone="amber">Awaiting model output · no curve shown</Tag>
         )}
@@ -515,11 +511,11 @@ function ReadPane({ L, w, t, cortex }: { L: Layout; w: Word[]; t: number; cortex
 
 function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets | null }) {
   const frame = useCurrentFrame()
-  const s = Math.min(Math.floor(t), ALIGNED.relative.length - 1)
+  const s = Math.min(Math.floor(t), result.relative.length - 1)
   const callouts = HAS_RESULT
     ? [
-        { second: ALIGNED.peak.second, label: 'Highest', said: ALIGNED.peak.said },
-        { second: ALIGNED.drop.second, label: 'Biggest drop', said: ALIGNED.drop.said },
+        { second: result.peak.second, label: 'Highest', said: result.peak.said },
+        { second: result.drop.second, label: 'Biggest drop', said: result.drop.said },
       ].sort((a, b) => a.second - b.second)
     : []
   const [chartW, chartH] = L.portrait ? [980, 300] : [690, 250]
@@ -542,19 +538,19 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
         </div>
       </div>
       <div style={at(L, [560, 10, cw, ch], [460, 20, cw, ch])}>
-        <CortexBox cortex={cortex} t={Math.min(t, PLAY_SECONDS - 1) + LAG} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.05} />
+        <CortexBox cortex={cortex} t={Math.min(t, PLAY_SECONDS)} w={cw} h={ch} rotation={Math.PI / 2 + t * 0.05} />
       </div>
       <div style={at(L, [1150, 20, 690, 180], [460, 440, 550, 290], { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: L.portrait ? 16 : 10 })}>
         <span style={label}>Now</span>
         <div style={{ fontFamily: MONO, fontSize: L.portrait ? 72 : 52, fontVariantNumeric: 'tabular-nums' }}>0:{String(Math.max(0, s)).padStart(2, '0')}</div>
         <div style={{ height: 12, borderRadius: 6, background: C.fill, overflow: 'hidden' }}>
-          <div style={{ width: `${(HAS_RESULT ? ALIGNED.relative[Math.max(0, s)] : 0) * 100}%`, height: '100%', background: C.accent }} />
+          <div style={{ width: `${(HAS_RESULT ? result.relative[Math.max(0, s)] : 0) * 100}%`, height: '100%', background: C.accent }} />
         </div>
         <div style={{ fontSize: 18, color: C.muted }}>Predicted response, lined up with the video</div>
       </div>
       <div style={at(L, [1150, 215, chartW, chartH], [30, 770, chartW, chartH])}>
         {HAS_RESULT ? (
-          <ResponseChart values={ALIGNED.relative} upTo={t} width={chartW} height={chartH} markers={callouts.map(c => ({ second: c.second, label: c.label }))} />
+          <ResponseChart values={result.relative} upTo={t} width={chartW} height={chartH} markers={callouts.map(c => ({ second: c.second, label: c.label }))} />
         ) : (
           <Tag tone="amber">Awaiting model output · no curve shown</Tag>
         )}
@@ -568,7 +564,7 @@ function PlayPane({ L, t, cortex }: { L: Layout; t: number; cortex: CortexAssets
         ))}
       </div>
       <div style={at(L, [560, 455, 560, 50], [30, 1230, 980, 60], { fontFamily: MONO, fontSize: 14, color: C.muted, lineHeight: 1.4 })}>
-        Whole-cortex predicted response (RMS across 20,484 points), relative to this clip, slid back {LAG} s to line up with the video. Model output, not measured brain data.
+        Whole-cortex predicted response (RMS across 20,484 points), relative to this clip; second t matches video second t. Model output, not measured brain data.
       </div>
     </>
   )
