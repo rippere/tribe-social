@@ -1,12 +1,14 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import { API_BASE } from '@/lib/api'
 import type { JobResponse, ScoreResult } from '@/lib/types'
+import { DEMO_STAGES } from '@/components/landing/demo-data'
 
-const STAGES = ['Upload', 'Score', 'Encode', 'Extract', 'Analyze']
-const STAGE_PCT = [10, 30, 60, 85, 95]
+// Backend progress thresholds (Upload, Score, Encode, Extract, Analyze) folded onto
+// the four stages the UI shows (Upload, Encode, Extract, Read).
+const DISPLAY_STAGE_PCT = [0, 30, 85, 95]
 
 // Hard polling ceiling — matches the backend job TIMEOUT (~30 min). Past this we
 // stop polling and surface a timeout state rather than hammering the API forever.
@@ -21,16 +23,19 @@ class FetchError extends Error {
   }
 }
 
-function stageIndex(pct: number): number {
-  for (let i = STAGE_PCT.length - 1; i >= 0; i--) {
-    if (pct >= STAGE_PCT[i]) return i
+/** Map backend progress_pct to a display stage index (0–3). */
+export function displayStageIndex(pct: number): number {
+  for (let i = DISPLAY_STAGE_PCT.length - 1; i >= 0; i--) {
+    if (pct >= DISPLAY_STAGE_PCT[i]) return i
   }
-  return -1
+  return 0
 }
 
 interface Props {
   jobId: string
   onComplete: (result: ScoreResult) => void
+  /** Optional: reports the active display stage (0–3) so the page rail can follow. */
+  onStageChange?: (index: number) => void
 }
 
 const fetcher = async (url: string): Promise<JobResponse> => {
@@ -53,20 +58,17 @@ function ErrorCard({
   onAction: () => void
 }) {
   return (
-    <div className="mt-8 rounded-xl border border-[#DC2626]/40 bg-[#DC2626]/10 p-8 text-center">
-      <p className="text-[#DC2626] font-medium mb-2">{title}</p>
-      <p className="text-[#9CA3AF] text-sm mb-4">{detail}</p>
-      <button
-        onClick={onAction}
-        className="px-4 py-2 rounded-lg bg-[#1F2937] text-[#F9FAFB] text-sm hover:bg-[#374151] transition-colors"
-      >
+    <div className="rounded-2xl bg-[#F87171]/10 p-8 text-center">
+      <p className="mb-2 font-medium text-[#F87171]">{title}</p>
+      <p className="mb-5 text-[14px] text-muted">{detail}</p>
+      <button type="button" onClick={onAction} className="btn-secondary btn-sm">
         {actionLabel}
       </button>
     </div>
   )
 }
 
-export default function JobProgress({ jobId, onComplete }: Props) {
+export default function JobProgress({ jobId, onComplete, onStageChange }: Props) {
   const startRef = useRef(Date.now())
   // Latch a terminal 404 and any request error so polling doesn't restart.
   const notFoundRef = useRef(false)
@@ -97,6 +99,12 @@ export default function JobProgress({ jobId, onComplete }: Props) {
       },
     },
   )
+
+  const pct = data?.progress_pct ?? 0
+  const activeStage = displayStageIndex(pct)
+  useEffect(() => {
+    onStageChange?.(activeStage)
+  }, [activeStage, onStageChange])
 
   // Terminal: the job genuinely does not exist.
   if (error?.status === 404) {
@@ -151,48 +159,37 @@ export default function JobProgress({ jobId, onComplete }: Props) {
     )
   }
 
-  const pct = data?.progress_pct ?? 0
-  const activeStage = stageIndex(pct)
+  const stage = DEMO_STAGES[activeStage]
 
   return (
-    <div className="mt-8 rounded-xl border border-[#1F2937] bg-[#111827] p-8">
-      {/* Stage labels */}
-      <div className="flex justify-between mb-3">
-        {STAGES.map((s, i) => (
-          <span
-            key={s}
-            className={`text-xs font-medium transition-colors ${
-              i <= activeStage ? 'text-[#6366F1]' : 'text-[#4B5563]'
-            }`}
-          >
-            {s}
-          </span>
-        ))}
+    <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-[1fr_1.1fr]">
+        {/* CortexViewer slot: see docs/CORTEX-VIEW.md on feat/cortex-render */}
+        <div className="relative flex h-[240px] items-center justify-center overflow-hidden rounded-2xl bg-panel">
+          <p className="px-6 text-center text-[13px] text-muted">The live 3D cortex view will appear here.</p>
+        </div>
+
+        {/* Plain-language explainer for the active stage */}
+        <div key={stage.key} className="flex flex-col justify-center rounded-2xl bg-fill p-5 animate-in fade-in duration-500">
+          <p className="text-[12px] font-medium uppercase tracking-wide text-muted">
+            Step {activeStage + 1} of {DEMO_STAGES.length}
+          </p>
+          <h3 className="mt-2 text-[18px] font-medium leading-6 text-ink">{stage.heading}</h3>
+          <p className="mt-2 text-[14px] leading-[22px] text-ink/70">{stage.body}</p>
+        </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full h-2 rounded-full bg-[#1F2937] overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[#6366F1] transition-all duration-700"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      {/* Status message */}
-      <p className="mt-3 text-[#9CA3AF] text-sm text-center">
-        {data?.message ?? (isLoading ? 'Loading…' : 'Queued…')}{' '}
-        <span className="text-[#6366F1] font-mono">{pct}%</span>
-      </p>
-
-      {/* Animated dots */}
-      <div className="flex justify-center gap-1.5 mt-4">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-[#6366F1] animate-bounce"
-            style={{ animationDelay: `${i * 150}ms` }}
-          />
-        ))}
+      <div className="rounded-2xl border border-line p-4">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-fill">
+          <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="mt-3 text-center text-[13px] text-muted">
+          {data?.message ?? (isLoading ? 'Loading…' : 'Queued…')}{' '}
+          <span className="font-mono text-ink">{pct}%</span>
+        </p>
+        <p className="mt-1 text-center text-[12px] text-muted/80">
+          Usually a few minutes; longer if the GPU has to start up.
+        </p>
       </div>
     </div>
   )

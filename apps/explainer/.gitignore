@@ -1,0 +1,6 @@
+node_modules/
+out/
+# Generated media (Higgsfield shots, narration, stimulus, cortex export) is
+# synced in by scripts/sync-media.sh and never committed.
+public/media/
+public/cortex/
