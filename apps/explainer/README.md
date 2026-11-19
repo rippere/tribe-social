@@ -62,9 +62,13 @@ just moves the cut.
 | upload | b2_upload |
 | encode | b3_encode, b4_scan |
 | extract | b5_extract |
-| read | b6_read, b7_lag, b8_read2 |
+| read | b6_read, b8_read2 |
 | play | none (the clip's own audio) |
 | cta | b9_outro |
+
+`b7_lag` ("brain scans run about five seconds behind… so I slide the line back") is
+retired and no longer played: TRIBE v2's output is already stimulus-aligned (see
+"Timing" below), so there is no lag to explain or correct. Its row in `lines.tsv` can go.
 
 **Stand-ins.** Until Ben records, every line is a free offline TTS stand-in (piper,
 voice `en_US-ryan-medium`, paced to ~2.6 words/s): `npm run vo:standin`. A stand-in
@@ -123,7 +127,7 @@ it is.
   ring) is cued from a word in the v6 script: "video", "brain", "second" (intro);
   "upload", "graphics card", "delete", "numbers" (upload); "frames", "audio", "words",
   "Meta", "trained", "MRI", "alone" (encode); "comes", "twenty thousand", "every",
-  "lighting" (extract); "real", "line", "behind", "slide", "climbs", "dips" (read);
+  "lighting" (extract); "real", "line", "climbs", "dips" (read);
   "fMRIght", "forecast", "testing", "Try" (sign-off).
 - **v3–v5 history.** Those cuts had the brain narrate (ElevenLabs "Isla") with lip-synced
   Seedance shots: `scripts/gen_talk.py`, `scripts/talk_shots.json`, `npm run talk:gen`.
@@ -135,8 +139,13 @@ it is.
   the per-second curve (global field power, the RMS across all 20,484 fsaverage5
   points, scaled 0–1 within the clip). No region masks are used: the index-range
   masks in `run_and_save.py` / `roi_masks.py` are not anatomical regions.
-- **Warm-up:** the first 5 s are shaded. The fMRI signal TRIBE predicts lags the
-  stimulus by about 5 s, so every clip starts low. That is not a weak hook.
+- **Timing:** TRIBE v2's output is already stimulus-aligned. It trains with
+  `FmriExtractor offset=5`, so the haemodynamic delay is absorbed in training: second t
+  of the curve (and frame t of the cortex) reflects second t of the video. Nothing is
+  shaded as warm-up or slid back. Earlier cuts got this wrong (v1–v4 shaded the first
+  5 s as "warm-up"; v5 and v6 slid the line back 5 s on a narrated "scans run about five
+  seconds late/behind" beat, now cut; the first short showed the line pre-slid by 5 s)
+  and need a re-render.
 - **Generated media:** the stimulus clip (Veo 3.1) and mascot shots (Kling 3.0, keyed
   from green screen) come from Higgsfield. The clip is labelled "AI-generated test
   clip" on screen. The narration is Ben's own voice; until he records, it is a piper

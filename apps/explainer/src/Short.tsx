@@ -5,8 +5,8 @@ import narration from './data/narration_short.json'
  * The ~30 s short for a LinkedIn post: four of v6's beats with their v6 visuals,
  * then a silent end card. Narration is Ben's takes cut by scripts/short_vo.py
  * (b1 without the old product name, b2's first sentence, b6 and b8 whole).
- * b3, b4, b5, b7 and b9 are left out; without b7 the read line is shown already slid
- * back by the scan lag, in sync with the video, and the intro title lights on "It".
+ * b3, b4, b5 and b9 are left out (b7 is retired in every cut), and the intro title
+ * lights on "It". The read line is TRIBE's output as is: already in sync with the video.
  */
 const SPECS: SceneSpec[] = [
   { key: 'intro', lines: ['s1_intro'], mascot: 'walk-in' },

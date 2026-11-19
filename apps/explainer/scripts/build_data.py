@@ -135,20 +135,12 @@ def build_result(model, preds_path: Path) -> None:
         near = [w for (s, e, w) in words if s < sec + 1.5 and e > sec - 1.5]
         return " ".join(near).strip(" ,.")
 
-    # The fMRI signal TRIBE predicts lags the stimulus by ~5 s, so every clip
-    # starts low. Those seconds are shown as warm-up, never read as a weak hook.
-    warmup = 5
+    # TRIBE v2's output is already stimulus-aligned: it trains with FmriExtractor
+    # offset=5, so the haemodynamic delay is absorbed in training and predicted second t
+    # reflects video second t. No warm-up to skip and no lag to slide out.
     peak = int(rel.argmax())
-    falls = np.diff(rel)[warmup - 1:]          # falls[i] = rel[warmup+i] - rel[warmup+i-1]
-    drop = int(falls.argmin()) + warmup
-    # The same curve slid back by the lag, so second s lines up with second s of the
-    # video (the explainer shows this slide). Not renormalised: same 0..1 scale as
-    # "relative". The clip's last `lag` seconds have no aligned reading yet.
-    lag = warmup
-    aligned = rel[lag:]
-    a_peak = int(aligned.argmax())
-    a_falls = np.diff(aligned)
-    a_drop = int(a_falls.argmin()) + 1
+    falls = np.diff(rel)                       # falls[i] = rel[i+1] - rel[i]
+    drop = int(falls.argmin()) + 1             # the second the biggest fall lands on
     result = {
         "source": "tribe",
         "model": "TRIBE v2 (CC-BY-NC-4.0)",
@@ -156,18 +148,11 @@ def build_result(model, preds_path: Path) -> None:
         "seconds": int(len(gfp)),
         "gfp": [round(float(v), 5) for v in gfp],
         "relative": [round(float(v), 4) for v in rel],
-        "warmup_seconds": warmup,
         "peak": {"second": peak, "said": said_at(peak)},
         "drop": {"second": drop, "said": said_at(drop), "size": round(float(-falls.min()), 4)},
-        "lag_seconds": lag,
-        "aligned": {
-            "relative": [round(float(v), 4) for v in aligned],
-            "peak": {"second": a_peak, "said": said_at(a_peak)},
-            "drop": {"second": a_drop, "said": said_at(a_drop), "size": round(float(-a_falls.min()), 4)},
-        },
     }
     (DATA / "result.json").write_text(json.dumps(result, indent=1) + "\n")
-    print(f"result.json  {len(gfp)} s  peak@{peak}s  drop@{drop}s  aligned: peak@{a_peak}s drop@{a_drop}s")
+    print(f"result.json  {len(gfp)} s  peak@{peak}s  drop@{drop}s")
 
 
 def main() -> None:
