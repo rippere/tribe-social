@@ -1,0 +1,299 @@
+{
+ "source": "event_confirm.py --discover on the 64 discovery clips",
+ "design": {
+  "lag_s": 0,
+  "baseline_offsets": [
+   -3,
+   -2,
+   -1
+  ],
+  "response_offsets": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "keep": "s = floor(t); s >= 3 and s + 3 <= n - 1",
+  "zscore": "within clip over all predicted seconds (no warm-up exclusion)",
+  "aggregation": "mean within clip, then across clips",
+  "ci": "percentile bootstrap over clips, 5000",
+  "null": "per-clip circular shift of kept event seconds within [3, n-4], 5000 shuffles, same offset across signals; centred on null mean",
+  "min_clips": 10,
+  "seed": 20261118
+ },
+ "signals": [
+  "gfp",
+  "attention",
+  "social",
+  "language",
+  "valuation",
+  "auditory",
+  "motion",
+  "narrative"
+ ],
+ "n_tests_discovery": 56,
+ "q_discover": 0.1,
+ "q_confirm": 0.05,
+ "positive_controls": [
+  "speech_onset:auditory",
+  "pause_start:auditory"
+ ],
+ "hypotheses": [
+  {
+   "test": "face_appear:gfp",
+   "event": "face_appear",
+   "signal": "gfp",
+   "direction": -1,
+   "discovery_effect_centred": -0.2648,
+   "discovery_ci_centred": [
+    -0.5092,
+    -0.0316
+   ],
+   "discovery_effect_sd": -0.2213,
+   "discovery_p_two_sided": 0.011197760447910418,
+   "discovery_q": 0.0523,
+   "discovery_n_clips": 36,
+   "discovery_n_events": 88
+  },
+  {
+   "test": "face_appear:language",
+   "event": "face_appear",
+   "signal": "language",
+   "direction": 1,
+   "discovery_effect_centred": 0.2672,
+   "discovery_ci_centred": [
+    0.1219,
+    0.4256
+   ],
+   "discovery_effect_sd": 0.5608,
+   "discovery_p_two_sided": 0.0005998800239952009,
+   "discovery_q": 0.0056,
+   "discovery_n_clips": 36,
+   "discovery_n_events": 88
+  },
+  {
+   "test": "face_appear:valuation",
+   "event": "face_appear",
+   "signal": "valuation",
+   "direction": 1,
+   "discovery_effect_centred": 0.189,
+   "discovery_ci_centred": [
+    0.0333,
+    0.3559
+   ],
+   "discovery_effect_sd": 0.3113,
+   "discovery_p_two_sided": 0.02399520095980804,
+   "discovery_q": 0.0896,
+   "discovery_n_clips": 36,
+   "discovery_n_events": 88
+  },
+  {
+   "test": "face_appear:auditory",
+   "event": "face_appear",
+   "signal": "auditory",
+   "direction": 1,
+   "discovery_effect_centred": 0.3977,
+   "discovery_ci_centred": [
+    0.1981,
+    0.6096
+   ],
+   "discovery_effect_sd": 0.5207,
+   "discovery_p_two_sided": 0.0001999600079984003,
+   "discovery_q": 0.0022,
+   "discovery_n_clips": 36,
+   "discovery_n_events": 88
+  },
+  {
+   "test": "face_appear:motion",
+   "event": "face_appear",
+   "signal": "motion",
+   "direction": -1,
+   "discovery_effect_centred": -0.2233,
+   "discovery_ci_centred": [
+    -0.4185,
+    -0.0274
+   ],
+   "discovery_effect_sd": -0.2472,
+   "discovery_p_two_sided": 0.023195360927814438,
+   "discovery_q": 0.0896,
+   "discovery_n_clips": 36,
+   "discovery_n_events": 88
+  },
+  {
+   "test": "face_disappear:gfp",
+   "event": "face_disappear",
+   "signal": "gfp",
+   "direction": 1,
+   "discovery_effect_centred": 0.3551,
+   "discovery_ci_centred": [
+    0.1349,
+    0.5822
+   ],
+   "discovery_effect_sd": 0.453,
+   "discovery_p_two_sided": 0.0007998400319936012,
+   "discovery_q": 0.0056,
+   "discovery_n_clips": 37,
+   "discovery_n_events": 94
+  },
+  {
+   "test": "face_disappear:social",
+   "event": "face_disappear",
+   "signal": "social",
+   "direction": 1,
+   "discovery_effect_centred": 0.2551,
+   "discovery_ci_centred": [
+    0.092,
+    0.4195
+   ],
+   "discovery_effect_sd": 0.5537,
+   "discovery_p_two_sided": 0.0007998400319936012,
+   "discovery_q": 0.0056,
+   "discovery_n_clips": 37,
+   "discovery_n_events": 94
+  },
+  {
+   "test": "face_disappear:auditory",
+   "event": "face_disappear",
+   "signal": "auditory",
+   "direction": -1,
+   "discovery_effect_centred": -0.3875,
+   "discovery_ci_centred": [
+    -0.5968,
+    -0.1885
+   ],
+   "discovery_effect_sd": -0.3208,
+   "discovery_p_two_sided": 0.0001999600079984003,
+   "discovery_q": 0.0022,
+   "discovery_n_clips": 37,
+   "discovery_n_events": 94
+  },
+  {
+   "test": "pause_start:attention",
+   "event": "pause_start",
+   "signal": "attention",
+   "direction": -1,
+   "discovery_effect_centred": -0.2166,
+   "discovery_ci_centred": [
+    -0.3826,
+    -0.0411
+   ],
+   "discovery_effect_sd": -0.1574,
+   "discovery_p_two_sided": 0.028194361127774445,
+   "discovery_q": 0.0987,
+   "discovery_n_clips": 33,
+   "discovery_n_events": 91
+  },
+  {
+   "test": "pause_start:social",
+   "event": "pause_start",
+   "signal": "social",
+   "direction": 1,
+   "discovery_effect_centred": 0.1775,
+   "discovery_ci_centred": [
+    -0.0133,
+    0.3813
+   ],
+   "discovery_effect_sd": 0.41,
+   "discovery_p_two_sided": 0.009398120375924815,
+   "discovery_q": 0.0478,
+   "discovery_n_clips": 33,
+   "discovery_n_events": 91
+  },
+  {
+   "test": "pause_start:language",
+   "event": "pause_start",
+   "signal": "language",
+   "direction": -1,
+   "discovery_effect_centred": -0.2142,
+   "discovery_ci_centred": [
+    -0.3911,
+    -0.0288
+   ],
+   "discovery_effect_sd": 0.0223,
+   "discovery_p_two_sided": 0.008798240351929614,
+   "discovery_q": 0.0478,
+   "discovery_n_clips": 33,
+   "discovery_n_events": 91
+  },
+  {
+   "test": "pause_start:auditory",
+   "event": "pause_start",
+   "signal": "auditory",
+   "direction": -1,
+   "discovery_effect_centred": -0.4858,
+   "discovery_ci_centred": [
+    -0.7485,
+    -0.216
+   ],
+   "discovery_effect_sd": -0.5186,
+   "discovery_p_two_sided": 0.0001999600079984003,
+   "discovery_q": 0.0022,
+   "discovery_n_clips": 33,
+   "discovery_n_events": 91
+  },
+  {
+   "test": "pause_start:narrative",
+   "event": "pause_start",
+   "signal": "narrative",
+   "direction": 1,
+   "discovery_effect_centred": 0.2664,
+   "discovery_ci_centred": [
+    0.0712,
+    0.4651
+   ],
+   "discovery_effect_sd": 0.4592,
+   "discovery_p_two_sided": 0.0011997600479904018,
+   "discovery_q": 0.0075,
+   "discovery_n_clips": 33,
+   "discovery_n_events": 91
+  },
+  {
+   "test": "speech_onset:language",
+   "event": "speech_onset",
+   "signal": "language",
+   "direction": 1,
+   "discovery_effect_centred": 0.3255,
+   "discovery_ci_centred": [
+    0.175,
+    0.4808
+   ],
+   "discovery_effect_sd": 0.5448,
+   "discovery_p_two_sided": 0.0001999600079984003,
+   "discovery_q": 0.0022,
+   "discovery_n_clips": 29,
+   "discovery_n_events": 84
+  },
+  {
+   "test": "speech_onset:auditory",
+   "event": "speech_onset",
+   "signal": "auditory",
+   "direction": 1,
+   "discovery_effect_centred": 0.6285,
+   "discovery_ci_centred": [
+    0.4342,
+    0.8196
+   ],
+   "discovery_effect_sd": 0.665,
+   "discovery_p_two_sided": 0.0001999600079984003,
+   "discovery_q": 0.0022,
+   "discovery_n_clips": 29,
+   "discovery_n_events": 84
+  },
+  {
+   "test": "speech_onset:motion",
+   "event": "speech_onset",
+   "signal": "motion",
+   "direction": -1,
+   "discovery_effect_centred": -0.2444,
+   "discovery_ci_centred": [
+    -0.5119,
+    0.0289
+   ],
+   "discovery_effect_sd": -0.2606,
+   "discovery_p_two_sided": 0.014197160567886422,
+   "discovery_q": 0.0612,
+   "discovery_n_clips": 29,
+   "discovery_n_events": 84
+  }
+ ]
+}
