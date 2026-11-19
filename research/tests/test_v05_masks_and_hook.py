@@ -1,5 +1,5 @@
 """Pre-registration v0.5: anatomical ROI masks with no silent fallback, and the
-lagged hook window (predicted s 4-8) shared by research and the product scorer."""
+hook window (predicted s 0-3, stimulus-aligned) shared by research and the product scorer."""
 from __future__ import annotations
 
 import ast
@@ -58,7 +58,7 @@ def _slice_constants(path: Path) -> dict[str, tuple[int, int]]:
 def test_hook_window_matches_product_scorer():
     research = _slice_constants(RESEARCH / "analyze.py")
     product = _slice_constants(REPO / "packages" / "tribe_scoring" / "run_and_save.py")
-    assert research["HOOK_WINDOW"] == product["HOOK_WINDOW"] == (4, 8)
+    assert research["HOOK_WINDOW"] == product["HOOK_WINDOW"] == (0, 3)
     assert research["LEGACY_HOOK_WINDOW"] == product["LEGACY_HOOK_WINDOW"] == (0, 3)
 
 
@@ -72,3 +72,15 @@ def test_phase1b_refuses_pre_v05_scores(tmp_path):
     )
     assert r.returncode != 0
     assert "predates pre-registration v0.5" in (r.stdout + r.stderr)
+
+
+def test_phase1b_refuses_lagged_window_scores(tmp_path):
+    lagged = tmp_path / "scores.csv"
+    lagged.write_text("filename,label,n_seconds,attention_hook,hook_window_n\nx.mp4,x,10,0.1,4\n")
+    r = subprocess.run(
+        [sys.executable, str(RESEARCH / "phase1b_correlation.py")],
+        cwd=tmp_path, capture_output=True, text=True, timeout=120,
+        env={"TRIBE_SCORES_CSV": str(lagged), "PATH": "/usr/bin:/bin", "MPLBACKEND": "Agg"},
+    )
+    assert r.returncode != 0
+    assert "reverted lagged hook window" in (r.stdout + r.stderr)

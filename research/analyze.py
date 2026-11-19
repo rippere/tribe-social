@@ -5,7 +5,7 @@ Usage:
     uv run python analyze.py --input preds.npy --label "title" [--mask-source hcp]
 
 Metrics implemented:
-  Baseline   — per-ROI mean, hook (predicted s 4–8, the lagged response to the 0–3 s hook; 0–3 s kept for comparison), peak second, weighted composite
+  Baseline   — per-ROI mean, hook (predicted s 0–3; TRIBE v2 output is already stimulus-aligned), peak second, weighted composite
   Berns 2020 — onset + offset windows (strongest predictors of view duration)
   BOLD lit   — transient/sustained ratio (onset vs. steady-state activation)
   EEG neuro  — Global Field Power per second (total cortical energy; Frontiers 2017)
@@ -60,16 +60,17 @@ TRW = {
 
 # ── METRIC COMPUTATION ─────────────────────────────────────────────────────────
 
-# The hook is the first 3 s of the clip, but predicted BOLD lags the stimulus by
-# ~5 s, so the response to it sits in predicted seconds 4-8 (indices 4..7). Same
-# window as packages/tribe_scoring/run_and_save.py HOOK_WINDOW (a test pins the
-# two together). The 0-3 s window is kept as Hook_0_3s for comparison only.
-HOOK_WINDOW = slice(4, 8)
+# The hook is the first 3 s of the clip. TRIBE v2's output is already aligned to
+# the stimulus (its training shifts the fMRI target by 5 s), so predicted second t
+# reflects video second t and the hook is predicted seconds 0-3 (indices 0..2).
+# Same window as packages/tribe_scoring/run_and_save.py HOOK_WINDOW (a test pins
+# the two together). LEGACY_HOOK_WINDOW is kept as an alias for Hook_0_3s.
+HOOK_WINDOW = slice(0, 3)
 LEGACY_HOOK_WINDOW = slice(0, 3)
 
 
 def hook_mean(ts: np.ndarray) -> float:
-    """Mean over the lagged hook window; NaN when the clip is too short to reach it."""
+    """Mean over the hook window; NaN when the clip is too short to reach it."""
     w = ts[HOOK_WINDOW]
     return float(w.mean()) if len(w) else float("nan")
 

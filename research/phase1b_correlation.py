@@ -124,16 +124,21 @@ DPI = 300
 # %% Cell 2 — Data Loading and Merge
 # ─────────────────────────────────────────────────────────────────────────────
 scores_df = pd.read_csv(SCORES_CSV)
-# Since pre-registration v0.5 the `<roi>_hook` columns mean predicted seconds 4-8
-# (the lagged response to the 0-3 s hook) and the ROI masks are anatomical.
-# Older files used the same column names for predicted seconds 0-3 and
-# index-range masks; the scorer marks new files with `hook_window_n`. Refuse old
-# files rather than silently mixing the two meanings.
+# Since pre-registration v0.5 the ROI masks are anatomical and the scorer marks
+# its files with `hook_window_n`. Older files used index-range masks; refuse them.
+# Files scored while the scorer briefly used a lagged hook window (predicted s 4-8,
+# reverted in PR #22) have hook_window_n up to 4; refuse those too, since their
+# `_hook` columns are not predicted s 0-3.
 if 'hook_window_n' not in scores_df.columns:
     raise SystemExit(
         f'{SCORES_CSV} predates pre-registration v0.5 (no hook_window_n column): its '
-        '_hook columns are predicted s 0-3 on index-range masks. Rescore from the '
-        'saved *_preds.npy with the current scorer before running this analysis.'
+        'ROI masks are index ranges. Rescore from the saved *_preds.npy with the '
+        'current scorer before running this analysis.'
+    )
+if scores_df['hook_window_n'].max() > 3:
+    raise SystemExit(
+        f'{SCORES_CSV} was scored with the reverted lagged hook window (predicted s 4-8). '
+        'Rescore from the saved *_preds.npy with the current scorer.'
     )
 scores_df.columns = scores_df.columns.str.strip()
 
