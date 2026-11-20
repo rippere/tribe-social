@@ -57,6 +57,8 @@ torch build. Consequence: Spark scores are compared only with Spark scores; neve
 3. `gfp_hook_lag` — GFP mean over predicted seconds 4–8 (index 4 through 7), NOT 0–3.
    The existing `*_hook` columns average seconds 0–3, which is the BOLD warm-up window; they are
    reported for comparison only.
+   *(Superseded after scoring: TRIBE v2 output is already stimulus-aligned, so s 0–3 is the hook and
+   s 4–8 is the body of the ad. See Deviation 4 below. Text above kept as pre-registered.)*
 
 ## Tests (per primary metric)
 - eta² (between-group SS / total SS) for category (beauty/food/home/tech; "other" dropped), arm
@@ -84,6 +86,12 @@ Batch finished 2026-11-17 03:43 UTC: 64/64 scored, 0 quarantined, 1 supervisor r
    not 0–3. Not a primary metric; read the 0–3 comparison from the original run.
 3. Added `analyze_within_category.py` (arm effect inside category: stratified permutation + OLS with
    category and length), as the "check arm within category" step above. n = 44 (human/ai, 4 categories).
+4. **Hook window (PR #22, 2026-11-19).** The plan assumed predictions lag the video by ~5 s, so it read the hook
+   from s 4–8 (`gfp_hook_lag`). TRIBE v2 is trained with that delay removed (`FmriExtractor` offset = 5), and a
+   speech → auditory-cortex check on these 64 clips peaks at lag 0. So `gfp_hook_lag` measures seconds 4–8 of the
+   ad, and the hook is s 0–3. Results below keep the planned metric name; RESULTS.md reports both windows.
+   True hook (s 0–3) on Ben's labels: human > AI +11% pooled (p = 0.061), within category +0.028 (p = 0.016),
+   higher for human in all 4 categories.
 
 ### Findings (primary metrics, v2 masks)
 | Metric | Category eta² (p) | Arm eta² (p) | Format eta² (p) |
